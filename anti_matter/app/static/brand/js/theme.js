@@ -125,10 +125,9 @@
   }
 
   function updateButton(resolved) {
-    var icon = document.getElementById("btn-theme-icon");
     var label = document.getElementById("btn-theme-label");
     var btn = document.getElementById("btn-theme");
-    if (icon) icon.textContent = resolved === "dark" ? "🌙" : "☀️";
+    // Icon is a static yin-yang glyph (E-Ink Studio style) — only the word toggles.
     if (label) {
       var key = resolved === "dark" ? "theme.dark" : "theme.light";
       label.setAttribute("data-i18n", key);

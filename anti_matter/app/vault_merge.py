@@ -52,12 +52,37 @@ def _normalize_deletions(meta: dict) -> dict[str, dict[str, str]]:
     }
 
 
+def _dedupe_by_id(items: Any) -> list:
+    """Keep only the first occurrence of each id.
+
+    Two entries sharing an id (e.g. from importing/merging the same export twice)
+    are indistinguishable to the API: deleting one by id would remove all of them.
+    Runs on every load/import/save so a vault that already has duplicates heals itself.
+    """
+    if not isinstance(items, list):
+        return []
+    seen: set[str] = set()
+    out = []
+    for item in items:
+        item_id = item.get("id") if isinstance(item, dict) else None
+        if item_id is None:
+            out.append(item)
+            continue
+        if item_id in seen:
+            continue
+        seen.add(item_id)
+        out.append(item)
+    return out
+
+
 def sanitize_vault_dict(raw: dict[str, Any]) -> dict[str, Any]:
     """Normalize vault JSON before Pydantic validation (import, sync, load)."""
     out = dict(raw)
     meta = dict(out.get("meta") or {})
     meta["deletions"] = _normalize_deletions(meta)
     out["meta"] = meta
+    out["categories"] = _dedupe_by_id(out.get("categories"))
+    out["codes"] = _dedupe_by_id(out.get("codes"))
     return out
 
 

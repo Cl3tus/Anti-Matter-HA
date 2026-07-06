@@ -261,6 +261,10 @@
 }
 
 .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rm-space-3);
   margin-bottom: var(--rm-space-4);
 }
 
@@ -279,6 +283,23 @@
   outline: none;
   border-color: var(--rm-border-focus);
   box-shadow: 0 0 0 3px var(--rm-accent-soft);
+}
+
+.attr-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-2);
+}
+
+.attr-filters select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-surface);
+  color: var(--rm-text);
+  font-family: inherit;
+  font-size: var(--rm-text-sm);
+  max-width: 9rem;
 }
 
 .codes-grid {
@@ -882,7 +903,8 @@ dialog h3 {
   width: 32px;
   height: 32px;
   padding: 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
   line-height: 1;
   border-radius: var(--rm-radius-sm);
   background: var(--rm-accent-soft);
@@ -1116,4 +1138,105 @@ body.qr-invert .zwave-sticker--dsk-only {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   v1.0.8 UI
+   ============================================================ */
+
+.table-dialog {
+  max-width: 92vw;
+  width: 900px;
+  position: relative;
+}
+.table-dialog .table-scroll {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  margin-top: var(--rm-space-3);
+}
+#codes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--rm-text-sm);
+}
+#codes-table th,
+#codes-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--rm-border);
+  text-align: left;
+  white-space: nowrap;
+}
+#codes-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--rm-surface-elevated);
+  font-weight: 600;
+}
+#codes-table tbody tr:hover {
+  background: var(--rm-accent-soft);
+}
+
+.modal-close-x {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: none;
+  background: transparent;
+  color: var(--rm-danger);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: var(--rm-radius-sm);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-close-x:hover {
+  background: var(--rm-danger-bg);
+}
+
+/* Bigger emoji glyphs in the top bar */
+.header-actions [aria-hidden="true"] {
+  font-size: 1.3em;
+  line-height: 1;
+}
+.header-actions .btn-icon-emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* Vertical divider before the theme/language pair (pushed to the far right) */
+.header-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--rm-border);
+  margin: 0 var(--rm-space-1);
+}
+.header-actions {
+  margin-left: auto;
+}
+.header-lang-theme {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-2);
+  margin-left: var(--rm-space-2);
+}
+
+/* Flags (copied sizing from E-Ink Studio) + yin-yang theme glyph */
+.flag {
+  height: 15px;
+  width: auto;
+  border-radius: 2px;
+  display: block;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.yny {
+  width: 18px;
+  height: 18px;
+  display: block;
 }

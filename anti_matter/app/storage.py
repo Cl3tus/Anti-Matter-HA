@@ -62,8 +62,17 @@ class VaultStorage:
                 current = Vault.model_validate(
                     json.loads(self.path.read_text(encoding="utf-8"))
                 )
-                current.categories.extend(incoming.categories)
-                current.codes.extend(incoming.codes)
+                # Skip incoming items whose id already exists locally — importing the
+                # same export twice (or re-importing after a partial sync) must not
+                # create a second record sharing an id with an existing one.
+                existing_cat_ids = {c.id for c in current.categories}
+                existing_code_ids = {c.id for c in current.codes}
+                current.categories.extend(
+                    c for c in incoming.categories if c.id not in existing_cat_ids
+                )
+                current.codes.extend(
+                    c for c in incoming.codes if c.id not in existing_code_ids
+                )
                 self._write_unlocked(current)
                 return current
             self._write_unlocked(incoming)

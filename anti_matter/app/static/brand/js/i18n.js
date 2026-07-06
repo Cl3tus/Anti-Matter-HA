@@ -8,8 +8,28 @@
 (function (global) {
   const DEFAULT_LOCALE = "en";
   const SUPPORTED = ["en", "nl"];
-  const LOCALE_FLAGS = { en: "🇬🇧", nl: "🇳🇱" };
   const LOCALE_LABELS = { en: "EN", nl: "NL" };
+  // Inline flag SVGs (E-Ink Studio style) so the flag isn't at the mercy of the
+  // OS emoji font's colour palette.
+  const LOCALE_FLAGS = {
+    en:
+      '<svg class="flag" viewBox="0 0 60 30" aria-hidden="true">' +
+      '<clipPath id="am-flag-uk-s"><path d="M0,0 v30 h60 v-30 z"/></clipPath>' +
+      '<clipPath id="am-flag-uk-t"><path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/></clipPath>' +
+      '<g clip-path="url(#am-flag-uk-s)">' +
+      '<path d="M0,0 v30 h60 v-30 z" fill="#012169"/>' +
+      '<path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/>' +
+      '<path d="M0,0 L60,30 M60,0 L0,30" clip-path="url(#am-flag-uk-t)" stroke="#c8102e" stroke-width="4"/>' +
+      '<path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/>' +
+      '<path d="M30,0 v30 M0,15 h60" stroke="#c8102e" stroke-width="6"/>' +
+      "</g></svg>",
+    nl:
+      '<svg class="flag" viewBox="0 0 60 30" aria-hidden="true">' +
+      '<rect width="60" height="10" y="0" fill="#AE1C28"/>' +
+      '<rect width="60" height="10" y="10" fill="#ffffff"/>' +
+      '<rect width="60" height="10" y="20" fill="#21468B"/>' +
+      "</svg>",
+  };
 
   function localeBase() {
     const base = global.ANTIMATTER_LOCALE_BASE || "/assets/locales/";
@@ -94,7 +114,7 @@
   function updateLangButton() {
     const flag = document.getElementById("btn-lang-flag");
     const label = document.getElementById("btn-lang-label");
-    if (flag) flag.textContent = LOCALE_FLAGS[locale] || LOCALE_FLAGS.en;
+    if (flag) flag.innerHTML = LOCALE_FLAGS[locale] || LOCALE_FLAGS.en;
     if (label) label.textContent = LOCALE_LABELS[locale] || "EN";
   }
 

@@ -59,12 +59,40 @@ function categoryName(id) {
   return c ? c.name : "Uncategorized";
 }
 
+const ATTR_FILTER_FIELDS = [
+  ["filter-vendor", "device_vendor", "filter.vendor"],
+  ["filter-product", "device_product", "filter.product"],
+  ["filter-type", "device_type", "filter.type"],
+  ["filter-area", "area", "filter.area"],
+];
+const activeFilters = { device_vendor: "", device_product: "", device_type: "", area: "" };
+
+function fillAttributeFilters() {
+  for (const [id, field, labelKey] of ATTR_FILTER_FIELDS) {
+    const sel = document.getElementById(id);
+    if (!sel) continue;
+    const current = activeFilters[field];
+    const values = Array.from(
+      new Set(vault.codes.map((c) => (c[field] || "").trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+    if (!values.includes(current)) activeFilters[field] = "";
+    sel.innerHTML =
+      `<option value="">${escapeHtml(t(labelKey))}</option>` +
+      values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    sel.value = activeFilters[field];
+  }
+}
+
 function filteredCodes() {
   let codes = vault.codes;
   if (activeCategories.size) {
     codes = codes.filter((c) =>
       activeCategories.has(c.category_id || NONE_CATEGORY_ID)
     );
+  }
+  for (const [, field] of ATTR_FILTER_FIELDS) {
+    const val = activeFilters[field];
+    if (val) codes = codes.filter((c) => (c[field] || "") === val);
   }
   const q = document.getElementById("search").value.trim().toLowerCase();
   if (!q) return codes;
@@ -142,6 +170,32 @@ function updateStatusbar(shown) {
       : t("status.filtered", { shown, total });
 }
 
+function renderTable() {
+  const tbody = document.getElementById("codes-table-body");
+  if (!tbody) return;
+  const codes = filteredCodes();
+  tbody.innerHTML = codes
+    .map((c) => {
+      const proto =
+        window.AntiMatterVaultCards?.codeProtocol?.(c) || c.code_type || "matter";
+      return `<tr>
+        <td>${escapeHtml(c.name)}</td>
+        <td>${escapeHtml(proto)}</td>
+        <td>${escapeHtml(c.device_vendor)}</td>
+        <td>${escapeHtml(c.device_product)}</td>
+        <td>${escapeHtml(c.device_type)}</td>
+        <td>${escapeHtml(c.area)}</td>
+        <td>${escapeHtml(categoryName(c.category_id))}</td>
+      </tr>`;
+    })
+    .join("");
+}
+
+function openTableDialog() {
+  renderTable();
+  document.getElementById("table-dialog").showModal();
+}
+
 function renderCodes() {
   const grid = document.getElementById("codes-grid");
   const empty = document.getElementById("empty-state");
@@ -180,6 +234,7 @@ function renderCodes() {
 }
 
 function render() {
+  fillAttributeFilters();
   renderCategories();
   renderCodes();
   fillCategorySelect();
@@ -505,18 +560,29 @@ function uiImportChoice() {
   });
 }
 
+function syncBackupFrequencyFields() {
+  const freq = document.getElementById("backup-frequency").value;
+  document.getElementById("backup-weekday-row").classList.toggle("hidden", freq !== "weekly");
+  document.getElementById("backup-day-of-month-row").classList.toggle("hidden", freq !== "monthly");
+  document.getElementById("backup-hourly-hint").classList.toggle("hidden", freq !== "hourly");
+}
+
 async function openBackupDialog() {
   const dlg = document.getElementById("backup-dialog");
   try {
     const s = await api("/backup/settings");
     document.getElementById("backup-auto-enabled").checked = Boolean(s.enabled);
+    document.getElementById("backup-frequency").value = s.frequency || "daily";
     document.getElementById("backup-auto-time").value =
       String(s.hour ?? 3).padStart(2, "0") + ":" + String(s.minute ?? 0).padStart(2, "0");
+    document.getElementById("backup-weekday").value = String(s.weekday ?? 0);
+    document.getElementById("backup-day-of-month").value = s.day_of_month ?? 1;
     document.getElementById("backup-keep-count").value = s.keep_count ?? 10;
+    syncBackupFrequencyFields();
     const info = document.getElementById("backup-last-info");
     if (info) {
-      info.textContent = s.last_run_date
-        ? t("backup.last_run", { date: s.last_run_date })
+      info.textContent = s.last_run_key
+        ? t("backup.last_run", { date: s.last_run_key })
         : "";
     }
   } catch {
@@ -621,6 +687,15 @@ function bindUi() {
   document.getElementById("category-form").onsubmit = saveCategory;
   document.getElementById("search").oninput = renderCodes;
 
+  for (const [id, field] of ATTR_FILTER_FIELDS) {
+    document.getElementById(id)?.addEventListener("change", (e) => {
+      activeFilters[field] = e.target.value;
+      renderCodes();
+    });
+  }
+
+  document.getElementById("btn-table-view").onclick = openTableDialog;
+
   document.getElementById("filter-all").onclick = () => {
     activeCategories.clear();
     render();
@@ -649,6 +724,7 @@ function bindUi() {
   };
 
   document.getElementById("btn-backup").onclick = openBackupDialog;
+  document.getElementById("backup-frequency").onchange = syncBackupFrequencyFields;
 
   document.getElementById("backup-form").onsubmit = async (e) => {
     e.preventDefault();
@@ -657,8 +733,11 @@ function bindUi() {
       .map((n) => parseInt(n, 10) || 0);
     const body = {
       enabled: document.getElementById("backup-auto-enabled").checked,
+      frequency: document.getElementById("backup-frequency").value,
       hour: hh,
       minute: mm,
+      weekday: parseInt(document.getElementById("backup-weekday").value, 10) || 0,
+      day_of_month: parseInt(document.getElementById("backup-day-of-month").value, 10) || 1,
       keep_count: parseInt(document.getElementById("backup-keep-count").value, 10) || 10,
     };
     await api("/backup/settings", { method: "PUT", body: JSON.stringify(body) });

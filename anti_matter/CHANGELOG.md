@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.0.8
+
+- **Fixed a data-integrity bug**: importing/merging the same export twice (or a partial
+  re-sync) could leave two codes sharing the same id — deleting one then deleted both.
+  The vault now dedupes by id on every load and on merge-import, and heals itself if a
+  vault file already has duplicates. (There's no database — it's a single JSON file,
+  `anti_matter.json`, in the add-on config folder.)
+- **Attribute filters**: dropdowns for Vendor, Product, Type and Area next to the search
+  box, filled from your actual data. Combine them with category selection and search.
+- **Table view**: a new button opens a spreadsheet-style table of the (filtered) codes in
+  its own modal, closed with a red ✕.
+- **Backup schedule**: added Hourly / Daily / Weekly / Monthly frequency, with a day-of-week
+  or day-of-month picker where relevant.
+- Theme toggle now uses a static yin-yang glyph (copied from E-Ink Studio) instead of an
+  emoji that changed per state; language toggle uses proper inline flag SVGs (UK/NL)
+  instead of emoji flags, so the colours don't depend on the OS emoji font.
+- Bigger icons in the top bar; Export/Import/Backup/Scan/New all show text again; the
+  QR-invert button is now an emoji (🌓) with an "Invert" label.
+- Theme and language buttons moved to the far right of the bar behind a divider.
+- Renamed "+ Code" to "New" with a 🆕 icon (was a hand/pencil, unclear); Scan and New are
+  both accent-coloured now.
+- The "+" add-category button no longer renders as a colourful emoji plus (which ignored
+  the accent colour on some systems) — it's a plain, properly accent-coloured "+".
+
 ## 1.0.7
 
 - Small grey version number next to the app title.

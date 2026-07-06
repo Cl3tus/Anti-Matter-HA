@@ -18,7 +18,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 from pydantic import BaseModel
 
-from backup_schedule import is_due, load_settings, mark_ran, save_settings
+from backup_schedule import is_due, load_settings, mark_ran, period_key, save_settings
 from ha_client import HomeAssistantClient
 from models import (
     Category,
@@ -55,7 +55,7 @@ from storage import VaultStorage
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger("anti_matter")
 
-APP_VERSION = "1.0.7"
+APP_VERSION = "1.0.8"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -193,7 +193,7 @@ async def _scheduler_loop() -> None:
             now = datetime.now()
             if is_due(settings, now):
                 result = run_backup(keep_count=settings.get("keep_count", 10))
-                mark_ran(storage.data_dir, now.strftime("%Y-%m-%d"))
+                mark_ran(storage.data_dir, period_key(settings.get("frequency", "daily"), now))
                 _LOGGER.info("Scheduled backup: %s", result)
         except Exception:
             _LOGGER.exception("Scheduled backup check failed")
@@ -265,8 +265,11 @@ async def trigger_backup():
 
 class BackupSettingsBody(BaseModel):
     enabled: bool = False
+    frequency: str = "daily"
     hour: int = 3
     minute: int = 0
+    weekday: int = 0
+    day_of_month: int = 1
     keep_count: int = 10
 
 
