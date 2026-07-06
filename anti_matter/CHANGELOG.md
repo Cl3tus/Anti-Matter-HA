@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.0.13
+
+- **Logging overhaul**: server now logs export/import counts, backup runs (startup and
+  manual), settings on boot, and every category/code add/remove/edit — with names redacted
+  and pairing codes/QR payloads never written to the log. Removed the noisy repeated
+  `GET /api/vault` polling lines from the log (custom access-log filter), and silenced an
+  `invalid escape sequence` warning from `storage.py`.
+- **Fixed "Pull from HA" false failure**: the alert lumped "code not saved" and "no
+  attribute filled in" into one misleading message. Now split into two clear alerts, and
+  the Home Assistant link section auto-expands if either field is missing.
+- **Matter payload decoder**: expand "Decode Matter payload" under the QR/manual code
+  fields to see the Vendor ID, Product ID, setup passcode, discriminator, discovery
+  capabilities and commissioning flow — fully client-side, no external service.
+- **No duplicate category names** — creating or renaming a category to a name that already
+  exists (case-insensitive) is now rejected with a clear error.
+- **Independent scrolling**: the categories sidebar and the code grid/table now scroll on
+  their own, so a long category list no longer pushes "All categories" or the storage hint
+  off-screen, and a long code list no longer scrolls the whole page.
+- Dialogs (New/Edit code, categories, etc.) now keep their Cancel/Save button row **pinned**
+  at the bottom while the form content above scrolls.
+- Table view gained **In use** and **Connectivity** columns; the quick-view popup's meta
+  line now also shows In use and Connectivity.
+- **New Stock field** ("Stock (spare units)") on every code, next to In use — for tracking
+  spare/unused devices you haven't installed yet. Shown in the form, the table, and the
+  quick-view popup.
+- **Multi-select + mass delete**: shift-click for a range, ctrl/cmd-click to toggle,
+  on both the categories sidebar and the code grid/table. A selection bar shows the count
+  with Delete selected / Clear buttons. Plain clicks keep their existing behavior (category
+  filter toggle; nothing changes for a single code click).
+- **Mobile layout**: categories now sit below the code grid instead of above it, so the
+  code list is the first thing you see on a phone.
+- **Scanning improvements**: the "this code is already saved" duplicate notice now uses the
+  app's own popup instead of the browser's native alert/confirm (which could silently fail
+  inside the Home Assistant ingress frame). Scanning several codes in a row without typing a
+  name now numbers the default name ("Scanned device", "Scanned device 2", "Scanned device
+  3", …) instead of colliding on the same name.
+
 ## 1.0.12
 
 - **Connectivity** now includes **Z-Wave** alongside WiFi/Matter/Zigbee/Bluetooth.

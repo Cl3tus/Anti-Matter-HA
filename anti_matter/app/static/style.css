@@ -92,26 +92,32 @@
   grid-template-areas:
     "sidebar content"
     "sidebar status";
-  min-height: calc(100vh - 57px); /* viewport minus header (56 + 1px border) */
+  height: calc(100vh - 57px); /* viewport minus header (56 + 1px border) */
+  overflow: hidden; /* sidebar and content each scroll independently, see below */
 }
-.sidebar { grid-area: sidebar; }
-.content { grid-area: content; }
+.sidebar { grid-area: sidebar; min-height: 0; }
+.content { grid-area: content; min-height: 0; overflow-y: auto; }
 .statusbar { grid-area: status; }
 
 @media (max-width: 720px) {
   .layout {
     grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto;
     grid-template-areas:
-      "sidebar"
       "content"
+      "sidebar"
       "status";
   }
   .sidebar {
-    border-bottom: 1px solid var(--rm-border);
+    border-bottom: none;
+    border-top: 1px solid var(--rm-border);
+    max-height: 40vh;
   }
 }
 
 .sidebar {
+  display: flex;
+  flex-direction: column;
   padding: var(--rm-space-4);
   border-right: 1px solid var(--rm-border);
   background: var(--rm-surface);
@@ -122,6 +128,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--rm-space-3);
+  flex: none;
 }
 
 .sidebar-head h2 {
@@ -133,10 +140,19 @@
   color: var(--rm-text-muted);
 }
 
+.filter-all {
+  flex: none;
+}
+
+/* The category list scrolls on its own; "All categories" above and the storage
+   hint below stay pinned so a long category list doesn't push them off-screen. */
 .category-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--rm-space-4);
+  margin: var(--rm-space-3) 0;
 }
 
 .category-list li {
@@ -250,6 +266,7 @@
 }
 
 .backup-status {
+  flex: none;
   margin-top: var(--rm-space-4);
   font-size: var(--rm-text-xs);
   color: var(--rm-text-muted);
@@ -723,8 +740,12 @@ dialog {
   color: var(--rm-text);
   padding: var(--rm-space-5);
   max-width: 480px;
+  max-height: 85vh;
   width: calc(100% - 2rem);
   box-shadow: var(--rm-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* dialog form scrolls internally, see below */
 }
 
 dialog::backdrop {
@@ -739,6 +760,9 @@ dialog form {
   display: flex;
   flex-direction: column;
   gap: var(--rm-space-3);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 dialog label {
@@ -845,6 +869,12 @@ dialog h3 {
   justify-content: flex-end;
   gap: var(--rm-space-2);
   margin-top: var(--rm-space-2);
+  /* Stays pinned at the bottom of the modal while the fields above scroll. */
+  position: sticky;
+  bottom: 0;
+  background: var(--rm-surface-glass);
+  padding-top: var(--rm-space-2);
+  flex: none;
 }
 
 /* QR scan */
@@ -1052,6 +1082,7 @@ body.qr-invert .zwave-sticker--dsk-only {
   margin: 0 0 var(--rm-space-4);
   color: var(--rm-text-muted);
   line-height: 1.5;
+  white-space: pre-line;
 }
 
 /* ============================================================
@@ -1333,4 +1364,62 @@ body.qr-invert .zwave-sticker--dsk-only {
   font-weight: 700;
   font-size: 1.15em;
   line-height: 1;
+}
+
+.mt-decode-result {
+  margin-top: var(--rm-space-2);
+}
+.mt-decode-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--rm-text-sm);
+}
+.mt-decode-table th,
+.mt-decode-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--rm-border);
+  text-align: left;
+}
+.mt-decode-table th {
+  color: var(--rm-text-muted);
+  font-weight: 500;
+  width: 45%;
+}
+.mt-decode-table td {
+  font-family: var(--rm-font-mono, monospace);
+}
+
+/* Multi-select (shift/ctrl+click) selection bar — codes and categories */
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-2);
+  padding: var(--rm-space-2) var(--rm-space-3);
+  margin-bottom: var(--rm-space-3);
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-danger-bg);
+  border: 1px solid var(--rm-danger);
+  font-size: var(--rm-text-sm);
+}
+.selection-bar span {
+  flex: 1;
+  color: var(--rm-text);
+}
+
+/* Selected code cards (grid) / rows (table) */
+.code-card.selected .matter-sticker-box,
+.code-card.selected .homekit-sticker,
+.code-card.selected .zwave-sticker {
+  outline: 3px solid var(--rm-accent);
+  outline-offset: 2px;
+}
+#codes-table-body tr.selected {
+  background: var(--rm-accent-soft);
+}
+
+/* Categories held for bulk delete (ctrl/shift+click) — distinct from the
+   filter-active state, which uses .active */
+.category-btn.selected-for-delete {
+  outline: 2px dashed var(--rm-danger);
+  outline-offset: -2px;
 }

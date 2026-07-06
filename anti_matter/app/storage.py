@@ -1,4 +1,4 @@
-"""JSON file persistence for the Anti-Matter vault.
+r"""JSON file persistence for the Anti-Matter vault.
 
 Data lives under STORAGE_DIR (set to the add-on config folder `/config` by run.sh, which
 Home Assistant exposes over Samba at \\<HA-IP>\addon_configs\<slug>). Falls back to /data.

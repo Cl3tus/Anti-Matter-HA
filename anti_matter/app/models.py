@@ -52,6 +52,7 @@ class MatterCode(BaseModel):
     zwave_pin: str = ""  # first 5 digits of DSK (S2 PIN)
     notes: str = ""
     in_use: bool = False  # device is currently deployed (vs. spare/stock)
+    stock: int = 0  # spare/unused units on hand
     conn_wifi: bool = False
     conn_matter: bool = False
     conn_zigbee: bool = False
@@ -87,7 +88,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.12"
+    addon_version: str = "1.0.13"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 
@@ -148,6 +149,7 @@ class MatterCodeCreate(BaseModel):
     zwave_pin: str = ""
     notes: str = ""
     in_use: bool = False
+    stock: int = 0
     conn_wifi: bool = False
     conn_matter: bool = False
     conn_zigbee: bool = False
@@ -173,6 +175,7 @@ class MatterCodeUpdate(BaseModel):
     zwave_pin: Optional[str] = None
     notes: Optional[str] = None
     in_use: Optional[bool] = None
+    stock: Optional[int] = None
     conn_wifi: Optional[bool] = None
     conn_matter: Optional[bool] = None
     conn_zigbee: Optional[bool] = None

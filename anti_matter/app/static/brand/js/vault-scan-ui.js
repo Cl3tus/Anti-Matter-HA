@@ -24,6 +24,26 @@
 
     const scanDlg = document.getElementById("scan-dialog");
     const readerId = "scan-reader";
+    const uiAlert = opts.uiAlert || ((msg) => Promise.resolve(window.alert(msg)));
+    const uiConfirm = opts.uiConfirm || ((msg) => Promise.resolve(window.confirm(msg)));
+
+    // Consecutive scans without a custom name would all collide on the same
+    // "Scanned device" default — number them so each saved scan stays distinct.
+    function nextDefaultName() {
+      const base = t("scan.default_name");
+      const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(`^${escaped}(?: (\\d+))?$`);
+      let maxN = 0;
+      let found = false;
+      for (const c of opts.getVault().codes || []) {
+        const m = re.exec((c.name || "").trim());
+        if (!m) continue;
+        found = true;
+        const n = m[1] ? parseInt(m[1], 10) : 1;
+        if (n > maxN) maxN = n;
+      }
+      return found ? `${base} ${maxN + 1}` : base;
+    }
 
     function applyParsedToForm(parsed) {
       const codeType = parsed.code_type || "matter";
@@ -56,16 +76,18 @@
 
       const nameEl = document.getElementById("code-name");
       if (nameEl && !nameEl.value.trim()) {
-        nameEl.value = t("scan.default_name");
+        nameEl.value = nextDefaultName();
       }
     }
 
-    function handleParsedText(text) {
+    async function handleParsedText(text) {
       const parsed = global.AntiMatterScan.parseScannedText(text);
       if (!parsed) {
-        alert(t("scan.unrecognized"));
+        await uiAlert(t("scan.unrecognized"));
+        global.logEvent?.("Scan: unrecognized code");
         return;
       }
+      global.logEvent?.(`Scan: captured protocol=${parsed.code_type || "matter"}`);
       const excludeId = document.getElementById("code-id")?.value || null;
       const dup = global.AntiMatterScan.findDuplicate(
         opts.getVault().codes,
@@ -76,7 +98,8 @@
         const msg = t("scan.duplicate", {
           name: dup.name || t("scan.unnamed"),
         });
-        if (confirm(msg + "\n\n" + t("scan.duplicate_open"))) {
+        global.logEvent?.("Scan: duplicate of existing code detected");
+        if (await uiConfirm(msg + "\n" + t("scan.duplicate_open"), t("action.ok"))) {
           scanDlg?.close();
           opts.openCodeDialog(dup);
         }
@@ -147,7 +170,7 @@
         global.AntiMatterScanner.scanImageFile(
           file,
           handleParsedText,
-          (err) => alert(err.message || t("scan.photo_fail")),
+          (err) => uiAlert(err.message || t("scan.photo_fail")),
           opts.libUrl
         );
       });

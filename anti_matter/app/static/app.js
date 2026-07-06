@@ -6,6 +6,13 @@ const { t, initI18n, setLocale } = window.AntiMatterI18n;
 
 let vault = { categories: [], codes: [] };
 let activeCategories = new Set();
+
+// Multi-select for bulk delete (shift/ctrl+click) — separate from the filter
+// selection above and from the category "active" filter state.
+let selectedCodeIds = new Set();
+let lastSelectedCodeIndex = null;
+let selectedCategoryIds = new Set();
+let lastSelectedCategoryIndex = null;
 let categoryIconPicker = null;
 const NONE_CATEGORY_ID = "__none__";
 
@@ -43,11 +50,21 @@ async function api(path, options = {}) {
   return res;
 }
 
+// Fire-and-forget log line for client-only state the server has no other way to see
+// (view mode, QR invert, resolved theme/language, scan captured). Never send raw codes.
+function logEvent(message) {
+  api("/log", { method: "POST", body: JSON.stringify({ message }) }).catch(() => {});
+}
+
 let lastVaultJson = "";
 
 async function loadVault() {
   vault = await api("/vault");
   lastVaultJson = JSON.stringify(vault);
+  selectedCodeIds.clear();
+  lastSelectedCodeIndex = null;
+  selectedCategoryIds.clear();
+  lastSelectedCategoryIndex = null;
   render();
 }
 
@@ -142,6 +159,71 @@ function filteredCodes() {
   return codes.filter((c) => hay(c).includes(q));
 }
 
+// Shift = range-select, Ctrl/Cmd = toggle-select. Plain clicks keep their
+// original behavior (category filter toggle; nothing for code cards).
+function updateCodeSelectionUi() {
+  const bar = document.getElementById("code-selection-bar");
+  const count = document.getElementById("code-selection-count");
+  if (bar) bar.classList.toggle("hidden", selectedCodeIds.size === 0);
+  if (count) count.textContent = t("status.selected", { count: selectedCodeIds.size });
+  document.querySelectorAll("#codes-grid .code-card[data-code-id]").forEach((card) => {
+    card.classList.toggle("selected", selectedCodeIds.has(card.dataset.codeId));
+  });
+  document.querySelectorAll("#codes-table-body tr[data-code-id]").forEach((tr) => {
+    tr.classList.toggle("selected", selectedCodeIds.has(tr.dataset.codeId));
+  });
+}
+
+function updateCategorySelectionUi() {
+  const bar = document.getElementById("category-selection-bar");
+  const count = document.getElementById("category-selection-count");
+  if (bar) bar.classList.toggle("hidden", selectedCategoryIds.size === 0);
+  if (count) count.textContent = t("status.selected", { count: selectedCategoryIds.size });
+  document.querySelectorAll("#category-list .category-btn[data-category-id]").forEach((btn) => {
+    btn.classList.toggle("selected-for-delete", selectedCategoryIds.has(btn.dataset.categoryId));
+  });
+}
+
+function handleCodeSelectClick(e, code, index, orderedCodes) {
+  if (e.shiftKey && lastSelectedCodeIndex != null) {
+    const [lo, hi] = [lastSelectedCodeIndex, index].sort((a, b) => a - b);
+    for (let i = lo; i <= hi; i++) selectedCodeIds.add(orderedCodes[i].id);
+  } else {
+    if (selectedCodeIds.has(code.id)) selectedCodeIds.delete(code.id);
+    else selectedCodeIds.add(code.id);
+    lastSelectedCodeIndex = index;
+  }
+  updateCodeSelectionUi();
+}
+
+function handleCategorySelectClick(e, cat, index, orderedCats) {
+  if (e.shiftKey && lastSelectedCategoryIndex != null) {
+    const [lo, hi] = [lastSelectedCategoryIndex, index].sort((a, b) => a - b);
+    for (let i = lo; i <= hi; i++) selectedCategoryIds.add(orderedCats[i].id);
+  } else {
+    if (selectedCategoryIds.has(cat.id)) selectedCategoryIds.delete(cat.id);
+    else selectedCategoryIds.add(cat.id);
+    lastSelectedCategoryIndex = index;
+  }
+  updateCategorySelectionUi();
+}
+
+async function deleteSelectedCodes() {
+  const ids = [...selectedCodeIds];
+  if (!ids.length) return;
+  if (!(await uiConfirm(t("confirm.delete_selected", { count: ids.length }), t("action.delete")))) return;
+  for (const id of ids) await api(`/codes/${id}`, { method: "DELETE" });
+  await loadVault();
+}
+
+async function deleteSelectedCategories() {
+  const ids = [...selectedCategoryIds];
+  if (!ids.length) return;
+  if (!(await uiConfirm(t("confirm.delete_selected_categories", { count: ids.length }), t("action.delete")))) return;
+  for (const id of ids) await api(`/categories/${id}`, { method: "DELETE" });
+  await loadVault();
+}
+
 function renderCategories() {
   const ul = document.getElementById("category-list");
   ul.innerHTML = "";
@@ -165,17 +247,24 @@ function renderCategories() {
   const sorted = [...vault.categories].sort(
     (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
   );
-  for (const cat of sorted) {
+  sorted.forEach((cat, i) => {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.type = "button";
+    btn.dataset.categoryId = cat.id;
     btn.className =
-      "category-btn" + (activeCategories.has(cat.id) ? " active" : "");
+      "category-btn" +
+      (activeCategories.has(cat.id) ? " active" : "") +
+      (selectedCategoryIds.has(cat.id) ? " selected-for-delete" : "");
     const mark = window.AntiMatterCategoryIcons
       ? window.AntiMatterCategoryIcons.markMarkup(cat, BRAND_PREFIX)
       : `<span class="category-dot" style="background:${cat.color}"></span>`;
     btn.innerHTML = `${mark}${escapeHtml(cat.name)}`;
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        handleCategorySelectClick(e, cat, i, sorted);
+        return;
+      }
       if (activeCategories.has(cat.id)) activeCategories.delete(cat.id);
       else activeCategories.add(cat.id);
       render();
@@ -186,7 +275,8 @@ function renderCategories() {
     };
     li.appendChild(btn);
     ul.appendChild(li);
-  }
+  });
+  updateCategorySelectionUi();
 }
 
 function updateStatusbar(shown) {
@@ -202,6 +292,21 @@ function updateStatusbar(shown) {
 const VIEW_MODE_KEY = "antimatter-view-mode";
 let viewMode = localStorage.getItem(VIEW_MODE_KEY) === "table" ? "table" : "grid";
 
+const CONN_LABELS = {
+  conn_wifi: "WiFi",
+  conn_matter: "Matter",
+  conn_zigbee: "Zigbee",
+  conn_bluetooth: "Bluetooth",
+  conn_zwave: "Z-Wave",
+};
+
+function connectivitySummary(c) {
+  return Object.keys(CONN_LABELS)
+    .filter((k) => c[k])
+    .map((k) => CONN_LABELS[k])
+    .join(", ");
+}
+
 function renderTable() {
   const tbody = document.getElementById("codes-table-body");
   if (!tbody) return;
@@ -210,7 +315,7 @@ function renderTable() {
     .map((c) => {
       const proto =
         window.AntiMatterVaultCards?.codeProtocol?.(c) || c.code_type || "matter";
-      return `<tr data-code-id="${escapeHtml(c.id)}">
+      return `<tr data-code-id="${escapeHtml(c.id)}" class="${selectedCodeIds.has(c.id) ? "selected" : ""}">
         <td>${escapeHtml(c.name)}</td>
         <td>${escapeHtml(proto)}</td>
         <td>${escapeHtml(c.device_vendor)}</td>
@@ -218,6 +323,9 @@ function renderTable() {
         <td>${escapeHtml(c.device_type)}</td>
         <td>${escapeHtml(c.area)}</td>
         <td>${escapeHtml(categoryName(c.category_id))}</td>
+        <td>${c.in_use ? "✓" : ""}</td>
+        <td>${c.stock || 0}</td>
+        <td>${escapeHtml(connectivitySummary(c))}</td>
         <td class="table-row-actions">
           <button type="button" class="card-icon-btn card-icon-btn-danger" data-table-delete title="${escapeHtml(t("action.delete"))}">
             <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-trash"/></svg>
@@ -245,6 +353,57 @@ function toggleViewMode() {
   viewMode = viewMode === "grid" ? "table" : "grid";
   try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch (e) { /* ignore */ }
   applyViewMode();
+  logEvent(`View mode: ${viewMode}`);
+}
+
+function decodeDiscoveryFlags(bits) {
+  if (bits == null) return null;
+  const flags = [];
+  if (bits & 0x01) flags.push("Soft-AP");
+  if (bits & 0x02) flags.push("BLE");
+  if (bits & 0x04) flags.push(t("code.decode_ip"));
+  return flags.length ? flags.join(", ") : t("code.decode_none");
+}
+
+function hex4(n) {
+  return "0x" + n.toString(16).toUpperCase().padStart(4, "0");
+}
+
+// Decode a Matter QR/manual payload into its fields (vendor/product ID, passcode,
+// discriminator, discovery capabilities, commissioning flow) — fully client-side,
+// reuses the same Base38/Verhoeff parser the scanner already ships.
+function renderMtDecode() {
+  const box = document.getElementById("code-mt-decode-result");
+  if (!box) return;
+  const M = window.AntiMatterMatterPayload;
+  const qr = trimVal("code-qr");
+  const manual = trimVal("code-manual");
+  let parsed = null;
+  try {
+    if (M && qr) parsed = M.parseQrPayload(qr);
+    else if (M && manual) parsed = M.parseManualPayload(manual);
+  } catch (e) {
+    parsed = null;
+  }
+  if (!parsed) {
+    box.innerHTML = `<p class="form-hint">${escapeHtml(t("code.decode_mt_empty"))}</p>`;
+    return;
+  }
+  const rows = [
+    [t("code.decode_vid"), parsed.vid != null ? `${hex4(parsed.vid)} (${parsed.vid})` : "—"],
+    [t("code.decode_pid"), parsed.pid != null ? `${hex4(parsed.pid)} (${parsed.pid})` : "—"],
+    [t("code.decode_passcode"), parsed.pincode != null ? String(parsed.pincode).padStart(8, "0") : "—"],
+    [
+      t("code.decode_discriminator"),
+      parsed.long_discriminator ?? parsed.short_discriminator ?? "—",
+    ],
+    [t("code.decode_discovery"), decodeDiscoveryFlags(parsed.discovery) || "—"],
+    [t("code.decode_flow"), parsed.flow != null ? t(`code.decode_flow_${parsed.flow}`) || parsed.flow : "—"],
+  ];
+  box.innerHTML =
+    `<table class="mt-decode-table">` +
+    rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
+    `</table>`;
 }
 
 function buildQuickMeta(code, proto) {
@@ -255,6 +414,10 @@ function buildQuickMeta(code, proto) {
   if (code.area) parts.push(`${t("filter.area")}: ${code.area}`);
   parts.push(`${t("code.category")}: ${categoryName(code.category_id)}`);
   parts.push(`${t("code.protocol")}: ${proto}`);
+  parts.push(`${t("code.in_use")}: ${code.in_use ? t("filter.yes") : t("filter.no")}`);
+  if (code.stock) parts.push(`${t("code.stock")}: ${code.stock}`);
+  const conn = connectivitySummary(code);
+  if (conn) parts.push(`${t("code.connectivity")}: ${conn}`);
   return parts.join(" · ");
 }
 
@@ -277,10 +440,6 @@ function openQuickView(code) {
     openCodeDialog(code);
   };
   document.getElementById("quickview-download").onclick = () => downloadCode(code);
-  document.getElementById("quickview-delete").onclick = async () => {
-    document.getElementById("quickview-dialog").close();
-    await deleteCode(code);
-  };
   document.getElementById("quickview-dialog").showModal();
 }
 
@@ -294,16 +453,18 @@ function renderCodes() {
   renderTable();
 
   const Cards = window.AntiMatterVaultCards;
-  for (const code of codes) {
+  codes.forEach((code, index) => {
     const card = document.createElement("article");
     const proto = Cards?.codeProtocol?.(code) || "matter";
+    card.dataset.codeId = code.id;
     card.className =
       "code-card " +
       (proto === "homekit"
         ? "homekit-sticker-card"
         : proto === "zwave"
           ? "zwave-sticker-card"
-          : "matter-sticker-card");
+          : "matter-sticker-card") +
+      (selectedCodeIds.has(code.id) ? " selected" : "");
     if (Cards) {
       card.innerHTML = Cards.buildCodeCardHtml(code, {
         escapeHtml,
@@ -318,8 +479,14 @@ function renderCodes() {
         onDelete: deleteCode,
       });
     }
+    card.addEventListener("click", (e) => {
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        handleCodeSelectClick(e, code, index, codes);
+      }
+    });
     grid.appendChild(card);
-  }
+  });
+  updateCodeSelectionUi();
 }
 
 function render() {
@@ -445,6 +612,9 @@ function openCodeDialog(code = null) {
   document.getElementById("code-category").value = code?.category_id || "";
   setVal("code-manual", code?.manual_code);
   setVal("code-qr", code?.qr_payload);
+  const mtDecode = document.getElementById("code-mt-decode");
+  if (mtDecode) mtDecode.open = false;
+  renderMtDecode();
   setVal("code-homekit-pairing", code?.manual_code);
   setVal("code-homekit-setup-id", code?.setup_id);
   const catEl = document.getElementById("code-homekit-category");
@@ -455,6 +625,7 @@ function openCodeDialog(code = null) {
   setVal("code-zwave-qr", proto === "zwave" ? code?.qr_payload : "");
   setVal("code-notes", code?.notes);
   document.getElementById("code-in-use").checked = Boolean(code?.in_use);
+  document.getElementById("code-stock").value = code?.stock ?? 0;
   document.getElementById("code-conn-wifi").checked = Boolean(code?.conn_wifi);
   document.getElementById("code-conn-matter").checked = Boolean(code?.conn_matter);
   document.getElementById("code-conn-zigbee").checked = Boolean(code?.conn_zigbee);
@@ -509,6 +680,7 @@ function baseBody(codeType) {
     category_id: document.getElementById("code-category").value || null,
     notes: trimVal("code-notes"),
     in_use: document.getElementById("code-in-use").checked,
+    stock: parseInt(document.getElementById("code-stock").value, 10) || 0,
     conn_wifi: document.getElementById("code-conn-wifi").checked,
     conn_matter: document.getElementById("code-conn-matter").checked,
     conn_zigbee: document.getElementById("code-conn-zigbee").checked,
@@ -730,10 +902,15 @@ async function saveCategory(e) {
     color: document.getElementById("category-color").value,
     icon: document.getElementById("category-icon").value,
   };
-  if (id) {
-    await api(`/categories/${id}`, { method: "PUT", body: JSON.stringify(body) });
-  } else {
-    await api("/categories", { method: "POST", body: JSON.stringify(body) });
+  try {
+    if (id) {
+      await api(`/categories/${id}`, { method: "PUT", body: JSON.stringify(body) });
+    } else {
+      await api("/categories", { method: "POST", body: JSON.stringify(body) });
+    }
+  } catch (err) {
+    await uiAlert(err.message || t("alert.category_save_fail"));
+    return;
   }
   document.getElementById("category-dialog").close();
   await loadVault();
@@ -783,6 +960,9 @@ function bindUi() {
   document
     .getElementById("code-homekit-pairing")
     ?.addEventListener("input", syncHomeKitDerived);
+  document.getElementById("code-mt-decode")?.addEventListener("toggle", renderMtDecode);
+  document.getElementById("code-qr")?.addEventListener("input", renderMtDecode);
+  document.getElementById("code-manual")?.addEventListener("input", renderMtDecode);
   document.getElementById("btn-add-code").onclick = () => openCodeDialog();
   document.getElementById("btn-add-category").onclick = () => openCategoryDialog();
   document.getElementById("code-form").onsubmit = saveCode;
@@ -812,10 +992,18 @@ function bindUi() {
   };
   document.getElementById("codes-table-body").onclick = (e) => {
     const btn = e.target.closest("[data-table-delete]");
-    if (!btn) return;
-    e.stopPropagation();
-    const tr = btn.closest("tr[data-code-id]");
-    if (tr) deleteCode(tr.dataset.codeId);
+    if (btn) {
+      e.stopPropagation();
+      const tr = btn.closest("tr[data-code-id]");
+      if (tr) deleteCode(tr.dataset.codeId);
+      return;
+    }
+    if (!(e.shiftKey || e.ctrlKey || e.metaKey)) return;
+    const tr = e.target.closest("tr[data-code-id]");
+    if (!tr) return;
+    const codes = filteredCodes();
+    const index = codes.findIndex((c) => c.id === tr.dataset.codeId);
+    if (index >= 0) handleCodeSelectClick(e, codes[index], index, codes);
   };
   document.getElementById("codes-table-body").oncontextmenu = (e) => {
     const tr = e.target.closest("tr[data-code-id]");
@@ -829,6 +1017,19 @@ function bindUi() {
     activeCategories.clear();
     render();
   };
+
+  document.getElementById("btn-delete-selected-codes")?.addEventListener("click", deleteSelectedCodes);
+  document.getElementById("btn-clear-code-selection")?.addEventListener("click", () => {
+    selectedCodeIds.clear();
+    lastSelectedCodeIndex = null;
+    updateCodeSelectionUi();
+  });
+  document.getElementById("btn-delete-selected-categories")?.addEventListener("click", deleteSelectedCategories);
+  document.getElementById("btn-clear-category-selection")?.addEventListener("click", () => {
+    selectedCategoryIds.clear();
+    lastSelectedCategoryIndex = null;
+    updateCategorySelectionUi();
+  });
 
   document.querySelectorAll("[data-close]").forEach((btn) => {
     btn.onclick = () => btn.closest("dialog").close();
@@ -892,7 +1093,15 @@ function bindUi() {
     const entity_id = trimVal("code-ha-entity") || null;
     const attribute = trimVal("code-ha-attr") || null;
     if (!entity_id || !attribute) {
-      await uiAlert(t("alert.save_before_sync"));
+      const haDetails = document.getElementById("code-ha-details");
+      if (haDetails) haDetails.open = true;
+    }
+    if (!entity_id) {
+      await uiAlert(t("alert.ha_entity_required"));
+      return;
+    }
+    if (!attribute) {
+      await uiAlert(t("alert.ha_attribute_required"));
       return;
     }
     try {
@@ -930,6 +1139,7 @@ function initQrInvert() {
     const next = !document.body.classList.contains("qr-invert");
     applyQrInvert(next);
     try { localStorage.setItem(QR_INVERT_KEY, next ? "1" : "0"); } catch (e) { /* ignore */ }
+    logEvent(`QR invert: ${next ? "on" : "off"}`);
   };
 }
 
@@ -958,6 +1168,8 @@ async function boot() {
       getVault: () => vault,
       openCodeDialog,
       t,
+      uiAlert,
+      uiConfirm,
       libUrl: SCAN_LIB_URL,
     });
   }
@@ -965,6 +1177,12 @@ async function boot() {
   await loadAreas();
   updateStorageHint();
   startVaultPolling();
+  logEvent(
+    `Session started: language=${window.AntiMatterI18n?.getLocale?.() || "?"} ` +
+      `theme=${window.AntiMatterTheme?.get?.() || "?"} ` +
+      `qr_invert=${document.body.classList.contains("qr-invert") ? "on" : "off"} ` +
+      `view_mode=${viewMode}`
+  );
 }
 
 // Live refresh: pick up codes added from another device (e.g. a phone scan) without F5.

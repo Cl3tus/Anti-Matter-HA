@@ -6,6 +6,7 @@ import asyncio
 import io
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, Optional
@@ -54,10 +55,29 @@ from storage import VaultStorage
 
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger("anti_matter")
+# Quiet the noisy library loggers — our own access_log_middleware below replaces
+# uvicorn's per-request line, and httpx's default request line is redundant with it.
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.12"
+APP_VERSION = "1.0.13"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+# --- Logging redaction: never write pairing codes / QR payloads to the log ---
+_REDACT_PATTERNS = [
+    re.compile(r"MT:[A-Za-z0-9./+_-]+", re.I),
+    re.compile(r"X-HM://[A-Za-z0-9]+", re.I),
+    re.compile(r"\b\d{4}-\d{3}-\d{4}\b"),  # Matter manual code, formatted
+    re.compile(r"\b\d{9,90}\b"),  # any long digit run (Z-Wave DSK/QR, raw manual codes)
+]
+
+
+def _redact(text: Any) -> str:
+    out = str(text or "")
+    for pat in _REDACT_PATTERNS:
+        out = pat.sub("***", out)
+    return out[:300]
 
 
 class IngressStaticFiles(StaticFiles):
@@ -86,6 +106,20 @@ def _find_category(vault, category_id: str) -> Category:
         if cat.id == category_id:
             return cat
     raise HTTPException(404, "Category not found")
+
+
+def _find_category_by_name(
+    vault: Vault, name: str, exclude_id: str | None = None
+) -> Category | None:
+    key = (name or "").strip().lower()
+    if not key:
+        return None
+    for cat in vault.categories:
+        if exclude_id and cat.id == exclude_id:
+            continue
+        if cat.name.strip().lower() == key:
+            return cat
+    return None
 
 
 def _find_code(vault, code_id: str) -> MatterCode:
@@ -202,6 +236,20 @@ async def _scheduler_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    lang = norm_language(opt("interface", "language", "auto"))
+    theme = norm_theme(opt("interface", "theme", "auto"))
+    backup_settings = load_settings(storage.data_dir)
+    _LOGGER.info(
+        "Anti-Matter %s starting: language=%s theme=%s ha_available=%s "
+        "backup_enabled=%s backup_frequency=%s backup_keep_count=%s",
+        APP_VERSION,
+        lang,
+        theme,
+        ha.enabled,
+        backup_settings.get("enabled"),
+        backup_settings.get("frequency"),
+        backup_settings.get("keep_count"),
+    )
     task = asyncio.create_task(_scheduler_loop())
     yield
     task.cancel()
@@ -215,6 +263,48 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Requests polled every few seconds by the UI (vault refresh, live status) are noise —
+# log everything else (mutations, errors, one-off page loads).
+_QUIET_GET_PATHS = {"/", "/api/vault", "/api/info"}
+
+
+@app.middleware("http")
+async def access_log_middleware(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    quiet = (
+        request.method == "GET"
+        and response.status_code < 400
+        and (
+            path in _QUIET_GET_PATHS
+            or path.startswith("/static/")
+            or (path.startswith("/api/codes/") and path.endswith((".png", ".svg")))
+        )
+    )
+    if not quiet:
+        _LOGGER.info("%s %s -> %d", request.method, path, response.status_code)
+    return response
+
+
+class ClientLogBody(BaseModel):
+    message: str
+    level: str = "info"
+
+
+@app.post("/api/log")
+async def client_log(body: ClientLogBody):
+    """Client-side events with no other server touch-point (view mode, QR invert,
+    scan captured, resolved theme/language for the session) — never raw codes."""
+    msg = _redact(body.message)
+    level = (body.level or "info").lower()
+    if level == "warning":
+        _LOGGER.warning("[client] %s", msg)
+    elif level == "error":
+        _LOGGER.error("[client] %s", msg)
+    else:
+        _LOGGER.info("[client] %s", msg)
+    return {"ok": True}
 
 
 # --- Add-on info (resolved options for the UI) ---
@@ -240,8 +330,14 @@ async def get_vault():
 
 @app.get("/api/export")
 async def export_vault():
+    content = storage.export_json()
+    vault = storage.load()
+    _LOGGER.info(
+        "Vault exported: %d codes, %d categories (%d bytes)",
+        len(vault.codes), len(vault.categories), len(content),
+    )
     return Response(
-        content=storage.export_json(),
+        content=content,
         media_type="application/json",
         headers={
             "Content-Disposition": 'attachment; filename="anti-matter-export.json"'
@@ -254,13 +350,20 @@ async def import_vault(body: ImportBody):
     try:
         vault = storage.import_json(body.data, merge=body.merge)
     except Exception as exc:
+        _LOGGER.warning("Vault import failed (merge=%s): %s", body.merge, exc)
         raise HTTPException(400, f"Invalid JSON: {exc}") from exc
+    _LOGGER.info(
+        "Vault imported (merge=%s): now %d codes, %d categories",
+        body.merge, len(vault.codes), len(vault.categories),
+    )
     return vault.model_dump()
 
 
 @app.post("/api/backup")
 async def trigger_backup():
-    return run_backup()
+    result = run_backup()
+    _LOGGER.info("Manual backup triggered: %s", result)
+    return result
 
 
 class BackupSettingsBody(BaseModel):
@@ -294,10 +397,14 @@ async def list_categories():
 @app.post("/api/categories", status_code=201)
 async def create_category(body: CategoryCreate):
     vault = storage.load()
+    dup = _find_category_by_name(vault, body.name)
+    if dup:
+        raise HTTPException(409, detail=f"A category named “{dup.name}” already exists")
     category = Category(**body.model_dump())
     vault.categories.append(category)
     vault.categories.sort(key=lambda c: (c.sort_order, c.name.lower()))
     storage.save(vault)
+    _LOGGER.info("Category added: id=%s name=%s", category.id, _redact(category.name))
     return category
 
 
@@ -305,9 +412,15 @@ async def create_category(body: CategoryCreate):
 async def update_category(category_id: str, body: CategoryUpdate):
     vault = storage.load()
     category = _find_category(vault, category_id)
-    for key, value in body.model_dump(exclude_unset=True).items():
+    updates = body.model_dump(exclude_unset=True)
+    if "name" in updates and updates["name"]:
+        dup = _find_category_by_name(vault, updates["name"], exclude_id=category_id)
+        if dup:
+            raise HTTPException(409, detail=f"A category named “{dup.name}” already exists")
+    for key, value in updates.items():
         setattr(category, key, value)
     storage.save(vault)
+    _LOGGER.info("Category updated: id=%s name=%s", category_id, _redact(category.name))
     return category
 
 
@@ -316,7 +429,8 @@ async def delete_category(category_id: str):
     from vault_merge import record_deletion
 
     vault = storage.load()
-    _find_category(vault, category_id)
+    category = _find_category(vault, category_id)
+    category_name = category.name
     data = vault.model_dump(mode="json")
     data["categories"] = [c for c in data["categories"] if c["id"] != category_id]
     for code in data["codes"]:
@@ -324,6 +438,7 @@ async def delete_category(category_id: str):
             code["category_id"] = None
     record_deletion(data, "categories", category_id)
     storage.save(Vault.model_validate(data))
+    _LOGGER.info("Category removed: id=%s name=%s", category_id, _redact(category_name))
     return {"ok": True}
 
 
@@ -386,6 +501,9 @@ async def create_code(body: MatterCodeCreate):
         )
     vault.codes.append(code)
     storage.save(vault)
+    _LOGGER.info(
+        "Code added: id=%s name=%s protocol=%s", code.id, _redact(code.name), _code_protocol(code)
+    )
     return code
 
 
@@ -411,6 +529,9 @@ async def update_code(code_id: str, body: MatterCodeUpdate):
             detail=f"This code is already saved as “{dup.name}”",
         )
     storage.save(vault)
+    _LOGGER.info(
+        "Code updated: id=%s name=%s fields=%s", code_id, _redact(code.name), sorted(updates.keys())
+    )
     return code
 
 
@@ -419,11 +540,13 @@ async def delete_code(code_id: str):
     from vault_merge import record_deletion
 
     vault = storage.load()
-    _find_code(vault, code_id)
+    code = _find_code(vault, code_id)
+    code_name = code.name
     data = vault.model_dump(mode="json")
     data["codes"] = [c for c in data["codes"] if c["id"] != code_id]
     record_deletion(data, "codes", code_id)
     storage.save(Vault.model_validate(data))
+    _LOGGER.info("Code deleted: id=%s name=%s", code_id, _redact(code_name))
     return {"ok": True}
 
 
@@ -537,6 +660,9 @@ async def sync_code_from_ha(code_id: str):
             code.manual_code = value
     code.updated_at = utc_now()
     storage.save(vault)
+    _LOGGER.info(
+        "Pulled from HA: code=%s entity=%s attribute=%s", code_id, link.entity_id, link.attribute
+    )
     return code
 
 
@@ -560,5 +686,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=PORT,
         log_level="info",
-        access_log=True,
+        access_log=False,  # replaced by access_log_middleware (filters routine polling)
     )
