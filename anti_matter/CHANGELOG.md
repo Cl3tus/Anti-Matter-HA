@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.4
+
+- Per-card **Download** button: saves the code as a PNG (Matter) or SVG (HomeKit / Z-Wave).
+- **Dark-friendly QR** toggle in the top bar: shows codes in negative. Off by default
+  (white background, black QR) — flip it if you prefer inverted, in any theme.
+- Delete now uses an in-app confirmation modal instead of the browser dialog.
+- **Category icons** are now Material Design Icons with a searchable picker (bundled
+  offline); the whole MDI set is available.
+- Category dialog: removed the redundant colour swatch (kept the colour picker + hex).
+- Top-bar buttons are all the same height; fixed a stray dark strip at the bottom of the page.
+
+## 1.0.3
+
+- Top bar uses the same grey as the sidebar / Home Assistant header (flat panel, no glass).
+
 ## 1.0.2
 
 - Follow Home Assistant's accent/primary colours live (reads `--accent-color` /
