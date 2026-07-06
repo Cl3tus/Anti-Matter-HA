@@ -88,7 +88,7 @@
 .layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: calc(100vh - 88px);
+  min-height: calc(100vh - 57px); /* viewport minus the 56px header + its border */
 }
 
 @media (max-width: 720px) {
@@ -898,4 +898,87 @@ dialog h3 {
   background: transparent;
   color: var(--rm-danger);
   border: 1px solid var(--rm-danger);
+}
+
+/* ============================================================
+   v1.0.4 UI fixes
+   ============================================================ */
+
+/* Equal-height top-bar controls */
+.header .rm-btn,
+.header .file-label,
+.header .theme-dropdown-trigger,
+.header .locale-dropdown-trigger {
+  height: 36px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Active/toggle state for secondary header buttons (e.g. QR invert) */
+.header .rm-btn-secondary.is-active {
+  border-color: var(--rm-accent);
+  color: var(--rm-accent);
+  background: var(--rm-accent-soft);
+}
+
+/* Dark-friendly (inverted) QR rendering — off by default */
+body.qr-invert .matter-sticker-box,
+body.qr-invert .homekit-sticker-img,
+body.qr-invert .zwave-sticker-img,
+body.qr-invert .zwave-sticker--dsk-only {
+  filter: invert(1);
+}
+
+/* MDI category icons */
+.category-icon-mdi {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.category-mark .category-icon-mdi {
+  color: var(--cat-color);
+}
+
+/* MDI icon picker: search box on top, scrollable grid below */
+.category-icon-picker {
+  display: block;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.mdi-picker-search {
+  width: 100%;
+  margin-bottom: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-surface);
+  color: var(--rm-text);
+  font: inherit;
+}
+.mdi-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.35rem, 1fr));
+  gap: 0.35rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-surface);
+}
+.mdi-picker-grid .category-icon-option {
+  width: 2.35rem;
+  height: 2.35rem;
+  background: var(--rm-surface-elevated);
+  color: var(--rm-text);
+}
+
+/* Confirm dialog message spacing */
+.confirm-message {
+  margin: 0 0 var(--rm-space-4);
+  color: var(--rm-text-muted);
+  line-height: 1.5;
 }

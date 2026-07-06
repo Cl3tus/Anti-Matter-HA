@@ -7,11 +7,12 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/logo.svg" type="image/svg+xml" />
-  <script src="./static/brand/js/theme.js?v=1.0.3"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.3" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.3" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.3" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.3" />
+  <script src="./static/brand/js/theme.js?v=1.0.4"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.4" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.4" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.4" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.4" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.4" />
 </head>
 <body>
   <header class="header">
@@ -71,6 +72,9 @@
         <span data-i18n="action.import">Import</span>
         <input type="file" id="import-file" accept="application/json,.json" hidden />
       </label>
+      <button type="button" id="btn-qr-invert" class="rm-btn rm-btn-secondary" data-i18n-title="action.qr_invert" title="Dark-friendly QR" aria-pressed="false">
+        <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20V2z"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
       <button type="button" id="btn-backup" class="rm-btn rm-btn-secondary" data-i18n="action.backup_now">Backup now</button>
       <button type="button" id="btn-scan-code" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan</button>
       <button type="button" id="btn-add-code" class="rm-btn rm-btn-primary" data-i18n="action.add_code">+ Code</button>
@@ -205,9 +209,8 @@
       <div class="form-field form-field-color">
         <span class="form-field-label" id="category-color-label" data-i18n="categories.color">Color</span>
         <div class="category-color-control">
-          <span class="category-color-swatch" id="category-color-swatch" aria-hidden="true"></span>
-          <input type="color" id="category-color" value="#6366f1" aria-labelledby="category-color-label" />
-          <span class="category-color-hex" id="category-color-hex">#6366F1</span>
+          <input type="color" id="category-color" value="#c9791a" aria-labelledby="category-color-label" />
+          <span class="category-color-hex" id="category-color-hex">#C9791A</span>
         </div>
       </div>
       <label><span data-i18n="categories.icon">Icon</span>
@@ -221,18 +224,29 @@
     </form>
   </dialog>
 
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <form method="dialog">
+      <h3 id="confirm-title" data-i18n="confirm.title">Please confirm</h3>
+      <p id="confirm-message" class="confirm-message"></p>
+      <div class="dialog-actions">
+        <button type="button" class="rm-btn rm-btn-secondary" id="confirm-cancel" data-i18n="action.cancel">Cancel</button>
+        <button type="button" class="rm-btn rm-btn-danger" id="confirm-ok" data-i18n="action.delete">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.3"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.3"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.3"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.3"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.3"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.3"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.3"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.3"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.3"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.3"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.3"></script>
-  <script src="./static/app.js?v=1.0.3"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.4"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.4"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.4"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.4"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.4"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.4"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.4"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.4"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.4"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.4"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.4"></script>
+  <script src="./static/app.js?v=1.0.4"></script>
 </body>
 </html>

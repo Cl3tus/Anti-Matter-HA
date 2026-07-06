@@ -1,98 +1,159 @@
 /**
- * Category icon picker (Lucide, bundled offline — see /brand/category-icons/LICENSE).
+ * Category icons via Material Design Icons (bundled webfont, offline).
+ * Icons are stored as bare MDI names (e.g. "home", "lightbulb"); rendered as
+ * <i class="mdi mdi-<name>">. The picker searches the full MDI set.
  */
 (function (global) {
   const DEFAULT_ICON = "folder";
 
+  // A small curated set shown before the user searches.
+  const COMMON = [
+    "folder", "home", "lightbulb", "lamp", "ceiling-light", "led-strip",
+    "power-plug", "toggle-switch", "lock", "door", "window-closed-variant",
+    "blinds", "garage", "thermometer", "water", "fan", "air-conditioner",
+    "television", "speaker", "cctv", "motion-sensor", "gauge", "battery",
+    "wifi", "router-network", "remote", "sofa", "bed", "fridge",
+    "washing-machine", "stove", "shower", "flower", "tree", "car",
+    "key", "shield-home", "leaf", "weather-night", "white-balance-sunny",
+    "star", "heart", "cog", "tag", "package-variant", "map-marker",
+  ];
+
   function normalizeIconId(value) {
-    const id = String(value || "")
+    let id = String(value || "")
       .trim()
       .toLowerCase()
+      .replace(/^mdi[:-]/, "")
       .replace(/[^a-z0-9-]/g, "");
     return id || DEFAULT_ICON;
   }
 
-  function iconUrl(iconId, brandPrefix) {
-    const prefix = brandPrefix || "/brand";
-    return `${prefix}/category-icons/${normalizeIconId(iconId)}.svg`;
-  }
-
-  function spriteUrl(brandPrefix) {
-    const prefix = brandPrefix || "/brand";
-    return `${prefix}/category-icons/category-icons.svg`;
-  }
-
-  /** Inline SVG via local sprite (works offline in HA ingress). */
-  function iconMarkup(iconId, brandPrefix) {
+  function iconMarkup(iconId) {
     const id = normalizeIconId(iconId);
-    const href = `${spriteUrl(brandPrefix)}#cat-icon-${id}`;
-    return `<svg class="category-icon-svg" viewBox="0 0 24 24" aria-hidden="true"><use href="${href}"/></svg>`;
+    return `<i class="mdi mdi-${id} category-icon-mdi" aria-hidden="true"></i>`;
   }
 
-  function markMarkup(cat, brandPrefix) {
-    const color = cat?.color || "#6366f1";
+  function markMarkup(cat) {
+    const color = cat?.color || "#c9791a";
     const icon = normalizeIconId(cat?.icon);
-    return `<span class="category-mark" style="--cat-color:${color}" title="${icon}">${iconMarkup(icon, brandPrefix)}</span>`;
+    return `<span class="category-mark" style="--cat-color:${color}" title="${icon}">${iconMarkup(icon)}</span>`;
+  }
+
+  // Lazily load + cache the full MDI name list from the bundled CSS.
+  function loadIconNames(vendorBase) {
+    if (global.__mdiNames) return global.__mdiNames;
+    const url = `${vendorBase}/mdi/css/materialdesignicons.min.css`;
+    global.__mdiNames = fetch(url)
+      .then((r) => r.text())
+      .then((css) => {
+        const names = new Set();
+        const re = /\.mdi-([a-z0-9-]+)::before/g;
+        let m;
+        while ((m = re.exec(css)) !== null) names.add(m[1]);
+        return Array.from(names);
+      })
+      .catch(() => COMMON.slice());
+    return global.__mdiNames;
   }
 
   function mountPicker(container, options) {
     if (!container) return;
     const brandPrefix = options.brandPrefix || "/brand";
+    const vendorBase = brandPrefix.replace(/\/brand\/?$/, "/vendor");
     const hiddenInput = options.hiddenInput;
-    const initial = normalizeIconId(options.value || DEFAULT_ICON);
-    let selected = initial;
+    const placeholder = options.searchPlaceholder || "Search icons…";
+    let selected = normalizeIconId(options.value || DEFAULT_ICON);
+    let allNames = null;
 
-    const manifestUrl = `${brandPrefix}/category-icons/manifest.json`;
-    fetch(manifestUrl)
-      .then((r) => r.json())
-      .then((data) => {
-        const icons = Array.isArray(data.icons) ? data.icons : [];
-        renderGrid(icons);
-        setSelected(initial, false);
-      })
-      .catch(() => {
-        renderGrid([{ id: DEFAULT_ICON, label: "Folder" }]);
-        setSelected(initial, false);
-      });
+    container.innerHTML = "";
+    container.classList.add("category-icon-picker");
+    const search = document.createElement("input");
+    search.type = "search";
+    search.className = "mdi-picker-search";
+    search.placeholder = placeholder;
+    const grid = document.createElement("div");
+    grid.className = "mdi-picker-grid";
+    container.appendChild(search);
+    container.appendChild(grid);
 
-    function renderGrid(icons) {
-      container.innerHTML = "";
-      container.classList.add("category-icon-picker");
-      for (const item of icons) {
+    function renderGrid(names) {
+      grid.innerHTML = "";
+      const list = names.slice(0, 140);
+      for (const name of list) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "category-icon-option";
-        btn.dataset.icon = item.id;
-        btn.title = item.label || item.id;
-        btn.setAttribute("aria-label", item.label || item.id);
-        btn.innerHTML = iconMarkup(item.id, brandPrefix);
-        btn.onclick = () => setSelected(item.id, true);
-        container.appendChild(btn);
+        btn.dataset.icon = name;
+        btn.title = name;
+        btn.setAttribute("aria-label", name);
+        btn.innerHTML = iconMarkup(name);
+        btn.onclick = () => setSelected(name, true);
+        grid.appendChild(btn);
       }
+      highlight();
+    }
+
+    function highlight() {
+      grid.querySelectorAll(".category-icon-option").forEach((el) => {
+        el.classList.toggle("selected", el.dataset.icon === selected);
+      });
+    }
+
+    function defaultNames() {
+      const set = [];
+      if (selected && !COMMON.includes(selected)) set.push(selected);
+      return set.concat(COMMON);
+    }
+
+    function applyFilter(q) {
+      q = q.trim().toLowerCase();
+      if (!q) {
+        renderGrid(defaultNames());
+        return;
+      }
+      const src = allNames || COMMON;
+      const starts = [];
+      const contains = [];
+      for (const n of src) {
+        if (n.startsWith(q)) starts.push(n);
+        else if (n.includes(q)) contains.push(n);
+        if (starts.length >= 140) break;
+      }
+      renderGrid(starts.concat(contains));
     }
 
     function setSelected(iconId, notify) {
       selected = normalizeIconId(iconId);
       if (hiddenInput) hiddenInput.value = selected;
-      container.querySelectorAll(".category-icon-option").forEach((el) => {
-        el.classList.toggle("selected", el.dataset.icon === selected);
-      });
+      highlight();
       if (notify && typeof options.onChange === "function") {
         options.onChange(selected);
       }
     }
 
+    let timer = null;
+    search.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => applyFilter(search.value), 120);
+    });
+
+    renderGrid(defaultNames());
+    loadIconNames(vendorBase).then((names) => {
+      allNames = names;
+    });
+
     return {
       getValue: () => selected,
-      setValue: (id) => setSelected(id, true),
+      setValue: (id) => {
+        setSelected(id, false);
+        search.value = "";
+        renderGrid(defaultNames());
+      },
     };
   }
 
   global.AntiMatterCategoryIcons = {
     DEFAULT_ICON,
     normalizeIconId,
-    iconUrl,
-    spriteUrl,
     iconMarkup,
     markMarkup,
     mountPicker,

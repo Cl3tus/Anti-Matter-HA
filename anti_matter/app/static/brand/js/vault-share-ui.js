@@ -8,13 +8,13 @@
 
   function cardIconButtonsHtml(opts) {
     const href = opts.iconsHref || "/brand/icons.svg";
-    const share = opts.showShare !== false;
-    const shareLabel = opts.shareLabel || "Share";
+    const download = opts.showDownload !== false;
+    const downloadLabel = opts.downloadLabel || "Download";
     const editLabel = opts.editLabel || "Edit";
     const deleteLabel = opts.deleteLabel || "Delete";
     let html = '<div class="card-icon-actions">';
-    if (share) {
-      html += `<button type="button" class="card-icon-btn card-icon-btn-share" data-share title="${shareLabel}" aria-label="${shareLabel}">${iconUse(href, "rm-icon-share")}</button>`;
+    if (download) {
+      html += `<button type="button" class="card-icon-btn" data-download title="${downloadLabel}" aria-label="${downloadLabel}">${iconUse(href, "rm-icon-export")}</button>`;
     }
     html += `<button type="button" class="card-icon-btn" data-edit title="${editLabel}" aria-label="${editLabel}">${iconUse(href, "rm-icon-edit")}</button>`;
     html += `<button type="button" class="card-icon-btn card-icon-btn-danger" data-delete title="${deleteLabel}" aria-label="${deleteLabel}">${iconUse(href, "rm-icon-trash")}</button>`;

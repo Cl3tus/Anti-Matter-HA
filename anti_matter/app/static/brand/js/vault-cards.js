@@ -153,8 +153,8 @@
     const icons =
       global.AntiMatterVaultShareUi?.cardIconButtonsHtml({
         iconsHref,
-        showShare: false,
-        shareLabel: actionLabel("share", "Share"),
+        showDownload: true,
+        downloadLabel: actionLabel("download", "Download"),
         editLabel: actionLabel("edit", "Edit"),
         deleteLabel: actionLabel("delete", "Delete"),
       }) || "";
@@ -182,11 +182,11 @@
   }
 
   function wireCodeCard(card, code, handlers) {
-    const shareBtn = card.querySelector("[data-share]");
-    if (shareBtn && handlers.onShare) {
-      shareBtn.onclick = (e) => {
+    const dlBtn = card.querySelector("[data-download]");
+    if (dlBtn && handlers.onDownload) {
+      dlBtn.onclick = (e) => {
         e.stopPropagation();
-        handlers.onShare(code);
+        handlers.onDownload(code);
       };
     }
     const editBtn = card.querySelector("[data-edit]");

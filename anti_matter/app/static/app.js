@@ -19,6 +19,7 @@ function ensureCategoryIconPicker() {
   categoryIconPicker = Icons.mountPicker(host, {
     brandPrefix: BRAND_PREFIX,
     hiddenInput: input,
+    searchPlaceholder: t("icons.search"),
   });
   return categoryIconPicker;
 }
@@ -135,7 +136,7 @@ function renderCodes() {
         qrApiPrefix: "./api",
       });
       Cards.wireCodeCard(card, code, {
-        onShare: null,
+        onDownload: downloadCode,
         onEdit: openCodeDialog,
         onDelete: deleteCode,
       });
@@ -273,7 +274,7 @@ function openCategoryDialog(cat = null) {
     : t("categories.dialog_new");
   document.getElementById("category-id").value = cat?.id || "";
   document.getElementById("category-name").value = cat?.name || "";
-  document.getElementById("category-color").value = cat?.color || "#6366f1";
+  document.getElementById("category-color").value = cat?.color || "#c9791a";
   window.AntiMatterCategoryColor?.sync();
   document.getElementById("category-icon").value =
     cat?.icon || window.AntiMatterCategoryIcons?.DEFAULT_ICON || "folder";
@@ -371,8 +372,61 @@ async function saveCode(e) {
   await loadVault();
 }
 
-async function deleteCode(id) {
-  if (!confirm(t("confirm.delete_code"))) return;
+// Promise-based confirm using the in-app modal (falls back to window.confirm).
+function uiConfirm(message, okLabel) {
+  return new Promise((resolve) => {
+    const dlg = document.getElementById("confirm-dialog");
+    if (!dlg) {
+      resolve(window.confirm(message));
+      return;
+    }
+    document.getElementById("confirm-message").textContent = message;
+    const okBtn = document.getElementById("confirm-ok");
+    const cancelBtn = document.getElementById("confirm-cancel");
+    if (okLabel) okBtn.textContent = okLabel;
+    let done = false;
+    const finish = (val) => {
+      if (done) return;
+      done = true;
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      dlg.removeEventListener("close", onClose);
+      try { dlg.close(); } catch (e) { /* ignore */ }
+      resolve(val);
+    };
+    const onClose = () => finish(false);
+    okBtn.onclick = () => finish(true);
+    cancelBtn.onclick = () => finish(false);
+    dlg.addEventListener("close", onClose);
+    dlg.showModal();
+  });
+}
+
+async function downloadCode(code) {
+  const proto = window.AntiMatterVaultCards?.codeProtocol?.(code) || "matter";
+  const isSvg = proto === "homekit" || proto === "zwave";
+  const path = isSvg ? `/codes/${code.id}/card.svg` : `/codes/${code.id}/label.png`;
+  try {
+    const res = await fetch(`${API}${path}`);
+    if (!res.ok) throw new Error(t("alert.download_fail"));
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const safe = (code.name || "code").replace(/[^\w.-]+/g, "_");
+    a.download = isSvg ? `antimatter-${safe}.svg` : `antimatter-${safe}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    alert(err.message || t("alert.download_fail"));
+  }
+}
+
+async function deleteCode(code) {
+  const id = typeof code === "string" ? code : code?.id;
+  if (!id) return;
+  if (!(await uiConfirm(t("confirm.delete_code"), t("action.delete")))) return;
   await api(`/codes/${id}`, { method: "DELETE" });
   await loadVault();
 }
@@ -460,7 +514,7 @@ function bindUi() {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
-    const merge = confirm(t("confirm.import_merge"));
+    const merge = await uiConfirm(t("confirm.import_merge"), t("action.import"));
     await api("/import", {
       method: "POST",
       body: JSON.stringify({ data: text, merge }),
@@ -493,10 +547,35 @@ function bindUi() {
     }
   };
 
+  initQrInvert();
+
   window.addEventListener("antimatter:locale", () => {
     render();
     updateStorageHint();
   });
+}
+
+const QR_INVERT_KEY = "antimatter-qr-invert";
+
+function initQrInvert() {
+  const btn = document.getElementById("btn-qr-invert");
+  const on = localStorage.getItem(QR_INVERT_KEY) === "1";
+  applyQrInvert(on);
+  if (!btn) return;
+  btn.onclick = () => {
+    const next = !document.body.classList.contains("qr-invert");
+    applyQrInvert(next);
+    try { localStorage.setItem(QR_INVERT_KEY, next ? "1" : "0"); } catch (e) { /* ignore */ }
+  };
+}
+
+function applyQrInvert(on) {
+  document.body.classList.toggle("qr-invert", on);
+  const btn = document.getElementById("btn-qr-invert");
+  if (btn) {
+    btn.classList.toggle("is-active", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
 }
 
 window.AntiMatterUI = {
