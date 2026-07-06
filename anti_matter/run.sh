@@ -11,7 +11,7 @@ log_line INFO '\033[32m' "Anti-Matter starting on port 8099 (ingress)..."
 export ANTIMATTER_DATA="/data"
 export ANTIMATTER_OPTIONS="/data/options.json"
 export ANTIMATTER_PORT="8099"
-export ADDON_VERSION="1.0.2"
+export ADDON_VERSION="1.0.3"
 
 # addon_config:rw mounts the add-on config folder at /config.
 # On the SAMBA share this shows up as addon_configs\<slug>. Store the vault there

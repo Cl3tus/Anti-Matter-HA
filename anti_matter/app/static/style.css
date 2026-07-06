@@ -9,9 +9,7 @@
   min-height: 56px; /* match Home Assistant's header height */
   padding: var(--rm-space-2) var(--rm-space-4);
   border-bottom: 1px solid var(--rm-border);
-  background: var(--rm-nav-bg);
-  backdrop-filter: blur(var(--rm-blur)) saturate(1.2);
-  -webkit-backdrop-filter: blur(var(--rm-blur)) saturate(1.2);
+  background: var(--rm-surface); /* same grey as the categories panel / HA header */
 }
 
 .brand-block {
@@ -56,6 +54,15 @@
   transform: none;
 }
 
+/* Buttons sit on the same grey as the bar → raise them one shade for contrast */
+.header .rm-btn-secondary {
+  background: var(--rm-surface-elevated);
+}
+
+.header .rm-btn-secondary:hover {
+  background: var(--rm-accent-soft);
+}
+
 .header .rm-btn-primary {
   box-shadow: 0 2px 10px var(--rm-glow);
 }
@@ -63,6 +70,7 @@
 .header .theme-dropdown-trigger,
 .header .locale-dropdown-trigger {
   padding: 0.35rem 0.55rem;
+  background: var(--rm-surface-elevated);
 }
 
 .sr-only {
