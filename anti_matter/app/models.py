@@ -81,7 +81,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.8"
+    addon_version: str = "1.0.9"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 

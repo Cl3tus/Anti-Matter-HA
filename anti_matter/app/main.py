@@ -55,7 +55,7 @@ from storage import VaultStorage
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger("anti_matter")
 
-APP_VERSION = "1.0.8"
+APP_VERSION = "1.0.9"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 

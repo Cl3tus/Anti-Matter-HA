@@ -271,7 +271,9 @@
 .toolbar input {
   width: 100%;
   max-width: 400px;
-  padding: var(--rm-space-3) var(--rm-space-4);
+  height: 2.3rem;
+  box-sizing: border-box;
+  padding: 0 var(--rm-space-4);
   border: 1px solid var(--rm-border);
   border-radius: var(--rm-radius-sm);
   background: var(--rm-surface);
@@ -292,7 +294,9 @@
 }
 
 .attr-filters select {
-  padding: 0.45rem 0.6rem;
+  height: 2.3rem;
+  box-sizing: border-box;
+  padding: 0 0.6rem;
   border: 1px solid var(--rm-border);
   border-radius: var(--rm-radius-sm);
   background: var(--rm-surface);
@@ -900,6 +904,9 @@ dialog h3 {
 }
 
 .btn.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 32px;
   padding: 0;
@@ -1239,4 +1246,10 @@ body.qr-invert .zwave-sticker--dsk-only {
   width: 18px;
   height: 18px;
   display: block;
+}
+
+.plus-glyph {
+  font-weight: 700;
+  font-size: 1.15em;
+  line-height: 1;
 }
