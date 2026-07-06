@@ -1,0 +1,14 @@
+# Normalize all text to LF; never convert to CRLF on checkout.
+* text=auto eol=lf
+
+# Shell scripts must stay LF.
+*.sh text eol=lf
+
+# Binary assets — never touch line endings.
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
