@@ -31,13 +31,27 @@ The **Area** field is a free-text input with autocomplete: it suggests the areas
 Home Assistant area registry (read through the Supervisor API), but you can type any value.
 If HA doesn't return areas, the field simply behaves as plain text.
 
+## Filtering and the table view
+
+- The search box and the **Vendor / Product / Type / Area** dropdowns (filled from your own
+  data) combine with the category selection in the sidebar — click several categories to
+  filter by all of them at once.
+- The table-view button swaps the QR canvas for a filterable, spreadsheet-style list (your
+  filters stay active). Click it again to switch back.
+- Double-click a row to open a quick-view popup with the rendered QR/card image and the
+  manual/pairing code.
+
 ## Backups & storage
 
 - Your vault is `anti_matter.json` in the add-on config folder, reachable over SAMBA at
   `\\<HA-IP>\addon_configs\<slug>_anti_matter\`.
-- **Backup now** writes a timestamped copy into `backups/` there. Copies beyond the
-  **Backups to keep** setting are removed automatically.
-- **Export** downloads the whole vault as JSON; **Import** loads one back (merge or replace).
+- The **Backup** button opens a schedule: enable automatic backups Hourly, Daily, Weekly or
+  Monthly, pick the time (and weekday/day-of-month where relevant), and how many backups to
+  keep. **Backup now** in the same dialog runs one immediately.
+- Timestamped copies are written to `backups/`; older ones beyond the keep count are pruned
+  automatically.
+- **Export** downloads the whole vault as JSON; **Import** asks to Replace or Merge before
+  loading it back.
 - Everything in the add-on config folder is included in Home Assistant's own backups.
 
 ## Language & theme

@@ -24,7 +24,6 @@
 
     const scanDlg = document.getElementById("scan-dialog");
     const readerId = "scan-reader";
-    const fileInput = document.getElementById("scan-file-input");
 
     function applyParsedToForm(parsed) {
       const codeType = parsed.code_type || "matter";
@@ -134,17 +133,25 @@
     document.getElementById("scan-stop")?.addEventListener("click", closeScanDialog);
     scanDlg?.addEventListener("close", () => global.AntiMatterScanner.stopCamera());
 
-    fileInput?.addEventListener("change", (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      global.AntiMatterScanner.scanImageFile(
-        file,
-        handleParsedText,
-        (err) => alert(err.message || t("scan.photo_fail")),
-        opts.libUrl
-      );
-    });
+    const fileInputIds = [
+      "scan-file-input",
+      "scan-file-in-form",
+      "scan-file-homekit",
+      "scan-file-zwave",
+    ];
+    for (const fid of fileInputIds) {
+      document.getElementById(fid)?.addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        global.AntiMatterScanner.scanImageFile(
+          file,
+          handleParsedText,
+          (err) => alert(err.message || t("scan.photo_fail")),
+          opts.libUrl
+        );
+      });
+    }
   }
 
   global.AntiMatterVaultScanUi = { bindVaultScanUi };

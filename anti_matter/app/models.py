@@ -51,6 +51,11 @@ class MatterCode(BaseModel):
     homekit_flag: int = 2
     zwave_pin: str = ""  # first 5 digits of DSK (S2 PIN)
     notes: str = ""
+    in_use: bool = False  # device is currently deployed (vs. spare/stock)
+    conn_wifi: bool = False
+    conn_matter: bool = False
+    conn_zigbee: bool = False
+    conn_bluetooth: bool = False
     ha_link: HaLink = Field(default_factory=HaLink)
     created_at: str = Field(default_factory=utc_now)
     updated_at: str = Field(default_factory=utc_now)
@@ -81,7 +86,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.10"
+    addon_version: str = "1.0.11"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 
@@ -141,6 +146,11 @@ class MatterCodeCreate(BaseModel):
     homekit_flag: int = 2
     zwave_pin: str = ""
     notes: str = ""
+    in_use: bool = False
+    conn_wifi: bool = False
+    conn_matter: bool = False
+    conn_zigbee: bool = False
+    conn_bluetooth: bool = False
     ha_link: Optional[HaLink] = None
 
 
@@ -160,4 +170,9 @@ class MatterCodeUpdate(BaseModel):
     homekit_flag: Optional[int] = None
     zwave_pin: Optional[str] = None
     notes: Optional[str] = None
+    in_use: Optional[bool] = None
+    conn_wifi: Optional[bool] = None
+    conn_matter: Optional[bool] = None
+    conn_zigbee: Optional[bool] = None
+    conn_bluetooth: Optional[bool] = None
     ha_link: Optional[HaLink] = None

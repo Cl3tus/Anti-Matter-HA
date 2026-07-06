@@ -890,7 +890,38 @@ dialog h3 {
 }
 
 .scan-inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-2);
   margin: 0 0 var(--rm-space-2);
+}
+
+.connectivity-row {
+  margin: 0 0 var(--rm-space-3);
+}
+.connectivity-row .form-field-label {
+  display: block;
+  margin-bottom: var(--rm-space-1);
+  font-size: var(--rm-text-sm);
+  color: var(--rm-text-muted);
+}
+.connectivity-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-3);
+}
+.connectivity-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 400;
+}
+
+.table-actions-col {
+  width: 2.5rem;
+}
+.table-row-actions {
+  text-align: center;
 }
 
 .badge {
@@ -1122,18 +1153,32 @@ body.qr-invert .zwave-sticker--dsk-only {
 [data-tip]::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  background: var(--rm-surface-elevated);
-  color: var(--rm-text);
-  border: 1px solid var(--rm-border);
-  border-radius: var(--rm-radius-sm);
-  padding: 0.3rem 0.6rem;
-  font-size: var(--rm-text-xs);
-  font-weight: 500;
+  background: #16181d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   white-space: nowrap;
-  box-shadow: var(--rm-shadow-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 60;
+}
+[data-tip]::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent;
+  border-top-color: #16181d;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -1141,7 +1186,9 @@ body.qr-invert .zwave-sticker--dsk-only {
   z-index: 60;
 }
 [data-tip]:hover::after,
-[data-tip]:focus-visible::after {
+[data-tip]:focus-visible::after,
+[data-tip]:hover::before,
+[data-tip]:focus-visible::before {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -1183,9 +1230,18 @@ body.qr-invert .zwave-sticker--dsk-only {
 }
 
 .quickview-dialog {
-  max-width: 320px;
+  max-width: 380px;
+  width: calc(100% - 2rem);
+  box-sizing: border-box;
   position: relative;
   text-align: center;
+  overflow-x: hidden;
+}
+.quickview-meta {
+  margin: 0 0 var(--rm-space-4);
+  font-size: var(--rm-text-xs);
+  color: var(--rm-text-muted);
+  line-height: 1.6;
 }
 .quickview-image-wrap {
   display: flex;

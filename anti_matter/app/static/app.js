@@ -188,6 +188,11 @@ function renderTable() {
         <td>${escapeHtml(c.device_type)}</td>
         <td>${escapeHtml(c.area)}</td>
         <td>${escapeHtml(categoryName(c.category_id))}</td>
+        <td class="table-row-actions">
+          <button type="button" class="card-icon-btn card-icon-btn-danger" data-table-delete title="${escapeHtml(t("action.delete"))}">
+            <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-trash"/></svg>
+          </button>
+        </td>
       </tr>`;
     })
     .join("");
@@ -211,6 +216,39 @@ function toggleViewMode() {
   applyViewMode();
 }
 
+function buildQuickMeta(code, proto) {
+  const parts = [];
+  if (code.device_vendor) parts.push(`${t("filter.vendor")}: ${code.device_vendor}`);
+  if (code.device_product) parts.push(`${t("filter.product")}: ${code.device_product}`);
+  if (code.device_type) parts.push(`${t("filter.type")}: ${code.device_type}`);
+  if (code.area) parts.push(`${t("filter.area")}: ${code.area}`);
+  parts.push(`${t("code.category")}: ${categoryName(code.category_id)}`);
+  parts.push(`${t("code.protocol")}: ${proto}`);
+  return parts.join(" · ");
+}
+
+async function shareQuickView(code) {
+  const proto = window.AntiMatterVaultCards?.codeProtocol?.(code) || "matter";
+  const isSvg = proto === "homekit" || proto === "zwave";
+  const path = isSvg ? `/codes/${code.id}/card.svg` : `/codes/${code.id}/qr.png`;
+  try {
+    const res = await fetch(`${API}${path}`);
+    if (!res.ok) throw new Error(t("alert.download_fail"));
+    const blob = await res.blob();
+    const safe = (code.name || "code").replace(/[^\w.-]+/g, "_");
+    const file = new File([blob], `antimatter-${safe}.${isSvg ? "svg" : "png"}`, {
+      type: blob.type,
+    });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: code.name || "Anti-Matter" });
+      return;
+    }
+  } catch (err) {
+    if (err?.name === "AbortError") return; // user cancelled the share sheet
+  }
+  await downloadCode(code); // fallback: browsers without Web Share file support
+}
+
 function openQuickView(code) {
   if (!code) return;
   const Cards = window.AntiMatterVaultCards;
@@ -224,10 +262,12 @@ function openQuickView(code) {
   wrap.innerHTML = `<img src="${src}" alt="" />`;
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";
+  document.getElementById("quickview-meta").textContent = buildQuickMeta(code, proto);
   document.getElementById("quickview-edit").onclick = () => {
     document.getElementById("quickview-dialog").close();
     openCodeDialog(code);
   };
+  document.getElementById("quickview-share").onclick = () => shareQuickView(code);
   document.getElementById("quickview-dialog").showModal();
 }
 
@@ -400,6 +440,11 @@ function openCodeDialog(code = null) {
   setVal("code-zwave-dsk", proto === "zwave" ? code?.manual_code : "");
   setVal("code-zwave-qr", proto === "zwave" ? code?.qr_payload : "");
   setVal("code-notes", code?.notes);
+  document.getElementById("code-in-use").checked = Boolean(code?.in_use);
+  document.getElementById("code-conn-wifi").checked = Boolean(code?.conn_wifi);
+  document.getElementById("code-conn-matter").checked = Boolean(code?.conn_matter);
+  document.getElementById("code-conn-zigbee").checked = Boolean(code?.conn_zigbee);
+  document.getElementById("code-conn-bluetooth").checked = Boolean(code?.conn_bluetooth);
   setVal("code-ha-entity", code?.ha_link?.entity_id);
   setVal("code-ha-attr", code?.ha_link?.attribute);
   dlg.showModal();
@@ -448,6 +493,11 @@ function baseBody(codeType) {
     description: trimVal("code-description"),
     category_id: document.getElementById("code-category").value || null,
     notes: trimVal("code-notes"),
+    in_use: document.getElementById("code-in-use").checked,
+    conn_wifi: document.getElementById("code-conn-wifi").checked,
+    conn_matter: document.getElementById("code-conn-matter").checked,
+    conn_zigbee: document.getElementById("code-conn-zigbee").checked,
+    conn_bluetooth: document.getElementById("code-conn-bluetooth").checked,
     ha_link: {
       entity_id: trimVal("code-ha-entity") || null,
       attribute: trimVal("code-ha-attr") || null,
@@ -732,10 +782,18 @@ function bindUi() {
 
   document.getElementById("btn-table-view").onclick = toggleViewMode;
   document.getElementById("codes-table-body").ondblclick = (e) => {
+    if (e.target.closest("[data-table-delete]")) return;
     const tr = e.target.closest("tr[data-code-id]");
     if (!tr) return;
     const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
     if (code) openQuickView(code);
+  };
+  document.getElementById("codes-table-body").onclick = (e) => {
+    const btn = e.target.closest("[data-table-delete]");
+    if (!btn) return;
+    e.stopPropagation();
+    const tr = btn.closest("tr[data-code-id]");
+    if (tr) deleteCode(tr.dataset.codeId);
   };
 
   document.getElementById("filter-all").onclick = () => {
@@ -802,7 +860,19 @@ function bindUi() {
       await uiAlert(t("alert.save_before_sync"));
       return;
     }
+    const entity_id = trimVal("code-ha-entity") || null;
+    const attribute = trimVal("code-ha-attr") || null;
+    if (!entity_id || !attribute) {
+      await uiAlert(t("alert.save_before_sync"));
+      return;
+    }
     try {
+      // The server pulls from the *saved* ha_link, not the live form — persist it first
+      // so editing Entity ID/Attribute and clicking Pull immediately works.
+      await api(`/codes/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ha_link: { entity_id, attribute } }),
+      });
       await api(`/codes/${id}/sync-from-ha`, { method: "POST" });
       await loadVault();
       openCodeDialog(vault.codes.find((c) => c.id === id));

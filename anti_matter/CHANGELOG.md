@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.11
+
+- **Fixed "Pull from HA" failing on existing entity links**: the button read the
+  entity/attribute saved on the server, not what was currently typed in the form — so
+  editing the link and clicking Pull immediately (without saving first) always failed with
+  "No Home Assistant entity linked". It now saves the link before pulling.
+- New fields: **In use** (checkbox) and **Connectivity** (WiFi / Matter / Zigbee /
+  Bluetooth checkboxes) — e.g. a Shelly can be "in use, WiFi yes, Matter no". All off by
+  default (stock/unused device).
+- Manual "Upload photo" button next to every inline **Scan QR** button in the New/Edit
+  code form (matter, HomeKit, Z-Wave) — pick an image file directly, no need to open the
+  camera dialog first.
+- Table view rows now have a **delete** button (with the usual confirm).
+- Quick-view popup (double-click a table row): removed the red ✕ (Close button at the
+  bottom is enough), added a small line of **vendor / product / type / area / category /
+  protocol** under the pairing code, and a **Share** button (uses the Web Share API on
+  mobile, falls back to download) next to Edit. Also fixed a horizontal scrollbar and
+  widened the popup slightly.
+- Tooltips restyled: consistent dark bubble with an arrow on every icon button (was a mix
+  of the native browser tooltip and the custom one).
+- Added the app icon, logo/banner and DOCS/README polish (badges, screenshots) for the
+  GitHub repo and the Home Assistant add-on store listing.
+
 ## 1.0.10
 
 - Reworked the table view: instead of a separate modal, it now **replaces the QR
