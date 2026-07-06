@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import os
+from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any, Optional
 
 import uvicorn
@@ -15,6 +18,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 from pydantic import BaseModel
 
+from backup_schedule import is_due, load_settings, mark_ran, save_settings
 from ha_client import HomeAssistantClient
 from models import (
     Category,
@@ -25,7 +29,7 @@ from models import (
     MatterCodeUpdate,
     utc_now,
 )
-from options import backup_keep_count, norm_language, norm_theme, opt
+from options import norm_language, norm_theme, opt
 from matter_label import label_png_bytes
 from matter_qr_image import qr_png_bytes as matter_qr_png_bytes
 from matter_payload import normalize_fields, qr_encode_payload
@@ -51,7 +55,7 @@ from storage import VaultStorage
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger("anti_matter")
 
-APP_VERSION = "1.0.6"
+APP_VERSION = "1.0.7"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -172,15 +176,38 @@ def _find_duplicate_code(
     return None
 
 
-def run_backup() -> dict[str, Any]:
+def run_backup(keep_count: int | None = None) -> dict[str, Any]:
     vault_path = storage.path
     if not vault_path.exists():
         return {"ok": False, "reason": "no_vault"}
-    dest = storage.backup_local_copy(keep_count=backup_keep_count())
+    if keep_count is None:
+        keep_count = load_settings(storage.data_dir).get("keep_count", 10)
+    dest = storage.backup_local_copy(keep_count=keep_count)
     return {"ok": True, "backup": dest.name}
 
 
-app = FastAPI(title="Anti-Matter", version=APP_VERSION)
+async def _scheduler_loop() -> None:
+    while True:
+        try:
+            settings = load_settings(storage.data_dir)
+            now = datetime.now()
+            if is_due(settings, now):
+                result = run_backup(keep_count=settings.get("keep_count", 10))
+                mark_ran(storage.data_dir, now.strftime("%Y-%m-%d"))
+                _LOGGER.info("Scheduled backup: %s", result)
+        except Exception:
+            _LOGGER.exception("Scheduled backup check failed")
+        await asyncio.sleep(60)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(_scheduler_loop())
+    yield
+    task.cancel()
+
+
+app = FastAPI(title="Anti-Matter", version=APP_VERSION, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -234,6 +261,23 @@ async def import_vault(body: ImportBody):
 @app.post("/api/backup")
 async def trigger_backup():
     return run_backup()
+
+
+class BackupSettingsBody(BaseModel):
+    enabled: bool = False
+    hour: int = 3
+    minute: int = 0
+    keep_count: int = 10
+
+
+@app.get("/api/backup/settings")
+async def get_backup_settings():
+    return load_settings(storage.data_dir)
+
+
+@app.put("/api/backup/settings")
+async def put_backup_settings(body: BackupSettingsBody):
+    return save_settings(storage.data_dir, body.model_dump())
 
 
 # --- Categories ---

@@ -7,77 +7,46 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/logo.svg" type="image/svg+xml" />
-  <script src="./static/brand/js/theme.js?v=1.0.6"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.6" />
-  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.6" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.6" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.6" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.6" />
+  <script src="./static/brand/js/theme.js?v=1.0.7"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.7" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.7" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.7" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.7" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.7" />
 </head>
 <body>
   <header class="header">
     <div class="brand-block">
       <img class="brand-logo" src="./static/assets/logo.svg" alt="" width="40" height="40" />
       <h1>Anti-Matter</h1>
+      <span id="app-version" class="app-version"></span>
     </div>
     <div class="header-actions">
-      <div class="theme-dropdown" data-theme-dropdown data-icons-href="./static/brand/icons.svg">
-        <button type="button" class="theme-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" data-i18n-title="theme.title" title="Color theme">
-          <span class="theme-dropdown-icons" aria-hidden="true">
-            <svg class="rm-icon theme-dropdown-current" viewBox="0 0 24 24" aria-hidden="true">
-              <use class="theme-dropdown-use" href="./static/brand/icons.svg#rm-icon-sun"/>
-            </svg>
-          </span>
-          <span class="theme-dropdown-chevron" aria-hidden="true">
-            <svg class="rm-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
-          </span>
-          <span class="sr-only">Color theme</span>
-        </button>
-        <ul class="theme-dropdown-menu" role="listbox" aria-label="Color theme" hidden>
-          <li role="presentation">
-            <button type="button" role="option" data-theme-set="light" aria-selected="false">
-              <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-sun"/></svg>
-              <span data-i18n="theme.light">Light</span>
-            </button>
-          </li>
-          <li role="presentation">
-            <button type="button" role="option" data-theme-set="dark" aria-selected="false">
-              <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-moon"/></svg>
-              <span data-i18n="theme.dark">Dark</span>
-            </button>
-          </li>
-          <li role="presentation">
-            <button type="button" role="option" data-theme-set="auto" aria-selected="false">
-              <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-auto"/></svg>
-              <span data-i18n="theme.system">System</span>
-            </button>
-          </li>
-        </ul>
-      </div>
-      <div class="locale-dropdown" data-locale-dropdown>
-        <button type="button" class="locale-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Language">
-          <span class="locale-trigger-flag" aria-hidden="true">🇬🇧</span>
-          <span class="locale-dropdown-chevron" aria-hidden="true">
-            <svg class="rm-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
-          </span>
-          <span class="sr-only" data-i18n="lang.label">Language</span>
-        </button>
-        <ul class="locale-dropdown-menu" role="listbox" aria-label="Language" hidden>
-          <li role="presentation"><button type="button" role="option" data-locale-set="en" aria-label="English" aria-selected="false"><span class="locale-flag">🇬🇧</span></button></li>
-          <li role="presentation"><button type="button" role="option" data-locale-set="nl" aria-label="Nederlands" aria-selected="false"><span class="locale-flag">🇳🇱</span></button></li>
-        </ul>
-      </div>
-      <button type="button" id="btn-export" class="rm-btn rm-btn-secondary" data-i18n="action.export">Export</button>
-      <label class="rm-btn rm-btn-secondary file-label">
-        <span data-i18n="action.import">Import</span>
+      <button type="button" id="btn-theme" class="rm-btn rm-btn-secondary" title="Theme">
+        <span id="btn-theme-icon" aria-hidden="true">☀️</span>
+        <span id="btn-theme-label" data-i18n="theme.light">Light</span>
+      </button>
+      <button type="button" id="btn-lang" class="rm-btn rm-btn-secondary" title="Language">
+        <span id="btn-lang-flag" aria-hidden="true">🇬🇧</span>
+        <span id="btn-lang-label">EN</span>
+      </button>
+      <button type="button" id="btn-export" class="rm-btn rm-btn-secondary" data-i18n-tip="action.export">📤</button>
+      <label class="rm-btn rm-btn-secondary file-label" data-i18n-tip="action.import">
+        📥
         <input type="file" id="import-file" accept="application/json,.json" hidden />
       </label>
-      <button type="button" id="btn-qr-invert" class="rm-btn rm-btn-secondary" data-i18n-title="action.qr_invert" title="Dark-friendly QR" aria-pressed="false">
+      <button type="button" id="btn-qr-invert" class="rm-btn rm-btn-secondary" data-i18n-tip="action.qr_invert" aria-pressed="false">
         <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20V2z"/><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
       </button>
-      <button type="button" id="btn-backup" class="rm-btn rm-btn-secondary" data-i18n="action.backup_now">Backup now</button>
-      <button type="button" id="btn-scan-code" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan</button>
-      <button type="button" id="btn-add-code" class="rm-btn rm-btn-primary" data-i18n="action.add_code">+ Code</button>
+      <button type="button" id="btn-backup" class="rm-btn rm-btn-secondary" data-i18n-title="backup.title" title="Backup">
+        <span aria-hidden="true">💾</span> <span data-i18n="action.backup_menu">Backup</span>
+      </button>
+      <button type="button" id="btn-scan-code" class="rm-btn rm-btn-secondary" data-i18n-title="scan.title" title="Scan">
+        <span aria-hidden="true">⛶</span> <span data-i18n="action.scan_code">Scan</span>
+      </button>
+      <button type="button" id="btn-add-code" class="rm-btn rm-btn-primary" data-i18n-title="code.add_manual_title" title="Add a code manually">
+        <span aria-hidden="true">✍️</span> <span data-i18n="action.add_code">Manual</span>
+      </button>
     </div>
   </header>
 
@@ -85,9 +54,9 @@
     <aside class="sidebar">
       <div class="sidebar-head">
         <h2 data-i18n="categories.title">Categories</h2>
-        <button type="button" id="btn-add-category" class="btn icon" data-i18n-title="categories.add_title" title="Add category">+</button>
+        <button type="button" id="btn-add-category" class="btn icon" data-i18n-tip="categories.add_title">➕</button>
       </div>
-      <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All codes</button>
+      <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All categories</button>
       <ul id="category-list" class="category-list"></ul>
       <div id="backup-status" class="backup-status"></div>
     </aside>
@@ -155,6 +124,7 @@
         <textarea id="code-zwave-qr" rows="3" data-i18n-placeholder="code.zwave_qr_placeholder" placeholder="9001…"></textarea>
       </label>
       </div>
+      <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
       <details id="code-details" class="form-section">
         <summary data-i18n="code.device_details">Device details</summary>
         <label><span data-i18n="code.device_vendor">Device vendor</span>
@@ -184,7 +154,6 @@
         </label>
         <button type="button" id="btn-sync-ha" class="rm-btn rm-btn-secondary" data-i18n="action.sync_from_ha">Pull from HA</button>
       </details>
-      <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
       <div class="dialog-actions">
         <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
         <button type="submit" class="rm-btn rm-btn-primary" data-i18n="action.save">Save</button>
@@ -232,6 +201,41 @@
     </form>
   </dialog>
 
+  <dialog id="backup-dialog">
+    <form id="backup-form" method="dialog">
+      <h3 data-i18n="backup.title">Backup</h3>
+      <label class="switch-row">
+        <input type="checkbox" id="backup-auto-enabled" />
+        <span data-i18n="backup.auto_enabled">Automatic daily backup</span>
+      </label>
+      <label><span data-i18n="backup.time">Time</span>
+        <input type="time" id="backup-auto-time" value="03:00" />
+      </label>
+      <label><span data-i18n="backup.keep_count">Backups to keep</span>
+        <input type="number" id="backup-keep-count" min="1" max="100" value="10" />
+      </label>
+      <p id="backup-last-info" class="form-hint"></p>
+      <div class="dialog-actions">
+        <button type="button" id="backup-now-btn" class="rm-btn rm-btn-secondary" data-i18n="action.backup_now">Backup now</button>
+        <span class="dialog-actions-spacer"></span>
+        <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
+        <button type="submit" class="rm-btn rm-btn-primary" data-i18n="action.ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="import-dialog">
+    <form method="dialog">
+      <h3 data-i18n="import.title">Import vault</h3>
+      <p class="confirm-message" data-i18n="import.hint">Replace overwrites everything. Merge adds the imported codes and categories to what you already have.</p>
+      <div class="dialog-actions">
+        <button type="button" id="import-cancel" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
+        <button type="button" id="import-replace" class="rm-btn rm-btn-danger" data-i18n="action.replace">Replace</button>
+        <button type="button" id="import-merge" class="rm-btn rm-btn-primary" data-i18n="action.merge">Merge</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="confirm-dialog" class="confirm-dialog">
     <form method="dialog">
       <h3 id="confirm-title" data-i18n="confirm.title">Please confirm</h3>
@@ -244,17 +248,17 @@
   </dialog>
 
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.6"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.6"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.6"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.6"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.6"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.6"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.6"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.6"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.6"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.6"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.6"></script>
-  <script src="./static/app.js?v=1.0.6"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.7"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.7"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.7"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.7"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.7"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.7"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.7"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.7"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.7"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.7"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.7"></script>
+  <script src="./static/app.js?v=1.0.7"></script>
 </body>
 </html>

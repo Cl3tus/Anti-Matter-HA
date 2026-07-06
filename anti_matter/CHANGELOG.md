@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.7
+
+- Small grey version number next to the app title.
+- Theme and language are now single toggle buttons (sun/moon, flag) like E-Ink Studio —
+  the dropdowns are gone. "Auto" (follow Home Assistant) stays the persistent default from
+  the add-on Configuration tab; clicking a button overrides light/dark or NL/EN for the
+  current session only, and resets to Auto on reload.
+- Import now asks **Cancel / Replace / Merge** in its own modal instead of a single
+  merge/replace confirm.
+- **Backup** is now a settings modal: enable a daily automatic backup, pick the time and
+  how many backups to keep, plus a "Backup now" button — Cancel/OK on the right, Backup now
+  on the far left. The add-on runs the scheduled backup itself in the background.
+- Header buttons got compact icons (Export 📤, Import 📥, Backup 💾, Scan ⛶, manual add ✍️)
+  with custom app-styled tooltips instead of the browser's default tooltip.
+- "All codes" renamed to **All categories**; a virtual **Uncategorized** group now always
+  shows codes without a category (not editable/deletable, no context menu).
+- Categories can be combined: click several to filter by all of them at once.
+
 ## 1.0.6
 
 - Add/Edit code modal reorganised: Protocol, Name, Category, the code fields, then a

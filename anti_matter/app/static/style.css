@@ -1060,3 +1060,60 @@ body.qr-invert .zwave-sticker--dsk-only {
 
 /* Push the Delete button to the left in dialog action rows */
 .dialog-actions-spacer { flex: 1; }
+
+/* ============================================================
+   v1.0.7 UI
+   ============================================================ */
+
+.app-version {
+  color: var(--rm-text-muted);
+  font-size: var(--rm-text-xs);
+  font-weight: 400;
+  margin-left: 0.15rem;
+  align-self: flex-end;
+  padding-bottom: 3px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-2);
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+.switch-row input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* Custom app-styled tooltip bubble, replaces native title on icon-only buttons */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--rm-surface-elevated);
+  color: var(--rm-text);
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: var(--rm-text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--rm-shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 60;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}

@@ -7,6 +7,7 @@ const { t, initI18n, setLocale } = window.AntiMatterI18n;
 let vault = { categories: [], codes: [] };
 let activeCategories = new Set();
 let categoryIconPicker = null;
+const NONE_CATEGORY_ID = "__none__";
 
 const BRAND_PREFIX = "./static/brand";
 
@@ -61,7 +62,9 @@ function categoryName(id) {
 function filteredCodes() {
   let codes = vault.codes;
   if (activeCategories.size) {
-    codes = codes.filter((c) => activeCategories.has(c.category_id));
+    codes = codes.filter((c) =>
+      activeCategories.has(c.category_id || NONE_CATEGORY_ID)
+    );
   }
   const q = document.getElementById("search").value.trim().toLowerCase();
   if (!q) return codes;
@@ -85,6 +88,23 @@ function filteredCodes() {
 function renderCategories() {
   const ul = document.getElementById("category-list");
   ul.innerHTML = "";
+
+  // Virtual "None" group for codes without a category — not editable/deletable.
+  const noneLi = document.createElement("li");
+  const noneBtn = document.createElement("button");
+  noneBtn.type = "button";
+  noneBtn.className =
+    "category-btn" + (activeCategories.has(NONE_CATEGORY_ID) ? " active" : "");
+  noneBtn.innerHTML = `<span class="category-mark" style="--cat-color:var(--rm-text-muted)"><i class="mdi mdi-tag-off-outline category-icon-mdi" aria-hidden="true"></i></span>${escapeHtml(t("categories.none"))}`;
+  noneBtn.onclick = () => {
+    if (activeCategories.has(NONE_CATEGORY_ID)) activeCategories.delete(NONE_CATEGORY_ID);
+    else activeCategories.add(NONE_CATEGORY_ID);
+    render();
+  };
+  noneBtn.oncontextmenu = (e) => e.preventDefault();
+  noneLi.appendChild(noneBtn);
+  ul.appendChild(noneLi);
+
   const sorted = [...vault.categories].sort(
     (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
   );
@@ -454,6 +474,57 @@ function uiAlert(message, okLabel) {
   return uiMessage({ message, okLabel, danger: false, showCancel: false });
 }
 
+// Three-way choice for import: "cancel" | "replace" | "merge".
+function uiImportChoice() {
+  return new Promise((resolve) => {
+    const dlg = document.getElementById("import-dialog");
+    if (!dlg) {
+      resolve(window.confirm(t("confirm.import_merge")) ? "merge" : "replace");
+      return;
+    }
+    const cancelBtn = document.getElementById("import-cancel");
+    const replaceBtn = document.getElementById("import-replace");
+    const mergeBtn = document.getElementById("import-merge");
+    let done = false;
+    const finish = (val) => {
+      if (done) return;
+      done = true;
+      cancelBtn.onclick = null;
+      replaceBtn.onclick = null;
+      mergeBtn.onclick = null;
+      dlg.removeEventListener("close", onClose);
+      try { dlg.close(); } catch (e) { /* ignore */ }
+      resolve(val);
+    };
+    const onClose = () => finish("cancel");
+    cancelBtn.onclick = () => finish("cancel");
+    replaceBtn.onclick = () => finish("replace");
+    mergeBtn.onclick = () => finish("merge");
+    dlg.addEventListener("close", onClose);
+    dlg.showModal();
+  });
+}
+
+async function openBackupDialog() {
+  const dlg = document.getElementById("backup-dialog");
+  try {
+    const s = await api("/backup/settings");
+    document.getElementById("backup-auto-enabled").checked = Boolean(s.enabled);
+    document.getElementById("backup-auto-time").value =
+      String(s.hour ?? 3).padStart(2, "0") + ":" + String(s.minute ?? 0).padStart(2, "0");
+    document.getElementById("backup-keep-count").value = s.keep_count ?? 10;
+    const info = document.getElementById("backup-last-info");
+    if (info) {
+      info.textContent = s.last_run_date
+        ? t("backup.last_run", { date: s.last_run_date })
+        : "";
+    }
+  } catch {
+    /* ignore — defaults stay in the form */
+  }
+  dlg.showModal();
+}
+
 async function downloadCode(code) {
   const proto = window.AntiMatterVaultCards?.codeProtocol?.(code) || "matter";
   const isSvg = proto === "homekit" || proto === "zwave";
@@ -506,6 +577,8 @@ async function loadAddonInfo() {
     if (info?.language && info.language !== "auto") {
       window.ADDON_LANGUAGE = info.language;
     }
+    const v = document.getElementById("app-version");
+    if (v && info?.version) v.textContent = "v" + info.version;
   } catch {
     /* ignore — defaults apply */
   }
@@ -565,16 +638,35 @@ function bindUi() {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
-    const merge = await uiConfirm(t("confirm.import_merge"), t("action.import"));
+    e.target.value = "";
+    const choice = await uiImportChoice();
+    if (choice === "cancel") return;
     await api("/import", {
       method: "POST",
-      body: JSON.stringify({ data: text, merge }),
+      body: JSON.stringify({ data: text, merge: choice === "merge" }),
     });
-    e.target.value = "";
     await loadVault();
   };
 
-  document.getElementById("btn-backup").onclick = async () => {
+  document.getElementById("btn-backup").onclick = openBackupDialog;
+
+  document.getElementById("backup-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const [hh, mm] = (document.getElementById("backup-auto-time").value || "03:00")
+      .split(":")
+      .map((n) => parseInt(n, 10) || 0);
+    const body = {
+      enabled: document.getElementById("backup-auto-enabled").checked,
+      hour: hh,
+      minute: mm,
+      keep_count: parseInt(document.getElementById("backup-keep-count").value, 10) || 10,
+    };
+    await api("/backup/settings", { method: "PUT", body: JSON.stringify(body) });
+    document.getElementById("backup-dialog").close();
+  };
+
+  document.getElementById("backup-now-btn").onclick = async () => {
+    document.getElementById("backup-dialog").close();
     try {
       const r = await api("/backup", { method: "POST" });
       await uiAlert(r.ok ? t("alert.backup_local_ok") : t("alert.backup_fail"));
