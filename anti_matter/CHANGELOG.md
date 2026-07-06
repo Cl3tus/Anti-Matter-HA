@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.12
+
+- **Connectivity** now includes **Z-Wave** alongside WiFi/Matter/Zigbee/Bluetooth.
+- Right-click a table row to **edit** the code directly (same as right-click on a category).
+- The table/QR view choice is now **remembered** across reloads (localStorage).
+- **Filter dropdowns** for In use and each connectivity type (WiFi/Matter/Zigbee/Bluetooth/
+  Z-Wave), each with All/Yes/No, next to the existing Vendor/Product/Type/Area filters.
+- Quick-view popup: the Share button didn't work well, replaced with a plain **Download**
+  button for the PNG/SVG, plus a **Delete** button (with the usual confirm).
+- Empty-state text updated to match the renamed buttons ("Click New or Scan…").
+- In-app logo/favicon now uses the new Anti-Matter icon instead of the old placeholder.
+- Home Assistant add-on store page: the icon now sits in the icon slot; the big banner
+  moved into the add-on's README (shown further down, in the description), instead of
+  stretching across the top logo slot.
+
 ## 1.0.11
 
 - **Fixed "Pull from HA" failing on existing entity links**: the button read the

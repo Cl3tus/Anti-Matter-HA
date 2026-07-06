@@ -56,6 +56,7 @@ class MatterCode(BaseModel):
     conn_matter: bool = False
     conn_zigbee: bool = False
     conn_bluetooth: bool = False
+    conn_zwave: bool = False
     ha_link: HaLink = Field(default_factory=HaLink)
     created_at: str = Field(default_factory=utc_now)
     updated_at: str = Field(default_factory=utc_now)
@@ -86,7 +87,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.11"
+    addon_version: str = "1.0.12"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 
@@ -151,6 +152,7 @@ class MatterCodeCreate(BaseModel):
     conn_matter: bool = False
     conn_zigbee: bool = False
     conn_bluetooth: bool = False
+    conn_zwave: bool = False
     ha_link: Optional[HaLink] = None
 
 
@@ -175,4 +177,5 @@ class MatterCodeUpdate(BaseModel):
     conn_matter: Optional[bool] = None
     conn_zigbee: Optional[bool] = None
     conn_bluetooth: Optional[bool] = None
+    conn_zwave: Optional[bool] = None
     ha_link: Optional[HaLink] = None

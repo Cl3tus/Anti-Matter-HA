@@ -1,5 +1,9 @@
 # Anti-Matter
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cl3tus/Anti-Matter-HA/main/anti_matter/banner.png" alt="Anti-Matter" width="100%">
+</p>
+
 Store, organize and back up your **Matter**, **HomeKit** and **Z-Wave** pairing codes
 and QR payloads — right inside Home Assistant.
 

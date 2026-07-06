@@ -67,6 +67,16 @@ const ATTR_FILTER_FIELDS = [
 ];
 const activeFilters = { device_vendor: "", device_product: "", device_type: "", area: "" };
 
+const BOOL_FILTER_FIELDS = [
+  ["filter-in-use", "in_use", "code.in_use"],
+  ["filter-conn-wifi", "conn_wifi", "code.conn_wifi"],
+  ["filter-conn-matter", "conn_matter", "code.conn_matter"],
+  ["filter-conn-zigbee", "conn_zigbee", "code.conn_zigbee"],
+  ["filter-conn-bluetooth", "conn_bluetooth", "code.conn_bluetooth"],
+  ["filter-conn-zwave", "conn_zwave", "code.conn_zwave"],
+];
+const boolFilters = {};
+
 function fillAttributeFilters() {
   for (const [id, field, labelKey] of ATTR_FILTER_FIELDS) {
     const sel = document.getElementById(id);
@@ -83,6 +93,20 @@ function fillAttributeFilters() {
   }
 }
 
+function fillBoolFilters() {
+  for (const [id, field, labelKey] of BOOL_FILTER_FIELDS) {
+    const sel = document.getElementById(id);
+    if (!sel) continue;
+    const label = t(labelKey);
+    const current = boolFilters[field] || "";
+    sel.innerHTML =
+      `<option value="">${escapeHtml(label)}: ${escapeHtml(t("filter.all_short"))}</option>` +
+      `<option value="yes">${escapeHtml(label)}: ${escapeHtml(t("filter.yes"))}</option>` +
+      `<option value="no">${escapeHtml(label)}: ${escapeHtml(t("filter.no"))}</option>`;
+    sel.value = current;
+  }
+}
+
 function filteredCodes() {
   let codes = vault.codes;
   if (activeCategories.size) {
@@ -93,6 +117,11 @@ function filteredCodes() {
   for (const [, field] of ATTR_FILTER_FIELDS) {
     const val = activeFilters[field];
     if (val) codes = codes.filter((c) => (c[field] || "") === val);
+  }
+  for (const [, field] of BOOL_FILTER_FIELDS) {
+    const val = boolFilters[field];
+    if (val === "yes") codes = codes.filter((c) => Boolean(c[field]));
+    else if (val === "no") codes = codes.filter((c) => !c[field]);
   }
   const q = document.getElementById("search").value.trim().toLowerCase();
   if (!q) return codes;
@@ -170,7 +199,8 @@ function updateStatusbar(shown) {
       : t("status.filtered", { shown, total });
 }
 
-let viewMode = "grid"; // "grid" | "table" — which one replaces the canvas
+const VIEW_MODE_KEY = "antimatter-view-mode";
+let viewMode = localStorage.getItem(VIEW_MODE_KEY) === "table" ? "table" : "grid";
 
 function renderTable() {
   const tbody = document.getElementById("codes-table-body");
@@ -213,6 +243,7 @@ function applyViewMode() {
 
 function toggleViewMode() {
   viewMode = viewMode === "grid" ? "table" : "grid";
+  try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch (e) { /* ignore */ }
   applyViewMode();
 }
 
@@ -225,28 +256,6 @@ function buildQuickMeta(code, proto) {
   parts.push(`${t("code.category")}: ${categoryName(code.category_id)}`);
   parts.push(`${t("code.protocol")}: ${proto}`);
   return parts.join(" · ");
-}
-
-async function shareQuickView(code) {
-  const proto = window.AntiMatterVaultCards?.codeProtocol?.(code) || "matter";
-  const isSvg = proto === "homekit" || proto === "zwave";
-  const path = isSvg ? `/codes/${code.id}/card.svg` : `/codes/${code.id}/qr.png`;
-  try {
-    const res = await fetch(`${API}${path}`);
-    if (!res.ok) throw new Error(t("alert.download_fail"));
-    const blob = await res.blob();
-    const safe = (code.name || "code").replace(/[^\w.-]+/g, "_");
-    const file = new File([blob], `antimatter-${safe}.${isSvg ? "svg" : "png"}`, {
-      type: blob.type,
-    });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: code.name || "Anti-Matter" });
-      return;
-    }
-  } catch (err) {
-    if (err?.name === "AbortError") return; // user cancelled the share sheet
-  }
-  await downloadCode(code); // fallback: browsers without Web Share file support
 }
 
 function openQuickView(code) {
@@ -267,7 +276,11 @@ function openQuickView(code) {
     document.getElementById("quickview-dialog").close();
     openCodeDialog(code);
   };
-  document.getElementById("quickview-share").onclick = () => shareQuickView(code);
+  document.getElementById("quickview-download").onclick = () => downloadCode(code);
+  document.getElementById("quickview-delete").onclick = async () => {
+    document.getElementById("quickview-dialog").close();
+    await deleteCode(code);
+  };
   document.getElementById("quickview-dialog").showModal();
 }
 
@@ -311,6 +324,7 @@ function renderCodes() {
 
 function render() {
   fillAttributeFilters();
+  fillBoolFilters();
   renderCategories();
   renderCodes();
   fillCategorySelect();
@@ -445,6 +459,7 @@ function openCodeDialog(code = null) {
   document.getElementById("code-conn-matter").checked = Boolean(code?.conn_matter);
   document.getElementById("code-conn-zigbee").checked = Boolean(code?.conn_zigbee);
   document.getElementById("code-conn-bluetooth").checked = Boolean(code?.conn_bluetooth);
+  document.getElementById("code-conn-zwave").checked = Boolean(code?.conn_zwave);
   setVal("code-ha-entity", code?.ha_link?.entity_id);
   setVal("code-ha-attr", code?.ha_link?.attribute);
   dlg.showModal();
@@ -498,6 +513,7 @@ function baseBody(codeType) {
     conn_matter: document.getElementById("code-conn-matter").checked,
     conn_zigbee: document.getElementById("code-conn-zigbee").checked,
     conn_bluetooth: document.getElementById("code-conn-bluetooth").checked,
+    conn_zwave: document.getElementById("code-conn-zwave").checked,
     ha_link: {
       entity_id: trimVal("code-ha-entity") || null,
       attribute: trimVal("code-ha-attr") || null,
@@ -779,6 +795,12 @@ function bindUi() {
       renderCodes();
     });
   }
+  for (const [id, field] of BOOL_FILTER_FIELDS) {
+    document.getElementById(id)?.addEventListener("change", (e) => {
+      boolFilters[field] = e.target.value;
+      renderCodes();
+    });
+  }
 
   document.getElementById("btn-table-view").onclick = toggleViewMode;
   document.getElementById("codes-table-body").ondblclick = (e) => {
@@ -794,6 +816,13 @@ function bindUi() {
     e.stopPropagation();
     const tr = btn.closest("tr[data-code-id]");
     if (tr) deleteCode(tr.dataset.codeId);
+  };
+  document.getElementById("codes-table-body").oncontextmenu = (e) => {
+    const tr = e.target.closest("tr[data-code-id]");
+    if (!tr) return;
+    e.preventDefault();
+    const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
+    if (code) openCodeDialog(code);
   };
 
   document.getElementById("filter-all").onclick = () => {
