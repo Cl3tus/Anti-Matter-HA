@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/logo.svg" type="image/svg+xml" />
-  <script src="./static/brand/js/theme.js?v=1.0.4"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.4" />
-  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.4" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.4" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.4" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.4" />
+  <script src="./static/brand/js/theme.js?v=1.0.5"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.5" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.5" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.5" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.5" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.5" />
 </head>
 <body>
   <header class="header">
@@ -87,8 +87,8 @@
         <h2 data-i18n="categories.title">Categories</h2>
         <button type="button" id="btn-add-category" class="btn icon" data-i18n-title="categories.add_title" title="Add category">+</button>
       </div>
-      <ul id="category-list" class="category-list"></ul>
       <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All codes</button>
+      <ul id="category-list" class="category-list"></ul>
       <div id="backup-status" class="backup-status"></div>
     </aside>
 
@@ -100,6 +100,10 @@
       <p id="empty-state" class="empty hidden" data-i18n="empty.no_codes">No Matter codes yet. Click + Code to get started.</p>
     </section>
   </main>
+
+  <footer class="statusbar">
+    <span id="statusbar-count"></span>
+  </footer>
 
   <dialog id="code-dialog">
     <form id="code-form" method="dialog">
@@ -116,19 +120,22 @@
       <label><span data-i18n="code.device_type">Device type</span>
         <input type="text" id="code-device-type" data-i18n-placeholder="code.device_type_placeholder" placeholder="e.g. light, switch" />
       </label>
-      <label><span data-i18n="code.device_vendor">Device vendor</span>
-        <input type="text" id="code-device-vendor" data-i18n-placeholder="code.device_vendor_placeholder" placeholder="e.g. IKEA" />
-      </label>
-      <label><span data-i18n="code.device_product">Device product name</span>
-        <input type="text" id="code-device-product" data-i18n-placeholder="code.device_product_placeholder" placeholder="e.g. MYGGBETT" />
-      </label>
-      <label><span data-i18n="code.area">Area</span>
-        <input type="text" id="code-area" list="area-options" data-i18n-placeholder="code.area_placeholder" placeholder="e.g. Living room" />
-        <datalist id="area-options"></datalist>
-      </label>
-      <label><span data-i18n="code.description">Description</span>
-        <input type="text" id="code-description" data-i18n-placeholder="code.description_placeholder" placeholder="e.g. Window sensor" />
-      </label>
+      <details id="code-details" class="form-section">
+        <summary data-i18n="code.device_details">Device details</summary>
+        <label><span data-i18n="code.device_vendor">Device vendor</span>
+          <input type="text" id="code-device-vendor" data-i18n-placeholder="code.device_vendor_placeholder" placeholder="e.g. IKEA" />
+        </label>
+        <label><span data-i18n="code.device_product">Device product name</span>
+          <input type="text" id="code-device-product" data-i18n-placeholder="code.device_product_placeholder" placeholder="e.g. MYGGBETT" />
+        </label>
+        <label><span data-i18n="code.description">Description</span>
+          <input type="text" id="code-description" data-i18n-placeholder="code.description_placeholder" placeholder="e.g. Window sensor" />
+        </label>
+        <label><span data-i18n="code.area">Area</span>
+          <input type="text" id="code-area" list="area-options" data-i18n-placeholder="code.area_placeholder" placeholder="e.g. Living room" />
+          <datalist id="area-options"></datalist>
+        </label>
+      </details>
       <label><span data-i18n="code.category">Category</span>
         <select id="code-category"></select>
       </label>
@@ -196,7 +203,7 @@
         <input type="file" id="scan-file-input" accept="image/*" capture="environment" />
       </label>
       <div class="dialog-actions">
-        <button type="button" id="scan-stop" class="rm-btn rm-btn-secondary" data-i18n="action.cancel">Close</button>
+        <button type="button" id="scan-stop" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Close</button>
       </div>
     </form>
   </dialog>
@@ -236,17 +243,17 @@
   </dialog>
 
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.4"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.4"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.4"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.4"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.4"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.4"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.4"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.4"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.4"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.4"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.4"></script>
-  <script src="./static/app.js?v=1.0.4"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.5"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.5"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.5"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.5"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.5"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.5"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.5"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.5"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.5"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.5"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.5"></script>
+  <script src="./static/app.js?v=1.0.5"></script>
 </body>
 </html>

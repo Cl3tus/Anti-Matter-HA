@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.5
+
+- Bottom **status bar** showing how many codes are stored (and how many are shown when filtered).
+- "All codes" moved to the top of the sidebar; selecting it now correctly deselects the active
+  category.
+- "Backup created" and other alerts now use an in-app modal instead of the browser popup.
+- Fixed **Cancel** not closing the Scan dialog.
+- Add/Edit code modal: optional fields (vendor, product, description, area) moved behind a
+  collapsible **Device details** section; Description and Area swapped. Mandatory fields stay
+  visible.
+- Card **Download / Edit / Delete** buttons now follow the active light/dark theme.
+
 ## 1.0.4
 
 - Per-card **Download** button: saves the code as a PNG (Matter) or SVG (HomeKit / Z-Wave).

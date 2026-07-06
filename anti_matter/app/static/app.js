@@ -97,7 +97,6 @@ function renderCategories() {
     btn.innerHTML = `${mark}${escapeHtml(cat.name)}`;
     btn.onclick = () => {
       activeCategoryId = cat.id;
-      document.getElementById("filter-all").classList.remove("active");
       render();
     };
     btn.oncontextmenu = (e) => {
@@ -109,12 +108,23 @@ function renderCategories() {
   }
 }
 
+function updateStatusbar(shown) {
+  const el = document.getElementById("statusbar-count");
+  if (!el) return;
+  const total = vault.codes.length;
+  el.textContent =
+    shown === total
+      ? t("status.codes", { count: total })
+      : t("status.filtered", { shown, total });
+}
+
 function renderCodes() {
   const grid = document.getElementById("codes-grid");
   const empty = document.getElementById("empty-state");
   const codes = filteredCodes();
   grid.innerHTML = "";
   empty.classList.toggle("hidden", codes.length > 0);
+  updateStatusbar(codes.length);
 
   const Cards = window.AntiMatterVaultCards;
   for (const code of codes) {
@@ -149,6 +159,8 @@ function render() {
   renderCategories();
   renderCodes();
   fillCategorySelect();
+  const fa = document.getElementById("filter-all");
+  if (fa) fa.classList.toggle("active", activeCategoryId === null);
 }
 
 function fillCategorySelect() {
@@ -250,6 +262,12 @@ function openCodeDialog(code = null) {
   setVal("code-device-product", code?.device_product);
   setVal("code-area", code?.area);
   setVal("code-description", code?.description);
+  const details = document.getElementById("code-details");
+  if (details) {
+    details.open = Boolean(
+      code?.device_vendor || code?.device_product || code?.description || code?.area
+    );
+  }
   document.getElementById("code-category").value = code?.category_id || "";
   setVal("code-manual", code?.manual_code);
   setVal("code-qr", code?.qr_payload);
@@ -372,18 +390,21 @@ async function saveCode(e) {
   await loadVault();
 }
 
-// Promise-based confirm using the in-app modal (falls back to window.confirm).
-function uiConfirm(message, okLabel) {
+// Shared in-app message modal (falls back to native dialogs).
+function uiMessage({ message, okLabel, danger = false, showCancel = true }) {
   return new Promise((resolve) => {
     const dlg = document.getElementById("confirm-dialog");
     if (!dlg) {
-      resolve(window.confirm(message));
+      resolve(showCancel ? window.confirm(message) : (window.alert(message), true));
       return;
     }
     document.getElementById("confirm-message").textContent = message;
     const okBtn = document.getElementById("confirm-ok");
     const cancelBtn = document.getElementById("confirm-cancel");
-    if (okLabel) okBtn.textContent = okLabel;
+    okBtn.textContent = okLabel || t("action.ok");
+    okBtn.classList.toggle("rm-btn-danger", danger);
+    okBtn.classList.toggle("rm-btn-primary", !danger);
+    cancelBtn.style.display = showCancel ? "" : "none";
     let done = false;
     const finish = (val) => {
       if (done) return;
@@ -400,6 +421,14 @@ function uiConfirm(message, okLabel) {
     dlg.addEventListener("close", onClose);
     dlg.showModal();
   });
+}
+
+function uiConfirm(message, okLabel) {
+  return uiMessage({ message, okLabel, danger: true, showCancel: true });
+}
+
+function uiAlert(message, okLabel) {
+  return uiMessage({ message, okLabel, danger: false, showCancel: false });
 }
 
 async function downloadCode(code) {
@@ -419,7 +448,7 @@ async function downloadCode(code) {
     a.remove();
     URL.revokeObjectURL(a.href);
   } catch (err) {
-    alert(err.message || t("alert.download_fail"));
+    await uiAlert(err.message || t("alert.download_fail"));
   }
 }
 
@@ -498,8 +527,7 @@ function bindUi() {
 
   document.getElementById("filter-all").onclick = () => {
     activeCategoryId = null;
-    document.getElementById("filter-all").classList.add("active");
-    renderCodes();
+    render();
   };
 
   document.querySelectorAll("[data-close]").forEach((btn) => {
@@ -526,16 +554,16 @@ function bindUi() {
   document.getElementById("btn-backup").onclick = async () => {
     try {
       const r = await api("/backup", { method: "POST" });
-      alert(r.ok ? t("alert.backup_local_ok") : t("alert.backup_fail"));
+      await uiAlert(r.ok ? t("alert.backup_local_ok") : t("alert.backup_fail"));
     } catch (err) {
-      alert(err.message || t("alert.backup_fail"));
+      await uiAlert(err.message || t("alert.backup_fail"));
     }
   };
 
   document.getElementById("btn-sync-ha").onclick = async () => {
     const id = document.getElementById("code-id").value;
     if (!id) {
-      alert(t("alert.save_before_sync"));
+      await uiAlert(t("alert.save_before_sync"));
       return;
     }
     try {
@@ -543,7 +571,7 @@ function bindUi() {
       await loadVault();
       openCodeDialog(vault.codes.find((c) => c.id === id));
     } catch (err) {
-      alert(err.message);
+      await uiAlert(err.message);
     }
   };
 

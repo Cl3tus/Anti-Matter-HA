@@ -88,7 +88,7 @@
 .layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: calc(100vh - 57px); /* viewport minus the 56px header + its border */
+  min-height: calc(100vh - 57px - 35px); /* viewport minus header (56+1) and status bar (~35) */
 }
 
 @media (max-width: 720px) {
@@ -981,4 +981,68 @@ body.qr-invert .zwave-sticker--dsk-only {
   margin: 0 0 var(--rm-space-4);
   color: var(--rm-text-muted);
   line-height: 1.5;
+}
+
+/* ============================================================
+   v1.0.5 UI
+   ============================================================ */
+
+/* Bottom status bar */
+.statusbar {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 var(--rm-space-4);
+  border-top: 1px solid var(--rm-border);
+  background: var(--rm-surface);
+  color: var(--rm-text-muted);
+  font-size: var(--rm-text-xs);
+}
+
+/* Collapsible "Device details" section inside the code modal */
+.form-section {
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  padding: 0 var(--rm-space-3);
+  margin: var(--rm-space-1) 0;
+  background: var(--rm-surface);
+}
+.form-section > summary {
+  cursor: pointer;
+  padding: var(--rm-space-3) 0;
+  font-weight: 600;
+  font-size: var(--rm-text-sm);
+  color: var(--rm-text-muted);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-2);
+}
+.form-section > summary::-webkit-details-marker { display: none; }
+.form-section > summary::before {
+  content: "▸";
+  transition: transform 0.15s ease;
+}
+.form-section[open] > summary::before { transform: rotate(90deg); }
+.form-section > label:last-child { margin-bottom: var(--rm-space-3); }
+
+/* Card action buttons: follow the active theme (were hard-coded light) */
+.matter-label-wrap .card-icon-actions {
+  background: var(--rm-surface-glass);
+  box-shadow: var(--rm-shadow-md);
+}
+.card-icon-btn {
+  background: var(--rm-surface);
+  color: var(--rm-text);
+  border-color: var(--rm-border);
+}
+.card-icon-btn:hover {
+  border-color: var(--rm-accent);
+  color: var(--rm-accent);
+  background: var(--rm-accent-soft);
+}
+.card-icon-btn-danger:hover {
+  border-color: var(--rm-danger);
+  color: var(--rm-danger);
+  background: var(--rm-danger-bg);
 }
