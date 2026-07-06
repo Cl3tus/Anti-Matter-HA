@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2
+
+- Follow Home Assistant's accent/primary colours live (reads `--accent-color` /
+  `--primary-color` from the parent frame, like E-Ink Studio); falls back to amber
+  when standalone.
+- Follow Home Assistant's UI language: Auto now also reads the parent frame `<html lang>`
+  before the browser language.
+- Compact top bar (~56px, matching the HA header) with smaller buttons.
+
 ## 1.0.1
 
 - Restyle the whole UI to match E-Ink Studio / Home Assistant: neutral greys with an

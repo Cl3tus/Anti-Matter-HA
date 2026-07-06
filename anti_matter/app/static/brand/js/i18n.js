@@ -48,10 +48,27 @@
     // Add-on option (auto | nl | en) set from /api/info.
     const addon = String(global.ADDON_LANGUAGE || "auto").toLowerCase();
     if (SUPPORTED.includes(addon)) return addon;
-    // Autodetect from the browser (HA UI language flows into navigator.language).
+    // Follow Home Assistant's UI language (parent frame <html lang>).
+    const haLang = readHALang();
+    if (haLang) return haLang;
+    // Autodetect from the browser.
     const nav = String(navigator.language || "en").toLowerCase();
     if (nav.startsWith("nl")) return "nl";
     return DEFAULT_LOCALE;
+  }
+
+  function readHALang() {
+    const frames = [];
+    try { if (global.parent && global.parent !== global) frames.push(global.parent); } catch (e) {}
+    try { if (global.top && global.top !== global && frames.indexOf(global.top) === -1) frames.push(global.top); } catch (e) {}
+    for (let i = 0; i < frames.length; i++) {
+      try {
+        const lang = String(frames[i].document.documentElement.lang || "").toLowerCase();
+        if (lang.startsWith("nl")) return "nl";
+        if (lang.startsWith("en")) return "en";
+      } catch (e) { /* cross-origin — skip */ }
+    }
+    return null;
   }
 
   async function loadLocaleFile(code) {
