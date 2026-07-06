@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.6
+
+- Add/Edit code modal reorganised: Protocol, Name, Category, the code fields, then a
+  collapsible **Device details** (now also holds Device type, order: vendor, product,
+  device type, description, area) and a collapsible **Home Assistant link**, then Notes.
+- Categories can now be **deleted** (delete button in the category modal); the codes stay
+  and fall back to no category.
+- **Multi-select categories**: click several to combine them; click again to unselect.
+  "All codes" clears the selection.
+- The status bar now lines up under the code canvas (categories panel spans full height).
+- **Live refresh**: codes added from another device (e.g. a phone scan) appear within a few
+  seconds without reloading.
+
 ## 1.0.5
 
 - Bottom **status bar** showing how many codes are stored (and how many are shown when filtered).

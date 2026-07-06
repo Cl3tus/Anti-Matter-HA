@@ -69,6 +69,7 @@
   "code.attribute_placeholder": "matter_setup_code",
   "confirm.title": "Bevestigen",
   "confirm.delete_code": "Deze code verwijderen?",
+  "confirm.delete_category": "Deze categorie verwijderen? De codes blijven bestaan en komen zonder categorie terug.",
   "confirm.import_merge": "Samenvoegen met bestaande gegevens? (Annuleren = vervangen)",
   "icons.search": "Zoek iconen…",
   "alert.backup_local_ok": "Back-up aangemaakt in de add-on config-map.",

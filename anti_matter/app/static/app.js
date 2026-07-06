@@ -5,7 +5,7 @@ const API = "./api";
 const { t, initI18n, setLocale } = window.AntiMatterI18n;
 
 let vault = { categories: [], codes: [] };
-let activeCategoryId = null;
+let activeCategories = new Set();
 let categoryIconPicker = null;
 
 const BRAND_PREFIX = "./static/brand";
@@ -42,8 +42,11 @@ async function api(path, options = {}) {
   return res;
 }
 
+let lastVaultJson = "";
+
 async function loadVault() {
   vault = await api("/vault");
+  lastVaultJson = JSON.stringify(vault);
   render();
 }
 
@@ -57,8 +60,8 @@ function categoryName(id) {
 
 function filteredCodes() {
   let codes = vault.codes;
-  if (activeCategoryId) {
-    codes = codes.filter((c) => c.category_id === activeCategoryId);
+  if (activeCategories.size) {
+    codes = codes.filter((c) => activeCategories.has(c.category_id));
   }
   const q = document.getElementById("search").value.trim().toLowerCase();
   if (!q) return codes;
@@ -90,13 +93,14 @@ function renderCategories() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className =
-      "category-btn" + (activeCategoryId === cat.id ? " active" : "");
+      "category-btn" + (activeCategories.has(cat.id) ? " active" : "");
     const mark = window.AntiMatterCategoryIcons
       ? window.AntiMatterCategoryIcons.markMarkup(cat, BRAND_PREFIX)
       : `<span class="category-dot" style="background:${cat.color}"></span>`;
     btn.innerHTML = `${mark}${escapeHtml(cat.name)}`;
     btn.onclick = () => {
-      activeCategoryId = cat.id;
+      if (activeCategories.has(cat.id)) activeCategories.delete(cat.id);
+      else activeCategories.add(cat.id);
       render();
     };
     btn.oncontextmenu = (e) => {
@@ -160,7 +164,7 @@ function render() {
   renderCodes();
   fillCategorySelect();
   const fa = document.getElementById("filter-all");
-  if (fa) fa.classList.toggle("active", activeCategoryId === null);
+  if (fa) fa.classList.toggle("active", activeCategories.size === 0);
 }
 
 function fillCategorySelect() {
@@ -265,8 +269,13 @@ function openCodeDialog(code = null) {
   const details = document.getElementById("code-details");
   if (details) {
     details.open = Boolean(
-      code?.device_vendor || code?.device_product || code?.description || code?.area
+      code?.device_vendor || code?.device_product || code?.device_type ||
+      code?.description || code?.area
     );
+  }
+  const haDetails = document.getElementById("code-ha-details");
+  if (haDetails) {
+    haDetails.open = Boolean(code?.ha_link?.entity_id || code?.ha_link?.attribute);
   }
   document.getElementById("code-category").value = code?.category_id || "";
   setVal("code-manual", code?.manual_code);
@@ -297,7 +306,21 @@ function openCategoryDialog(cat = null) {
   document.getElementById("category-icon").value =
     cat?.icon || window.AntiMatterCategoryIcons?.DEFAULT_ICON || "folder";
   ensureCategoryIconPicker()?.setValue(cat?.icon || "folder");
+  const delBtn = document.getElementById("category-delete");
+  if (delBtn) {
+    delBtn.hidden = !cat;
+    delBtn.onclick = cat ? () => deleteCategory(cat.id) : null;
+  }
   dlg.showModal();
+}
+
+async function deleteCategory(id) {
+  if (!id) return;
+  if (!(await uiConfirm(t("confirm.delete_category"), t("action.delete")))) return;
+  await api(`/categories/${id}`, { method: "DELETE" });
+  activeCategories.delete(id);
+  document.getElementById("category-dialog").close();
+  await loadVault();
 }
 
 // Local, bundled scanner fallback for browsers without BarcodeDetector (offline-safe).
@@ -526,7 +549,7 @@ function bindUi() {
   document.getElementById("search").oninput = renderCodes;
 
   document.getElementById("filter-all").onclick = () => {
-    activeCategoryId = null;
+    activeCategories.clear();
     render();
   };
 
@@ -628,6 +651,34 @@ async function boot() {
   await loadVault();
   await loadAreas();
   updateStorageHint();
+  startVaultPolling();
+}
+
+// Live refresh: pick up codes added from another device (e.g. a phone scan) without F5.
+function anyDialogOpen() {
+  return !!document.querySelector("dialog[open]");
+}
+
+async function pollVault() {
+  if (document.hidden || anyDialogOpen()) return;
+  try {
+    const v = await api("/vault");
+    const j = JSON.stringify(v);
+    if (j !== lastVaultJson) {
+      lastVaultJson = j;
+      vault = v;
+      render();
+    }
+  } catch {
+    /* ignore transient errors */
+  }
+}
+
+function startVaultPolling() {
+  setInterval(pollVault, 6000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) pollVault();
+  });
 }
 
 boot();

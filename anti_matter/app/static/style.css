@@ -88,12 +88,23 @@
 .layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: calc(100vh - 57px - 35px); /* viewport minus header (56+1) and status bar (~35) */
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "sidebar content"
+    "sidebar status";
+  min-height: calc(100vh - 57px); /* viewport minus header (56 + 1px border) */
 }
+.sidebar { grid-area: sidebar; }
+.content { grid-area: content; }
+.statusbar { grid-area: status; }
 
 @media (max-width: 720px) {
   .layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "sidebar"
+      "content"
+      "status";
   }
   .sidebar {
     border-bottom: 1px solid var(--rm-border);
@@ -1046,3 +1057,6 @@ body.qr-invert .zwave-sticker--dsk-only {
   color: var(--rm-danger);
   background: var(--rm-danger-bg);
 }
+
+/* Push the Delete button to the left in dialog action rows */
+.dialog-actions-spacer { flex: 1; }

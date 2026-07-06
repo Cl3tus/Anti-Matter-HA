@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/logo.svg" type="image/svg+xml" />
-  <script src="./static/brand/js/theme.js?v=1.0.5"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.5" />
-  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.5" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.5" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.5" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.5" />
+  <script src="./static/brand/js/theme.js?v=1.0.6"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.6" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.6" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.6" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.6" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.6" />
 </head>
 <body>
   <header class="header">
@@ -99,11 +99,10 @@
       <div id="codes-grid" class="codes-grid"></div>
       <p id="empty-state" class="empty hidden" data-i18n="empty.no_codes">No Matter codes yet. Click + Code to get started.</p>
     </section>
+    <footer class="statusbar">
+      <span id="statusbar-count"></span>
+    </footer>
   </main>
-
-  <footer class="statusbar">
-    <span id="statusbar-count"></span>
-  </footer>
 
   <dialog id="code-dialog">
     <form id="code-form" method="dialog">
@@ -117,25 +116,6 @@
         </select>
       </label>
       <label><span data-i18n="code.name">Name</span> <input type="text" id="code-name" required /></label>
-      <label><span data-i18n="code.device_type">Device type</span>
-        <input type="text" id="code-device-type" data-i18n-placeholder="code.device_type_placeholder" placeholder="e.g. light, switch" />
-      </label>
-      <details id="code-details" class="form-section">
-        <summary data-i18n="code.device_details">Device details</summary>
-        <label><span data-i18n="code.device_vendor">Device vendor</span>
-          <input type="text" id="code-device-vendor" data-i18n-placeholder="code.device_vendor_placeholder" placeholder="e.g. IKEA" />
-        </label>
-        <label><span data-i18n="code.device_product">Device product name</span>
-          <input type="text" id="code-device-product" data-i18n-placeholder="code.device_product_placeholder" placeholder="e.g. MYGGBETT" />
-        </label>
-        <label><span data-i18n="code.description">Description</span>
-          <input type="text" id="code-description" data-i18n-placeholder="code.description_placeholder" placeholder="e.g. Window sensor" />
-        </label>
-        <label><span data-i18n="code.area">Area</span>
-          <input type="text" id="code-area" list="area-options" data-i18n-placeholder="code.area_placeholder" placeholder="e.g. Living room" />
-          <datalist id="area-options"></datalist>
-        </label>
-      </details>
       <label><span data-i18n="code.category">Category</span>
         <select id="code-category"></select>
       </label>
@@ -175,9 +155,27 @@
         <textarea id="code-zwave-qr" rows="3" data-i18n-placeholder="code.zwave_qr_placeholder" placeholder="9001…"></textarea>
       </label>
       </div>
-      <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
-      <fieldset class="ha-link">
-        <legend data-i18n="code.ha_link">Home Assistant link (optional)</legend>
+      <details id="code-details" class="form-section">
+        <summary data-i18n="code.device_details">Device details</summary>
+        <label><span data-i18n="code.device_vendor">Device vendor</span>
+          <input type="text" id="code-device-vendor" data-i18n-placeholder="code.device_vendor_placeholder" placeholder="e.g. IKEA" />
+        </label>
+        <label><span data-i18n="code.device_product">Device product name</span>
+          <input type="text" id="code-device-product" data-i18n-placeholder="code.device_product_placeholder" placeholder="e.g. MYGGBETT" />
+        </label>
+        <label><span data-i18n="code.device_type">Device type</span>
+          <input type="text" id="code-device-type" data-i18n-placeholder="code.device_type_placeholder" placeholder="e.g. light, switch" />
+        </label>
+        <label><span data-i18n="code.description">Description</span>
+          <input type="text" id="code-description" data-i18n-placeholder="code.description_placeholder" placeholder="e.g. Window sensor" />
+        </label>
+        <label><span data-i18n="code.area">Area</span>
+          <input type="text" id="code-area" list="area-options" data-i18n-placeholder="code.area_placeholder" placeholder="e.g. Living room" />
+          <datalist id="area-options"></datalist>
+        </label>
+      </details>
+      <details id="code-ha-details" class="form-section">
+        <summary data-i18n="code.ha_link">Home Assistant link (optional)</summary>
         <label><span data-i18n="code.entity_id">Entity ID</span>
           <input type="text" id="code-ha-entity" data-i18n-placeholder="code.entity_placeholder" placeholder="light.living_room" />
         </label>
@@ -185,7 +183,8 @@
           <input type="text" id="code-ha-attr" data-i18n-placeholder="code.attribute_placeholder" placeholder="matter_setup_code" />
         </label>
         <button type="button" id="btn-sync-ha" class="rm-btn rm-btn-secondary" data-i18n="action.sync_from_ha">Pull from HA</button>
-      </fieldset>
+      </details>
+      <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
       <div class="dialog-actions">
         <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
         <button type="submit" class="rm-btn rm-btn-primary" data-i18n="action.save">Save</button>
@@ -225,6 +224,8 @@
         <div id="category-icon-picker" class="category-icon-picker-host"></div>
       </label>
       <div class="dialog-actions">
+        <button type="button" class="rm-btn rm-btn-danger" id="category-delete" data-i18n="action.delete" hidden>Delete</button>
+        <span class="dialog-actions-spacer"></span>
         <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
         <button type="submit" class="rm-btn rm-btn-primary" data-i18n="action.save">Save</button>
       </div>
@@ -243,17 +244,17 @@
   </dialog>
 
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.5"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.5"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.5"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.5"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.5"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.5"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.5"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.5"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.5"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.5"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.5"></script>
-  <script src="./static/app.js?v=1.0.5"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.6"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.6"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.6"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.6"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.6"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.6"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.6"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.6"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.6"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.6"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.6"></script>
+  <script src="./static/app.js?v=1.0.6"></script>
 </body>
 </html>

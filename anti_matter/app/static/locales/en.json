@@ -69,6 +69,7 @@
   "code.attribute_placeholder": "matter_setup_code",
   "confirm.title": "Please confirm",
   "confirm.delete_code": "Delete this code?",
+  "confirm.delete_category": "Delete this category? Its codes stay and move to no category.",
   "confirm.import_merge": "Merge with existing data? (Cancel = replace)",
   "categories.icon_search": "Search icons…",
   "icons.search": "Search icons…",
