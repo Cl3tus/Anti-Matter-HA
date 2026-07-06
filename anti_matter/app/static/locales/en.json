@@ -111,6 +111,7 @@
   "filter.area": "Area",
   "table.title": "Codes table",
   "table.tooltip": "Table view",
+  "table.tooltip_grid": "Back to QR view",
   "status.codes": "{count} codes",
   "status.filtered": "{shown} of {total} codes",
   "lang.label": "Language",

@@ -1151,17 +1151,11 @@ body.qr-invert .zwave-sticker--dsk-only {
    v1.0.8 UI
    ============================================================ */
 
-.table-dialog {
-  max-width: 92vw;
-  width: 900px;
-  position: relative;
-}
-.table-dialog .table-scroll {
-  max-height: 60vh;
+.table-view .table-scroll {
+  max-height: calc(100vh - 260px);
   overflow: auto;
   border: 1px solid var(--rm-border);
   border-radius: var(--rm-radius-sm);
-  margin-top: var(--rm-space-3);
 }
 #codes-table {
   width: 100%;
@@ -1181,8 +1175,39 @@ body.qr-invert .zwave-sticker--dsk-only {
   background: var(--rm-surface-elevated);
   font-weight: 600;
 }
+#codes-table tbody tr {
+  cursor: pointer;
+}
 #codes-table tbody tr:hover {
   background: var(--rm-accent-soft);
+}
+
+.quickview-dialog {
+  max-width: 320px;
+  position: relative;
+  text-align: center;
+}
+.quickview-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: var(--rm-radius-md);
+  padding: var(--rm-space-4);
+  margin: var(--rm-space-3) 0;
+}
+.quickview-image-wrap img {
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.quickview-manual {
+  font-family: var(--rm-font-mono, monospace);
+  font-weight: 700;
+  font-size: var(--rm-text-lg);
+  letter-spacing: 0.03em;
+  margin: 0 0 var(--rm-space-3);
 }
 
 .modal-close-x {

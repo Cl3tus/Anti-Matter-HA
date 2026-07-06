@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.10
+
+- Reworked the table view: instead of a separate modal, it now **replaces the QR
+  canvas in place** (search/filters/category selection stay active). The button
+  icon flips between a table glyph and a QR-code glyph so it's clear it's a toggle.
+- **Double-click a row** in the table to open a compact quick-view popup with the
+  rendered QR code (or HomeKit/Z-Wave card) and the manual/pairing code, plus
+  Edit and Close (red ✕) buttons.
+
+## 1.0.9
+
+- Search box and the Vendor/Product/Type/Area filter dropdowns are now the same height.
+- Fixed the sidebar "+" (add category) not being centred in its accent box.
+- Replaced the New-code button's 🆕 emoji with a plain "+" (same fix as the category
+  button — some systems render heavy-plus emoji in a fixed colour that ignores accent).
+
 ## 1.0.8
 
 - **Fixed a data-integrity bug**: importing/merging the same export twice (or a partial

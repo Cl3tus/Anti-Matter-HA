@@ -170,6 +170,8 @@ function updateStatusbar(shown) {
       : t("status.filtered", { shown, total });
 }
 
+let viewMode = "grid"; // "grid" | "table" — which one replaces the canvas
+
 function renderTable() {
   const tbody = document.getElementById("codes-table-body");
   if (!tbody) return;
@@ -178,7 +180,7 @@ function renderTable() {
     .map((c) => {
       const proto =
         window.AntiMatterVaultCards?.codeProtocol?.(c) || c.code_type || "matter";
-      return `<tr>
+      return `<tr data-code-id="${escapeHtml(c.id)}">
         <td>${escapeHtml(c.name)}</td>
         <td>${escapeHtml(proto)}</td>
         <td>${escapeHtml(c.device_vendor)}</td>
@@ -191,9 +193,42 @@ function renderTable() {
     .join("");
 }
 
-function openTableDialog() {
-  renderTable();
-  document.getElementById("table-dialog").showModal();
+function applyViewMode() {
+  document.getElementById("codes-grid").classList.toggle("hidden", viewMode !== "grid");
+  document.getElementById("codes-table-view").classList.toggle("hidden", viewMode !== "table");
+  const icon = document.getElementById("btn-table-view-icon");
+  if (icon) icon.className = viewMode === "grid" ? "mdi mdi-table" : "mdi mdi-qrcode";
+  const btn = document.getElementById("btn-table-view");
+  if (btn) {
+    const key = viewMode === "grid" ? "table.tooltip" : "table.tooltip_grid";
+    btn.setAttribute("data-i18n-tip", key);
+    btn.setAttribute("data-tip", t(key));
+  }
+}
+
+function toggleViewMode() {
+  viewMode = viewMode === "grid" ? "table" : "grid";
+  applyViewMode();
+}
+
+function openQuickView(code) {
+  if (!code) return;
+  const Cards = window.AntiMatterVaultCards;
+  const proto = Cards?.codeProtocol?.(code) || "matter";
+  document.getElementById("quickview-name").textContent = code.name || "";
+  const wrap = document.getElementById("quickview-image-wrap");
+  const src =
+    proto === "homekit" || proto === "zwave"
+      ? `${API}/codes/${code.id}/card.svg`
+      : `${API}/codes/${code.id}/qr.png`;
+  wrap.innerHTML = `<img src="${src}" alt="" />`;
+  document.getElementById("quickview-manual").textContent =
+    Cards?.displayManual?.(code) || code.manual_code || "";
+  document.getElementById("quickview-edit").onclick = () => {
+    document.getElementById("quickview-dialog").close();
+    openCodeDialog(code);
+  };
+  document.getElementById("quickview-dialog").showModal();
 }
 
 function renderCodes() {
@@ -203,6 +238,7 @@ function renderCodes() {
   grid.innerHTML = "";
   empty.classList.toggle("hidden", codes.length > 0);
   updateStatusbar(codes.length);
+  renderTable();
 
   const Cards = window.AntiMatterVaultCards;
   for (const code of codes) {
@@ -694,7 +730,13 @@ function bindUi() {
     });
   }
 
-  document.getElementById("btn-table-view").onclick = openTableDialog;
+  document.getElementById("btn-table-view").onclick = toggleViewMode;
+  document.getElementById("codes-table-body").ondblclick = (e) => {
+    const tr = e.target.closest("tr[data-code-id]");
+    if (!tr) return;
+    const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
+    if (code) openQuickView(code);
+  };
 
   document.getElementById("filter-all").onclick = () => {
     activeCategories.clear();
@@ -770,6 +812,7 @@ function bindUi() {
   };
 
   initQrInvert();
+  applyViewMode();
 
   window.addEventListener("antimatter:locale", () => {
     render();

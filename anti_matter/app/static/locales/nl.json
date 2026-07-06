@@ -110,6 +110,7 @@
   "filter.area": "Ruimte",
   "table.title": "Codes tabel",
   "table.tooltip": "Tabelweergave",
+  "table.tooltip_grid": "Terug naar QR-weergave",
   "status.codes": "{count} codes",
   "status.filtered": "{shown} van {total} codes",
   "lang.label": "Taal",
