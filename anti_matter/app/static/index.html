@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-theme-mode="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#6366f1" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0a0e16" media="(prefers-color-scheme: dark)" />
+  <title>Anti-Matter</title>
+  <link rel="icon" href="./static/assets/logo.svg" type="image/svg+xml" />
+  <script src="./static/brand/js/theme.js?v=20260613"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=20260613" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=20260613" />
+  <link rel="stylesheet" href="./static/style.css?v=20260613" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand-block">
+      <img class="brand-logo" src="./static/assets/logo.svg" alt="" width="40" height="40" />
+      <h1>Anti-Matter</h1>
+    </div>
+    <div class="header-actions">
+      <div class="theme-dropdown" data-theme-dropdown data-icons-href="./static/brand/icons.svg">
+        <button type="button" class="theme-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" data-i18n-title="theme.title" title="Color theme">
+          <span class="theme-dropdown-icons" aria-hidden="true">
+            <svg class="rm-icon theme-dropdown-current" viewBox="0 0 24 24" aria-hidden="true">
+              <use class="theme-dropdown-use" href="./static/brand/icons.svg#rm-icon-sun"/>
+            </svg>
+          </span>
+          <span class="theme-dropdown-chevron" aria-hidden="true">
+            <svg class="rm-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+          </span>
+          <span class="sr-only">Color theme</span>
+        </button>
+        <ul class="theme-dropdown-menu" role="listbox" aria-label="Color theme" hidden>
+          <li role="presentation">
+            <button type="button" role="option" data-theme-set="light" aria-selected="false">
+              <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-sun"/></svg>
+              <span data-i18n="theme.light">Light</span>
+            </button>
+          </li>
+          <li role="presentation">
+            <button type="button" role="option" data-theme-set="dark" aria-selected="false">
+              <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-moon"/></svg>
+              <span data-i18n="theme.dark">Dark</span>
+            </button>
+          </li>
+          <li role="presentation">
+            <button type="button" role="option" data-theme-set="auto" aria-selected="false">
+              <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-auto"/></svg>
+              <span data-i18n="theme.system">System</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="locale-dropdown" data-locale-dropdown>
+        <button type="button" class="locale-dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Language">
+          <span class="locale-trigger-flag" aria-hidden="true">🇬🇧</span>
+          <span class="locale-dropdown-chevron" aria-hidden="true">
+            <svg class="rm-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+          </span>
+          <span class="sr-only" data-i18n="lang.label">Language</span>
+        </button>
+        <ul class="locale-dropdown-menu" role="listbox" aria-label="Language" hidden>
+          <li role="presentation"><button type="button" role="option" data-locale-set="en" aria-label="English" aria-selected="false"><span class="locale-flag">🇬🇧</span></button></li>
+          <li role="presentation"><button type="button" role="option" data-locale-set="nl" aria-label="Nederlands" aria-selected="false"><span class="locale-flag">🇳🇱</span></button></li>
+        </ul>
+      </div>
+      <button type="button" id="btn-export" class="rm-btn rm-btn-secondary" data-i18n="action.export">Export</button>
+      <label class="rm-btn rm-btn-secondary file-label">
+        <span data-i18n="action.import">Import</span>
+        <input type="file" id="import-file" accept="application/json,.json" hidden />
+      </label>
+      <button type="button" id="btn-backup" class="rm-btn rm-btn-secondary" data-i18n="action.backup_now">Backup now</button>
+      <button type="button" id="btn-scan-code" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan</button>
+      <button type="button" id="btn-add-code" class="rm-btn rm-btn-primary" data-i18n="action.add_code">+ Code</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <h2 data-i18n="categories.title">Categories</h2>
+        <button type="button" id="btn-add-category" class="btn icon" data-i18n-title="categories.add_title" title="Add category">+</button>
+      </div>
+      <ul id="category-list" class="category-list"></ul>
+      <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All codes</button>
+      <div id="backup-status" class="backup-status"></div>
+    </aside>
+
+    <section class="content">
+      <div class="toolbar">
+        <input type="search" id="search" data-i18n-placeholder="search.placeholder" placeholder="Search by name, type, or code…" />
+      </div>
+      <div id="codes-grid" class="codes-grid"></div>
+      <p id="empty-state" class="empty hidden" data-i18n="empty.no_codes">No Matter codes yet. Click + Code to get started.</p>
+    </section>
+  </main>
+
+  <dialog id="code-dialog">
+    <form id="code-form" method="dialog">
+      <h3 id="code-dialog-title" data-i18n="code.dialog_new">New code</h3>
+      <input type="hidden" id="code-id" />
+      <label><span data-i18n="code.protocol">Protocol</span>
+        <select id="code-type">
+          <option value="matter" data-i18n="code.protocol_matter">Matter</option>
+          <option value="homekit" data-i18n="code.protocol_homekit">HomeKit</option>
+          <option value="zwave" data-i18n="code.protocol_zwave">Z-Wave</option>
+        </select>
+      </label>
+      <label><span data-i18n="code.name">Name</span> <input type="text" id="code-name" required /></label>
+      <label><span data-i18n="code.device_type">Device type</span>
+        <input type="text" id="code-device-type" data-i18n-placeholder="code.device_type_placeholder" placeholder="e.g. light, switch" />
+      </label>
+      <label><span data-i18n="code.device_vendor">Device vendor</span>
+        <input type="text" id="code-device-vendor" data-i18n-placeholder="code.device_vendor_placeholder" placeholder="e.g. IKEA" />
+      </label>
+      <label><span data-i18n="code.device_product">Device product name</span>
+        <input type="text" id="code-device-product" data-i18n-placeholder="code.device_product_placeholder" placeholder="e.g. MYGGBETT" />
+      </label>
+      <label><span data-i18n="code.area">Area</span>
+        <input type="text" id="code-area" list="area-options" data-i18n-placeholder="code.area_placeholder" placeholder="e.g. Living room" />
+        <datalist id="area-options"></datalist>
+      </label>
+      <label><span data-i18n="code.description">Description</span>
+        <input type="text" id="code-description" data-i18n-placeholder="code.description_placeholder" placeholder="e.g. Window sensor" />
+      </label>
+      <label><span data-i18n="code.category">Category</span>
+        <select id="code-category"></select>
+      </label>
+      <div id="code-fields-matter">
+      <div class="scan-inline-row">
+        <button type="button" id="btn-scan-in-form" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan QR</button>
+      </div>
+      <label><span data-i18n="code.manual">Manual code (11 digits)</span>
+        <input type="text" id="code-manual" data-i18n-placeholder="code.manual_placeholder" placeholder="1234-567-8901" />
+      </label>
+      <label><span data-i18n="code.qr">QR payload (MT:…)</span>
+        <textarea id="code-qr" rows="3" data-i18n-placeholder="code.qr_placeholder" placeholder="MT:Y.K90…"></textarea>
+      </label>
+      </div>
+      <div id="code-fields-homekit" class="hidden">
+      <div class="scan-inline-row">
+        <button type="button" id="btn-scan-homekit" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan QR</button>
+      </div>
+      <label><span data-i18n="code.homekit_uri">Setup URI (X-HM://…)</span>
+        <textarea id="code-homekit-uri" rows="3" data-i18n-placeholder="code.homekit_uri_placeholder" placeholder="X-HM://0081YCYEP3QYT"></textarea>
+      </label>
+      <p id="code-homekit-derived" class="form-hint hidden" aria-live="polite"></p>
+      <label class="homekit-pairing-optional"><span data-i18n="code.homekit_pairing">Pairing code (8 digits, optional)</span>
+        <input type="text" id="code-homekit-pairing" inputmode="numeric" data-i18n-placeholder="code.homekit_pairing_placeholder" placeholder="841-31-633" maxlength="11" />
+      </label>
+      <input type="hidden" id="code-homekit-setup-id" />
+      <input type="hidden" id="code-homekit-category" value="other" />
+      </div>
+      <div id="code-fields-zwave" class="hidden">
+      <div class="scan-inline-row">
+        <button type="button" id="btn-scan-zwave" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan QR</button>
+      </div>
+      <label><span data-i18n="code.zwave_dsk">DSK (40 digits)</span>
+        <input type="text" id="code-zwave-dsk" data-i18n-placeholder="code.zwave_dsk_placeholder" placeholder="44383-12478-02618-07852-54448-44375-52483-13627" />
+      </label>
+      <label><span data-i18n="code.zwave_qr">SmartStart QR (90 digits)</span>
+        <textarea id="code-zwave-qr" rows="3" data-i18n-placeholder="code.zwave_qr_placeholder" placeholder="9001…"></textarea>
+      </label>
+      </div>
+      <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
+      <fieldset class="ha-link">
+        <legend data-i18n="code.ha_link">Home Assistant link (optional)</legend>
+        <label><span data-i18n="code.entity_id">Entity ID</span>
+          <input type="text" id="code-ha-entity" data-i18n-placeholder="code.entity_placeholder" placeholder="light.living_room" />
+        </label>
+        <label><span data-i18n="code.attribute">Attribute</span>
+          <input type="text" id="code-ha-attr" data-i18n-placeholder="code.attribute_placeholder" placeholder="matter_setup_code" />
+        </label>
+        <button type="button" id="btn-sync-ha" class="rm-btn rm-btn-secondary" data-i18n="action.sync_from_ha">Pull from HA</button>
+      </fieldset>
+      <div class="dialog-actions">
+        <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
+        <button type="submit" class="rm-btn rm-btn-primary" data-i18n="action.save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="scan-dialog" class="scan-dialog">
+    <form method="dialog">
+      <h3 data-i18n="scan.title">Scan Matter code</h3>
+      <p id="scan-hint" class="scan-hint" data-i18n="scan.hint_native">Point your camera at the Matter QR on the device or manual.</p>
+      <div id="scan-reader" class="scan-reader"></div>
+      <label class="scan-photo-label">
+        <span data-i18n="scan.photo">Or upload a photo</span>
+        <input type="file" id="scan-file-input" accept="image/*" capture="environment" />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="scan-stop" class="rm-btn rm-btn-secondary" data-i18n="action.cancel">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="category-dialog">
+    <form id="category-form" method="dialog">
+      <h3 id="category-dialog-title" data-i18n="categories.dialog_new">New category</h3>
+      <input type="hidden" id="category-id" />
+      <label><span data-i18n="code.name">Name</span> <input type="text" id="category-name" required /></label>
+      <div class="form-field form-field-color">
+        <span class="form-field-label" id="category-color-label" data-i18n="categories.color">Color</span>
+        <div class="category-color-control">
+          <span class="category-color-swatch" id="category-color-swatch" aria-hidden="true"></span>
+          <input type="color" id="category-color" value="#6366f1" aria-labelledby="category-color-label" />
+          <span class="category-color-hex" id="category-color-hex">#6366F1</span>
+        </div>
+      </div>
+      <label><span data-i18n="categories.icon">Icon</span>
+        <input type="hidden" id="category-icon" value="folder" />
+        <div id="category-icon-picker" class="category-icon-picker-host"></div>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
+        <button type="submit" class="rm-btn rm-btn-primary" data-i18n="action.save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
+  <script src="./static/brand/js/i18n.js?v=20260613"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=20260627"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=20260627"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=20260606"></script>
+  <script src="./static/brand/js/matter-scan.js?v=20260606"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=20260527"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=20260527"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=20260607"></script>
+  <script src="./static/brand/js/category-icons.js?v=20260601"></script>
+  <script src="./static/brand/js/vault-cards.js?v=20260628"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=20260527"></script>
+  <script src="./static/app.js?v=20260627"></script>
+</body>
+</html>

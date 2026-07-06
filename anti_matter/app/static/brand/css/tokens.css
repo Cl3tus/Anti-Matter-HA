@@ -1,0 +1,122 @@
+/**
+ * AntiMatter design tokens — light (default) and dark themes.
+ * Set theme: <html data-theme="light|dark">
+ */
+:root {
+  color-scheme: light;
+
+  /* Brand (constant) */
+  --rm-brand-start: #6366f1;
+  --rm-brand-end: #a855f7;
+  --rm-brand-gradient: linear-gradient(135deg, var(--rm-brand-start) 0%, var(--rm-brand-end) 100%);
+  --rm-brand-gradient-text: linear-gradient(135deg, #4f46e5 0%, #9333ea 45%, #c026d3 100%);
+
+  /* Typography */
+  --rm-font-ui: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --rm-font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --rm-text-xs: 0.75rem;
+  --rm-text-sm: 0.875rem;
+  --rm-text-base: 1rem;
+  --rm-text-lg: 1.125rem;
+  --rm-text-xl: 1.25rem;
+  --rm-display-sm: clamp(1.75rem, 3vw, 2.25rem);
+  --rm-display-md: clamp(2rem, 4vw, 2.75rem);
+  --rm-display-lg: clamp(2.4rem, 5vw, 3.5rem);
+
+  /* Spacing */
+  --rm-space-1: 0.25rem;
+  --rm-space-2: 0.5rem;
+  --rm-space-3: 0.75rem;
+  --rm-space-4: 1rem;
+  --rm-space-5: 1.25rem;
+  --rm-space-6: 1.5rem;
+  --rm-space-8: 2rem;
+  --rm-space-10: 2.5rem;
+  --rm-space-12: 3rem;
+  --rm-space-16: 4rem;
+  --rm-space-20: 5rem;
+
+  /* Radius */
+  --rm-radius-sm: 8px;
+  --rm-radius-md: 12px;
+  --rm-radius-lg: 16px;
+  --rm-radius-xl: 20px;
+  --rm-radius-2xl: 24px;
+  --rm-radius-pill: 9999px;
+
+  /* Layout */
+  --rm-container-max: 70rem;
+  --rm-blur: 20px;
+  --rm-blur-strong: 28px;
+
+  /* Light semantic */
+  --rm-bg: #f4f6fb;
+  --rm-bg-subtle: #eef1f8;
+  --rm-bg-mesh: radial-gradient(ellipse 90% 70% at 50% -20%, rgba(99, 102, 241, 0.14), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 0%, rgba(168, 85, 247, 0.08), transparent 50%),
+    var(--rm-bg);
+  --rm-surface: #ffffff;
+  --rm-surface-glass: rgba(255, 255, 255, 0.72);
+  --rm-surface-elevated: #ffffff;
+  --rm-border: rgba(148, 163, 184, 0.42);
+  --rm-border-silver: rgba(226, 232, 240, 0.95);
+  --rm-border-focus: rgba(99, 102, 241, 0.55);
+  --rm-text: #0f172a;
+  --rm-text-muted: #64748b;
+  --rm-text-inverse: #ffffff;
+  --rm-accent: #6366f1;
+  --rm-accent-hover: #4f46e5;
+  --rm-accent-soft: rgba(99, 102, 241, 0.1);
+  --rm-accent-2: #a855f7;
+  --rm-glow: rgba(99, 102, 241, 0.2);
+  --rm-glow-strong: rgba(99, 102, 241, 0.32);
+  --rm-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --rm-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.07);
+  --rm-shadow-lg: 0 16px 48px rgba(99, 102, 241, 0.1);
+  --rm-shadow-glass: 0 8px 32px rgba(99, 102, 241, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  --rm-nav-bg: rgba(255, 255, 255, 0.78);
+  --rm-code-bg: #f1f5f9;
+  --rm-danger: #dc2626;
+  --rm-success: #059669;
+  --rm-success-bg: rgba(5, 150, 105, 0.1);
+  --rm-danger-bg: rgba(220, 38, 38, 0.08);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --rm-bg: #0a0e16;
+  --rm-bg-subtle: #0f1522;
+  --rm-bg-mesh: radial-gradient(ellipse 80% 60% at 50% -15%, rgba(99, 102, 241, 0.2), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 10%, rgba(168, 85, 247, 0.12), transparent 50%),
+    var(--rm-bg);
+  --rm-surface: #141b2b;
+  --rm-surface-glass: rgba(20, 27, 43, 0.78);
+  --rm-surface-elevated: #1a2332;
+  --rm-border: rgba(148, 163, 184, 0.18);
+  --rm-border-silver: rgba(226, 232, 240, 0.1);
+  --rm-border-focus: rgba(129, 140, 248, 0.5);
+  --rm-text: #f1f5f9;
+  --rm-text-muted: #94a3b8;
+  --rm-text-inverse: #0f172a;
+  --rm-accent: #818cf8;
+  --rm-accent-hover: #a5b4fc;
+  --rm-accent-soft: rgba(99, 102, 241, 0.18);
+  --rm-accent-2: #c084fc;
+  --rm-glow: rgba(168, 85, 247, 0.22);
+  --rm-glow-strong: rgba(129, 140, 248, 0.35);
+  --rm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --rm-shadow-md: 0 8px 28px rgba(0, 0, 0, 0.4);
+  --rm-shadow-lg: 0 20px 56px rgba(0, 0, 0, 0.45);
+  --rm-shadow-glass: 0 12px 40px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  --rm-nav-bg: rgba(10, 14, 22, 0.82);
+  --rm-code-bg: #0f1522;
+  --rm-danger: #f87171;
+  --rm-success: #34d399;
+  --rm-success-bg: rgba(52, 211, 153, 0.12);
+  --rm-danger-bg: rgba(248, 113, 113, 0.12);
+}

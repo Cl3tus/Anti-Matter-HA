@@ -1,0 +1,517 @@
+"""Anti-Matter — Home Assistant add-on API and ingress UI."""
+
+from __future__ import annotations
+
+import io
+import logging
+import os
+from typing import Any, Optional
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
+from starlette.staticfiles import StaticFiles
+from starlette.types import Scope
+from pydantic import BaseModel
+
+from ha_client import HomeAssistantClient
+from models import (
+    Category,
+    CategoryCreate,
+    CategoryUpdate,
+    MatterCode,
+    MatterCodeCreate,
+    MatterCodeUpdate,
+    utc_now,
+)
+from options import backup_keep_count, norm_language, norm_theme, opt
+from matter_label import label_png_bytes
+from matter_qr_image import qr_png_bytes as matter_qr_png_bytes
+from matter_payload import normalize_fields, qr_encode_payload
+from homekit_label import card_svg_for_code
+from homekit_qr_image import qr_png_bytes as homekit_qr_png_bytes
+from homekit_payload import (
+    normalize_fields as normalize_homekit_fields,
+    pairing_digits as homekit_pairing_digits,
+    parse_setup_uri,
+    qr_encode_payload as homekit_qr_encode,
+)
+from zwave_label import card_svg_for_code as zwave_card_svg_for_code
+from zwave_qr_image import qr_png_bytes as zwave_qr_png_bytes
+from zwave_payload import (
+    extract_qr_string as zwave_extract_qr,
+    normalize_fields as normalize_zwave_fields,
+    qr_encode_payload as zwave_qr_encode,
+    _digits_only as zwave_digits_only,
+)
+from models import Vault
+from storage import VaultStorage
+
+logging.basicConfig(level=logging.INFO)
+_LOGGER = logging.getLogger("anti_matter")
+
+APP_VERSION = "1.0.0"
+PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+
+class IngressStaticFiles(StaticFiles):
+    """Ingress UI assets: avoid stale CSS/JS after add-on updates."""
+
+    async def get_response(self, path: str, scope: Scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            ctype = (response.headers.get("content-type") or "").lower()
+            if any(t in ctype for t in ("javascript", "css", "html", "json")):
+                response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return response
+
+
+storage = VaultStorage()
+ha = HomeAssistantClient()
+
+
+class ImportBody(BaseModel):
+    data: str
+    merge: bool = False
+
+
+def _find_category(vault, category_id: str) -> Category:
+    for cat in vault.categories:
+        if cat.id == category_id:
+            return cat
+    raise HTTPException(404, "Category not found")
+
+
+def _find_code(vault, code_id: str) -> MatterCode:
+    for code in vault.codes:
+        if code.id == code_id:
+            return code
+    raise HTTPException(404, "Code not found")
+
+
+def _normalize_manual_key(value: str) -> str:
+    digits = "".join(c for c in (value or "") if c.isdigit())
+    return digits if len(digits) == 11 else ""
+
+
+def _normalize_qr_key(value: str) -> str:
+    s = (value or "").strip().upper()
+    return s if s.startswith("MT:") else ""
+
+
+def _normalize_homekit_qr_key(value: str) -> str:
+    parsed = parse_setup_uri(str(value or ""))
+    return parsed["uri"].upper() if parsed else ""
+
+
+def _code_protocol(candidate: dict | MatterCode) -> str:
+    if isinstance(candidate, MatterCode):
+        data = candidate.model_dump(mode="json")
+    else:
+        data = candidate
+    ct = str(data.get("code_type") or "matter").strip().lower()
+    if ct in ("homekit", "zwave"):
+        return ct
+    qr = str(data.get("qr_payload") or "").strip().upper()
+    if qr.startswith("X-HM://"):
+        return "homekit"
+    if zwave_extract_qr(str(data.get("qr_payload") or "")):
+        return "zwave"
+    return "matter"
+
+
+def _find_duplicate_code(
+    vault: Vault, candidate: dict, exclude_id: str | None = None
+) -> MatterCode | None:
+    proto = _code_protocol(candidate)
+    if proto == "zwave":
+        dsk_key = zwave_digits_only(str(candidate.get("manual_code", "")))
+        qr_key = zwave_extract_qr(str(candidate.get("qr_payload", "")))
+        if len(dsk_key) != 40 and not qr_key:
+            return None
+        for existing in vault.codes:
+            if exclude_id and existing.id == exclude_id:
+                continue
+            if _code_protocol(existing) != "zwave":
+                continue
+            if dsk_key and dsk_key == zwave_digits_only(existing.manual_code):
+                return existing
+            if qr_key and qr_key == zwave_extract_qr(existing.qr_payload):
+                return existing
+        return None
+    if proto == "homekit":
+        pin = homekit_pairing_digits(str(candidate.get("manual_code", "")))
+        qr_key = _normalize_homekit_qr_key(str(candidate.get("qr_payload", "")))
+        if not pin and not qr_key:
+            return None
+        for existing in vault.codes:
+            if exclude_id and existing.id == exclude_id:
+                continue
+            if _code_protocol(existing) != "homekit":
+                continue
+            if pin and pin == homekit_pairing_digits(existing.manual_code):
+                return existing
+            if qr_key and qr_key == _normalize_homekit_qr_key(existing.qr_payload):
+                return existing
+        return None
+    man_key = _normalize_manual_key(str(candidate.get("manual_code", "")))
+    qr_key = _normalize_qr_key(str(candidate.get("qr_payload", "")))
+    if not man_key and not qr_key:
+        return None
+    for existing in vault.codes:
+        if exclude_id and existing.id == exclude_id:
+            continue
+        if _code_protocol(existing) not in ("matter",):
+            continue
+        if man_key and man_key == _normalize_manual_key(existing.manual_code):
+            return existing
+        if qr_key and qr_key == _normalize_qr_key(existing.qr_payload):
+            return existing
+    return None
+
+
+def run_backup() -> dict[str, Any]:
+    vault_path = storage.path
+    if not vault_path.exists():
+        return {"ok": False, "reason": "no_vault"}
+    dest = storage.backup_local_copy(keep_count=backup_keep_count())
+    return {"ok": True, "backup": dest.name}
+
+
+app = FastAPI(title="Anti-Matter", version=APP_VERSION)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+
+# --- Add-on info (resolved options for the UI) ---
+
+
+@app.get("/api/info")
+async def app_info():
+    return {
+        "version": APP_VERSION,
+        "language": norm_language(opt("interface", "language", "auto")),
+        "theme": norm_theme(opt("interface", "theme", "auto")),
+        "ha_available": ha.enabled,
+    }
+
+
+# --- Vault ---
+
+
+@app.get("/api/vault")
+async def get_vault():
+    return storage.load().model_dump()
+
+
+@app.get("/api/export")
+async def export_vault():
+    return Response(
+        content=storage.export_json(),
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="anti-matter-export.json"'
+        },
+    )
+
+
+@app.post("/api/import")
+async def import_vault(body: ImportBody):
+    try:
+        vault = storage.import_json(body.data, merge=body.merge)
+    except Exception as exc:
+        raise HTTPException(400, f"Invalid JSON: {exc}") from exc
+    return vault.model_dump()
+
+
+@app.post("/api/backup")
+async def trigger_backup():
+    return run_backup()
+
+
+# --- Categories ---
+
+
+@app.get("/api/categories")
+async def list_categories():
+    return storage.load().categories
+
+
+@app.post("/api/categories", status_code=201)
+async def create_category(body: CategoryCreate):
+    vault = storage.load()
+    category = Category(**body.model_dump())
+    vault.categories.append(category)
+    vault.categories.sort(key=lambda c: (c.sort_order, c.name.lower()))
+    storage.save(vault)
+    return category
+
+
+@app.put("/api/categories/{category_id}")
+async def update_category(category_id: str, body: CategoryUpdate):
+    vault = storage.load()
+    category = _find_category(vault, category_id)
+    for key, value in body.model_dump(exclude_unset=True).items():
+        setattr(category, key, value)
+    storage.save(vault)
+    return category
+
+
+@app.delete("/api/categories/{category_id}")
+async def delete_category(category_id: str):
+    from vault_merge import record_deletion
+
+    vault = storage.load()
+    _find_category(vault, category_id)
+    data = vault.model_dump(mode="json")
+    data["categories"] = [c for c in data["categories"] if c["id"] != category_id]
+    for code in data["codes"]:
+        if code.get("category_id") == category_id:
+            code["category_id"] = None
+    record_deletion(data, "categories", category_id)
+    storage.save(Vault.model_validate(data))
+    return {"ok": True}
+
+
+# --- Codes ---
+
+
+@app.get("/api/codes")
+async def list_codes(category_id: Optional[str] = Query(None)):
+    codes = storage.load().codes
+    if category_id:
+        codes = [c for c in codes if c.category_id == category_id]
+    return codes
+
+
+def _apply_code_fields(code: MatterCode) -> None:
+    if _code_protocol(code) == "zwave":
+        code.code_type = "zwave"
+        n = normalize_zwave_fields(code.manual_code or "", code.qr_payload or "")
+        code.manual_code = str(n["manual_code"])
+        code.qr_payload = str(n["qr_payload"])
+        code.zwave_pin = str(n.get("zwave_pin", ""))
+        return
+    if _code_protocol(code) == "homekit":
+        code.code_type = "homekit"
+        n = normalize_homekit_fields(
+            code.manual_code or "",
+            code.qr_payload or "",
+            homekit_category=code.homekit_category or "other",
+            homekit_flag=int(code.homekit_flag or 2),
+            setup_id=code.setup_id or "",
+        )
+        code.manual_code = str(n["manual_code"])
+        code.qr_payload = str(n["qr_payload"])
+        code.setup_id = str(n.get("setup_id", ""))
+        code.homekit_category = str(n.get("homekit_category", "other"))
+        code.homekit_flag = int(n.get("homekit_flag", 2))
+        return
+    code.code_type = "matter"
+    normalized = normalize_fields(code.manual_code or "", code.qr_payload or "")
+    code.manual_code = normalized["manual_code"]
+    code.qr_payload = normalized["qr_payload"]
+
+
+@app.post("/api/codes", status_code=201)
+async def create_code(body: MatterCodeCreate):
+    vault = storage.load()
+    data = body.model_dump()
+    ha_link = data.pop("ha_link", None)
+    code = MatterCode(**data)
+    _apply_code_fields(code)
+    if ha_link:
+        code.ha_link = ha_link
+    if code.category_id:
+        _find_category(vault, code.category_id)
+    dup = _find_duplicate_code(vault, code.model_dump(mode="json"))
+    if dup:
+        raise HTTPException(
+            409,
+            detail=f"This code is already saved as “{dup.name}”",
+        )
+    vault.codes.append(code)
+    storage.save(vault)
+    return code
+
+
+@app.put("/api/codes/{code_id}")
+async def update_code(code_id: str, body: MatterCodeUpdate):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    updates = body.model_dump(exclude_unset=True)
+    if "category_id" in updates and updates["category_id"]:
+        _find_category(vault, updates["category_id"])
+    ha_link = updates.pop("ha_link", None)
+    for key, value in updates.items():
+        setattr(code, key, value)
+    if ha_link is not None:
+        code.ha_link = ha_link
+    if "manual_code" in updates or "qr_payload" in updates:
+        _apply_code_fields(code)
+    code.updated_at = utc_now()
+    dup = _find_duplicate_code(vault, code.model_dump(mode="json"), exclude_id=code_id)
+    if dup:
+        raise HTTPException(
+            409,
+            detail=f"This code is already saved as “{dup.name}”",
+        )
+    storage.save(vault)
+    return code
+
+
+@app.delete("/api/codes/{code_id}")
+async def delete_code(code_id: str):
+    from vault_merge import record_deletion
+
+    vault = storage.load()
+    _find_code(vault, code_id)
+    data = vault.model_dump(mode="json")
+    data["codes"] = [c for c in data["codes"] if c["id"] != code_id]
+    record_deletion(data, "codes", code_id)
+    storage.save(Vault.model_validate(data))
+    return {"ok": True}
+
+
+@app.get("/api/codes/{code_id}/qr.png")
+async def code_qr_png(code_id: str):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    proto = _code_protocol(code)
+    if proto == "homekit":
+        payload = homekit_qr_encode(code.qr_payload or "", code.manual_code or "")
+        if not payload:
+            raise HTTPException(400, "No HomeKit setup URI stored")
+        return StreamingResponse(
+            io.BytesIO(homekit_qr_png_bytes(payload)),
+            media_type="image/png",
+        )
+    if proto == "zwave":
+        payload = zwave_qr_encode(code.qr_payload or "")
+        if not payload:
+            raise HTTPException(400, "No Z-Wave SmartStart QR string stored")
+        return StreamingResponse(
+            io.BytesIO(zwave_qr_png_bytes(payload)),
+            media_type="image/png",
+        )
+    payload = qr_encode_payload(code.qr_payload or "", code.manual_code or "")
+    if not payload:
+        raise HTTPException(400, "No MT: QR payload stored")
+    return StreamingResponse(
+        io.BytesIO(matter_qr_png_bytes(payload)),
+        media_type="image/png",
+    )
+
+
+@app.get("/api/codes/{code_id}/label.png")
+async def code_label_png(code_id: str):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    proto = _code_protocol(code)
+    if proto in ("homekit", "zwave"):
+        raise HTTPException(400, "Use card.svg for HomeKit or Z-Wave labels")
+    try:
+        png = label_png_bytes(code.manual_code or "", code.qr_payload or "")
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    if not png:
+        raise HTTPException(404, "No Matter code to render")
+    return StreamingResponse(io.BytesIO(png), media_type="image/png")
+
+
+@app.get("/api/codes/{code_id}/card.svg")
+async def code_card_svg(code_id: str):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    proto = _code_protocol(code)
+    if proto not in ("homekit", "zwave"):
+        raise HTTPException(400, "card.svg is only for HomeKit or Z-Wave codes")
+    try:
+        if proto == "homekit":
+            svg = card_svg_for_code(code.model_dump(mode="json"))
+        else:
+            svg = zwave_card_svg_for_code(code.model_dump(mode="json"))
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    return Response(content=svg, media_type="image/svg+xml; charset=utf-8")
+
+
+# --- Home Assistant ---
+
+
+@app.get("/api/ha/entities")
+async def ha_entities(domain: Optional[str] = Query(None)):
+    return await ha.list_entities(domain)
+
+
+@app.get("/api/ha/areas")
+async def ha_areas():
+    return await ha.list_areas()
+
+
+@app.get("/api/ha/attribute")
+async def ha_attribute(entity_id: str, attribute: str):
+    value = await ha.get_attribute(entity_id, attribute)
+    if value is None:
+        raise HTTPException(404, "Entity or attribute not found")
+    return {"entity_id": entity_id, "attribute": attribute, "value": value}
+
+
+@app.post("/api/codes/{code_id}/sync-from-ha")
+async def sync_code_from_ha(code_id: str):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    link = code.ha_link
+    if not link.entity_id or not link.attribute:
+        raise HTTPException(400, "No Home Assistant entity/attribute linked")
+    value = await ha.get_attribute(link.entity_id, link.attribute)
+    if value is None:
+        raise HTTPException(404, "Could not read attribute from Home Assistant")
+    if isinstance(value, str):
+        upper = value.upper()
+        if upper.startswith("MT:"):
+            code.qr_payload = value
+        elif upper.startswith("X-HM://"):
+            code.qr_payload = value
+            code.code_type = "homekit"
+            _apply_code_fields(code)
+        elif zwave_extract_qr(value):
+            code.qr_payload = value
+            code.code_type = "zwave"
+            _apply_code_fields(code)
+        else:
+            code.manual_code = value
+    code.updated_at = utc_now()
+    storage.save(vault)
+    return code
+
+
+# --- Static UI (relative paths for ingress) ---
+
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", IngressStaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/")
+async def index():
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.isfile(index_path):
+        return FileResponse(index_path)
+    return JSONResponse({"service": "anti-matter", "version": APP_VERSION})
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=PORT,
+        log_level="info",
+        access_log=True,
+    )

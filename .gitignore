@@ -1,0 +1,8 @@
+.claude/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.tmp
+anti_matter.json
+backups/

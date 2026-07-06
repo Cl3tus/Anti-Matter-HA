@@ -1,0 +1,21 @@
+configuration:
+  interface:
+    name: Interface
+    fields:
+      language:
+        name: Taal
+        description: >-
+          Taal van de app. "Auto" volgt de taal van je Home Assistant, daarna je
+          browser.
+      theme:
+        name: Thema
+        description: >-
+          Kleurthema. "Auto" volgt de licht/donker-instelling van je Home Assistant.
+  backup:
+    name: Back-up
+    fields:
+      keep_count:
+        name: Aantal back-ups bewaren
+        description: >-
+          Hoeveel back-upkopieën met tijdstempel bewaard blijven in de add-on
+          config-map (bereikbaar via SAMBA). Oudere worden automatisch opgeruimd.

@@ -1,0 +1,21 @@
+configuration:
+  interface:
+    name: Interface
+    fields:
+      language:
+        name: Language
+        description: >-
+          Interface language for the app. "Auto" follows your Home Assistant
+          language, then your browser.
+      theme:
+        name: Theme
+        description: >-
+          Colour theme. "Auto" follows your Home Assistant light/dark setting.
+  backup:
+    name: Backup
+    fields:
+      keep_count:
+        name: Backups to keep
+        description: >-
+          How many timestamped backup copies to keep in the add-on config folder
+          (reachable over SAMBA). Older ones are pruned automatically.
