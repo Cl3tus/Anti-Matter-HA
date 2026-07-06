@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" fill="none" role="img" aria-label="AntiMatter">
   <defs>
     <linearGradient id="g" x1="12" y1="8" x2="76" y2="80" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#a855f7"/>
+      <stop stop-color="#ffb300"/>
+      <stop offset="1" stop-color="#ff8f00"/>
     </linearGradient>
   </defs>
   <rect width="88" height="88" rx="22" fill="url(#g)"/>

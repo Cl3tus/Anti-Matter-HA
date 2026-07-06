@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- Restyle the whole UI to match E-Ink Studio / Home Assistant: neutral greys with an
+  amber accent, in both light and dark themes.
+- Switch typography to IBM Plex Sans / Mono, bundled locally (no Google Fonts CDN).
+- Recolour the app logo to amber.
+
 ## 1.0.0
 
 Initial release. A local, cloud-free vault for Matter / HomeKit / Z-Wave pairing codes,
