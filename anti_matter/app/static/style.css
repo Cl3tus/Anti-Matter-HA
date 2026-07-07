@@ -367,37 +367,24 @@
   font-size: var(--rm-text-xs);
 }
 
-/* Category select + inline "add category" button in the code dialog — same
-   height as the select, plus glyph centered (overrides the fixed 32x32 sidebar size) */
+/* Category multi-select + inline "add category" button in the code dialog —
+   reuses the toolbar's .filter-dropdown (toggle button + checkbox panel)
+   pattern, just stretched to fill the row instead of the toolbar's compact width. */
 .category-select-row {
   display: flex;
   gap: var(--rm-space-2);
 }
-.category-checks {
+.code-category-dropdown {
   flex: 1;
-  height: 2.3rem;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: var(--rm-space-3);
-  padding: 0 var(--rm-space-2);
-  border: 1px solid var(--rm-border);
-  border-radius: var(--rm-radius-sm);
-  overflow-x: auto;
-  overflow-y: hidden;
-  flex-wrap: nowrap;
-  white-space: nowrap;
+  min-width: 0;
 }
-.category-check {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--rm-space-1);
-  flex-shrink: 0;
-  font-size: var(--rm-text-sm);
-  cursor: pointer;
+.code-category-dropdown .filter-dropdown-toggle {
+  width: 100%;
+  max-width: none;
+  text-align: left;
 }
-.category-check input {
-  margin: 0;
+.code-category-dropdown .filter-dropdown-panel {
+  min-width: 100%;
 }
 .category-select-row .btn.icon {
   width: 2.3rem;
@@ -947,6 +934,31 @@ dialog label {
   user-select: all;
 }
 
+.category-color-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-2);
+  margin-top: var(--rm-space-2);
+}
+
+.category-color-preset {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--rm-radius-sm);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.category-color-preset:hover {
+  transform: translateY(-1px);
+}
+
+.category-color-preset.is-active {
+  border-color: var(--rm-text);
+}
+
 dialog input,
 dialog textarea,
 dialog select {
@@ -1038,13 +1050,46 @@ dialog h3 {
 }
 
 .scan-photo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rm-space-2);
   font-size: var(--rm-text-sm);
+  color: var(--rm-text-muted);
 }
 
+/* Style just the button portion of the native file input as a pill matching
+   .rm-btn-secondary — keeps the input itself fully native/clickable (a hidden
+   input behind a styled label was tried before and didn't reliably receive
+   clicks on some browsers), but drops its default bordered "frame" look. */
 .scan-photo-label input[type="file"] {
-  margin-top: var(--rm-space-2);
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: auto;
   font-size: var(--rm-text-xs);
-  width: 100%;
+  color: var(--rm-text-muted);
+}
+
+.scan-photo-label input[type="file"]::file-selector-button,
+.scan-photo-label input[type="file"]::-webkit-file-upload-button {
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--rm-text-sm);
+  padding: 0.7rem 1.35rem;
+  border-radius: var(--rm-radius-pill);
+  border: 1px solid var(--rm-border);
+  background: var(--rm-surface);
+  color: var(--rm-text);
+  box-shadow: var(--rm-shadow-sm);
+  cursor: pointer;
+  margin-right: var(--rm-space-2);
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.scan-photo-label input[type="file"]::file-selector-button:hover,
+.scan-photo-label input[type="file"]::-webkit-file-upload-button:hover {
+  border-color: var(--rm-border-focus);
+  background: var(--rm-surface-elevated);
 }
 
 .scan-inline-row {

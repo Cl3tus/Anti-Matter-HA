@@ -683,8 +683,10 @@ function openMtDecodeDialog(code) {
 
 // Z-Wave SmartStart decode: DSK/PIN plus, when a full QR payload is available (a bare
 // DSK alone doesn't carry this), manufacturer/product/device-class metadata from the
-// QR's TLV tail. No official-name lookup like Matter's DCL — Z-Wave has no public
-// equivalent registry — so this is purely a local parse of the payload's own fields.
+// QR's TLV tail. Manufacturer/product name (like Matter's DCL) comes from a local
+// snapshot of the zwave-js project's own device config database — Z-Wave has no live
+// public registry API to query, so /api/zwave/device/... looks it up server-side
+// against a bundled JSON index instead of a network call per lookup.
 function parseZwavePayload(qrPayload, manualCode) {
   const ZW = window.AntiMatterZWavePayload;
   if (!ZW) return null;
@@ -719,7 +721,7 @@ function zwaveCheckRow(label, checked) {
   return `<label><input type="checkbox" disabled ${checked ? "checked" : ""} /> ${escapeHtml(label)}</label>`;
 }
 
-function renderZwaveDecodeInto(box, parsed) {
+async function renderZwaveDecodeInto(box, parsed, opts = {}) {
   if (!box) return;
   if (!parsed) {
     box.innerHTML = `<p class="form-hint">${escapeHtml(t("code.decode_zwave_empty"))}</p>`;
@@ -729,16 +731,16 @@ function renderZwaveDecodeInto(box, parsed) {
   const sec = parsed.requestedSecurityClasses;
   const proto = meta.supportedProtocols;
 
-  let html = "";
+  let headHtml = "";
   if (parsed.version != null) {
     const label = parsed.smartStart ? t("code.decode_zwave_smartstart") : t("code.decode_zwave_s2");
-    html +=
+    headHtml +=
       `<table class="mt-decode-table">` +
       `<tr><th>${escapeHtml(t("code.decode_zwave_version"))}</th><td>${escapeHtml(label)} (${parsed.version})</td></tr>` +
       `</table>`;
   }
   if (sec) {
-    html +=
+    headHtml +=
       `<p class="form-field-label">${escapeHtml(t("code.decode_zwave_security_classes"))}</p>` +
       `<div class="connectivity-options zwave-decode-checks">` +
       zwaveCheckRow(t("code.decode_zwave_s2_access_control"), sec.s2AccessControl) +
@@ -748,7 +750,7 @@ function renderZwaveDecodeInto(box, parsed) {
       `</div>`;
   }
   if (proto) {
-    html +=
+    headHtml +=
       `<p class="form-field-label">${escapeHtml(t("code.decode_zwave_protocols"))}</p>` +
       `<div class="connectivity-options zwave-decode-checks">` +
       zwaveCheckRow(t("code.decode_zwave_protocol_zwave"), proto.zwave) +
@@ -760,27 +762,53 @@ function renderZwaveDecodeInto(box, parsed) {
   if (meta.genericDeviceClass != null) rows.push([t("code.decode_zwave_generic_class"), decVal(meta.genericDeviceClass)]);
   if (meta.specificDeviceClass != null) rows.push([t("code.decode_zwave_specific_class"), decVal(meta.specificDeviceClass)]);
   if (meta.installerIconType != null) rows.push([t("code.decode_zwave_icon"), decVal(meta.installerIconType)]);
-  if (meta.manufacturerId != null) rows.push([t("code.decode_zwave_mfg"), decVal(meta.manufacturerId)]);
+  let mfgIdx = -1;
+  let productIdx = -1;
+  if (meta.manufacturerId != null) {
+    mfgIdx = rows.length;
+    rows.push([t("code.decode_zwave_mfg"), decVal(meta.manufacturerId)]);
+  }
   if (meta.productType != null) rows.push([t("code.decode_zwave_product_type"), decVal(meta.productType)]);
-  if (meta.productId != null) rows.push([t("code.decode_zwave_product_id"), decVal(meta.productId)]);
+  if (meta.productId != null) {
+    productIdx = rows.length;
+    rows.push([t("code.decode_zwave_product_id"), decVal(meta.productId)]);
+  }
   if (meta.applicationVersion) {
     const [major, minor] = meta.applicationVersion.split(".");
     rows.push([t("code.decode_zwave_app_version_major"), major ?? "—"]);
     rows.push([t("code.decode_zwave_app_version_minor"), minor ?? "—"]);
   }
   rows.push([t("code.decode_zwave_pin"), parsed.pin || "—"]);
-  html +=
+
+  const paint = () =>
+    headHtml +
     `<table class="mt-decode-table">` +
     rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
     `</table>`;
+  box.innerHTML = paint();
 
-  box.innerHTML = html;
+  if (meta.manufacturerId == null || meta.productType == null || meta.productId == null) return;
+  const device = await lookupOfficialName(
+    `/zwave/device/${meta.manufacturerId}/${meta.productType}/${meta.productId}`
+  );
+  if (!device) return;
+  if (mfgIdx >= 0 && device.manufacturer) rows[mfgIdx][1] = `${rows[mfgIdx][1]} — ${device.manufacturer}`;
+  if (productIdx >= 0 && device.label) {
+    const productName = device.description ? `${device.label} (${device.description})` : device.label;
+    rows[productIdx][1] = `${rows[productIdx][1]} — ${productName}`;
+  }
+  if (typeof opts.onNames === "function") {
+    opts.onNames(device.manufacturer || null, device.label || null);
+  }
+  box.innerHTML = paint();
 }
 
 function renderZwaveDecode() {
   const box = document.getElementById("code-zwave-decode-result");
   if (!box) return;
-  renderZwaveDecodeInto(box, parseZwavePayload(trimVal("code-zwave-qr"), trimVal("code-zwave-dsk")));
+  renderZwaveDecodeInto(box, parseZwavePayload(trimVal("code-zwave-qr"), trimVal("code-zwave-dsk")), {
+    onNames: applyDecodedDeviceNames,
+  });
 }
 
 function openZwaveDecodeDialog(code) {
@@ -905,18 +933,18 @@ function render() {
 }
 
 function fillCategoryChecks(selectedIds) {
-  const container = document.getElementById("code-category-checks");
-  if (!container) return;
-  const keep = selectedIds || getCheckedCategoryIds(container);
+  const panel = document.getElementById("code-category-checks");
+  const toggle = document.getElementById("code-category-toggle");
+  if (!panel) return;
+  const keep = selectedIds || getCheckedCategoryIds(panel);
   if (window.AntiMatterVaultCards) {
-    window.AntiMatterVaultCards.fillCategoryChecks(container, vault, keep);
+    window.AntiMatterVaultCards.fillCategoryChecks(panel, toggle, vault, keep);
     return;
   }
   const keepSet = new Set(keep);
-  container.innerHTML = "";
+  panel.innerHTML = "";
   for (const cat of vault.categories) {
     const label = document.createElement("label");
-    label.className = "category-check";
     const input = document.createElement("input");
     input.type = "checkbox";
     input.value = cat.id;
@@ -925,7 +953,7 @@ function fillCategoryChecks(selectedIds) {
     span.textContent = capitalizeFirst(cat.name);
     label.appendChild(input);
     label.appendChild(span);
-    container.appendChild(label);
+    panel.appendChild(label);
   }
 }
 
@@ -988,6 +1016,20 @@ function syncCodeTypeFields() {
   document.getElementById("code-fields-matter")?.classList.toggle("hidden", type !== "matter");
   document.getElementById("code-fields-homekit")?.classList.toggle("hidden", type !== "homekit");
   document.getElementById("code-fields-zwave")?.classList.toggle("hidden", type !== "zwave");
+}
+
+// Only wired to the protocol dropdown's own onchange (not called when a dialog opens
+// for an existing code) — a Z-Wave code is Z-Wave connectivity by definition, but this
+// must never override a value the user already saved by unchecking it. Matter/HomeKit
+// don't get the same treatment: those protocols don't imply one specific radio (Matter
+// devices are commonly WiFi-only, HomeKit ones commonly WiFi too), so guessing would
+// just be wrong as often as right.
+function onCodeTypeChanged() {
+  syncCodeTypeFields();
+  if (document.getElementById("code-type")?.value === "zwave") {
+    const cb = document.getElementById("code-conn-zwave");
+    if (cb) cb.checked = true;
+  }
 }
 
 function setVal(id, value) {
@@ -1371,7 +1413,10 @@ async function saveCategory(e) {
   if (created && categoryCreateTargetSelectId) {
     const container = document.getElementById(categoryCreateTargetSelectId);
     const input = container?.querySelector(`input[value="${created.id}"]`);
-    if (input) input.checked = true;
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event("change"));
+    }
   }
   categoryCreateTargetSelectId = null;
 }
@@ -1423,7 +1468,7 @@ async function loadAreas() {
 function bindUi() {
   window.AntiMatterCategoryColor?.bind();
   ensureCategoryIconPicker();
-  document.getElementById("code-type").onchange = syncCodeTypeFields;
+  document.getElementById("code-type").onchange = onCodeTypeChanged;
   document
     .getElementById("code-homekit-uri")
     ?.addEventListener("input", syncHomeKitDerived);

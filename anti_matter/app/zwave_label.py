@@ -113,7 +113,7 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <svg viewBox="0 0 {CARD_W} {card_h}" xmlns="http://www.w3.org/2000/svg">
   <title>Z-Wave SmartStart</title>
-  <rect width="{CARD_W}" height="{card_h}" rx="16" fill="white"/>
+  <rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>
   <g transform="translate({logo_x},{logo_y})">{logo_svg}</g>
   {qr_svg}
   {pin_line}

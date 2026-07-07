@@ -236,22 +236,36 @@
     return c ? capitalizeFirst(c.name) : none;
   }
 
-  function fillCategoryChecks(container, vault, selectedIds) {
+  function fillCategoryChecks(panel, toggle, vault, selectedIds) {
     const selected = new Set(selectedIds || []);
-    container.innerHTML = "";
+    const baseLabel = global.AntiMatterI18n?.t?.("code.category") ?? "Category";
+    const noneLabel = global.AntiMatterI18n?.t?.("code.category_none") ?? "No category";
+    const updateToggle = () => {
+      if (!toggle) return;
+      const count = panel.querySelectorAll("input[type=checkbox]:checked").length;
+      toggle.textContent = count ? `${baseLabel} (${count})` : noneLabel;
+    };
+    panel.innerHTML = "";
+    if (!vault.categories.length) {
+      const hint = global.AntiMatterI18n?.t?.("filter.no_options") ?? "No options";
+      panel.innerHTML = `<p class="form-hint">${hint}</p>`;
+      updateToggle();
+      return;
+    }
     for (const cat of vault.categories) {
       const label = document.createElement("label");
-      label.className = "category-check";
       const input = document.createElement("input");
       input.type = "checkbox";
       input.value = cat.id;
       input.checked = selected.has(cat.id);
+      input.onchange = updateToggle;
       const span = document.createElement("span");
       span.textContent = capitalizeFirst(cat.name);
       label.appendChild(input);
       label.appendChild(span);
-      container.appendChild(label);
+      panel.appendChild(label);
     }
+    updateToggle();
   }
 
   global.AntiMatterVaultCards = {

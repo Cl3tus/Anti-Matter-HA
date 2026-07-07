@@ -107,7 +107,7 @@ def compose_card_svg(
   <defs>
     {qr_sym}
   </defs>
-  <rect width="{CARD_W}" height="{card_h}" rx="16" fill="white"/>
+  <rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>
   <g transform="translate({logo_x},{logo_y})">{logo_svg}</g>
   <use href="#qrCode" x="{qr_x}" y="{qr_y}" width="{QR_SIZE}" height="{QR_SIZE}"/>
   <text x="{CARD_W / 2}" y="{code_y + 24}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="black">{pairing_display}</text>

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.28
+
+- The category field in the New/Edit dialog is now a dropdown with checkboxes (like
+  the toolbar's Vendor/Product/Type filters) instead of a horizontally-scrolling row —
+  cleaner with a lot of categories, and scrolls vertically inside the panel instead.
+- HomeKit and Z-Wave pairing cards have their thin black border back, matching Matter's.
+- Upload photo (New/Edit dialog) is now a pill-shaped button instead of a plain native
+  file input with its default boxy frame.
+- Z-Wave decode now looks up the official manufacturer/product name (like Matter's CSA
+  DCL lookup) against a local snapshot of the zwave-js project's own device config
+  database — the same data devices.zwave-js.io itself is generated from. Z-Wave has no
+  live public registry API to query, so this ships as a bundled index refreshed via
+  `tools/build_zwave_device_db.py` rather than a network call per lookup.
+- Selecting Z-Wave as the protocol now also turns on the Z-Wave connectivity checkbox
+  automatically (a Z-Wave code is Z-Wave connectivity by definition) — doesn't touch it
+  again once you've saved a code, so unchecking it by hand still sticks.
+- The category color picker now shows 12 preset swatches to pick from, alongside the
+  native color picker.
+
 ## 1.0.27
 
 - A code can now belong to **multiple categories**. The category field in the New/Edit

@@ -52,6 +52,7 @@ from zwave_payload import (
     qr_encode_payload as zwave_qr_encode,
     _digits_only as zwave_digits_only,
 )
+from zwave_device_db import lookup_device as lookup_zwave_device
 from models import Vault
 from storage import VaultStorage
 
@@ -62,7 +63,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.27"
+APP_VERSION = "1.0.28"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -783,6 +784,14 @@ async def matter_model_info(vendor_id: int, product_id: int):
     info = await fetch_model_info(vendor_id, product_id)
     if info is None:
         raise HTTPException(404, "No official product record found")
+    return info
+
+
+@app.get("/api/zwave/device/{manufacturer_id}/{product_type}/{product_id}")
+async def zwave_device_info(manufacturer_id: int, product_type: int, product_id: int):
+    info = lookup_zwave_device(manufacturer_id, product_type, product_id)
+    if info is None:
+        raise HTTPException(404, "No known device record found")
     return info
 
 
