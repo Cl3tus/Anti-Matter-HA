@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.24
+
+- **HomeKit and Z-Wave cards redesigned to match Matter's**: same white card, thin black
+  border, size, and layout (wordmark logo on top, QR in the middle, code printed below).
+  Previously HomeKit used a thick black Apple-style frame with a big digit-box display,
+  and Z-Wave used a dark navy card — both looked out of place next to Matter's cards.
+  Uses the official HomeKit and Z-Wave wordmark/icon logos, bundled the same way as
+  Matter's own logo (falls back to plain text if the asset is ever missing).
+
 ## 1.0.23
 
 - **Z-Wave decode expanded**: Version (S2/SmartStart), Security classes (S2 Access

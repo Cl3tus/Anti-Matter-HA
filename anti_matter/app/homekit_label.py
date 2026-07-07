@@ -1,12 +1,15 @@
-"""HomeKit pairing card SVG (layout from SimonGolms/homekit-code, MIT)."""
+"""HomeKit pairing card SVG — same minimal layout as the Matter label (logo, QR,
+code, thin border) for a consistent look across protocols."""
 
 from __future__ import annotations
 
+import base64
 import io
+import os
 import re
-from pathlib import Path
 
 import qrcode
+from PIL import Image
 from qrcode.image.svg import SvgPathImage
 
 from homekit_payload import (
@@ -16,17 +19,15 @@ from homekit_payload import (
     qr_encode_payload,
 )
 
-def _load_digit_symbols() -> str:
-    here = Path(__file__).resolve().parent
-    candidates = [
-        here / "static" / "brand" / "homekit" / "digit-symbols.inc.xml",
-    ]
-    for parent in here.parents:
-        candidates.append(parent / "brand" / "homekit" / "digit-symbols.inc.xml")
-    for path in candidates:
-        if path.is_file():
-            return path.read_text(encoding="utf-8")
-    raise FileNotFoundError("HomeKit digit symbols XML not found")
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+WORDMARK = os.path.join(STATIC_DIR, "assets", "homekit_logo.png")
+
+CARD_W = 288
+PAD_X = 12
+PAD_Y = 10
+GAP = 8
+QR_SIZE = 260
+CODE_H = 34
 
 
 def _qr_symbol_fragment(setup_uri: str) -> str:
@@ -49,12 +50,34 @@ def _qr_symbol_fragment(setup_uri: str) -> str:
     return f'<symbol id="qrCode"{attrs}>{body}</symbol>'
 
 
+def _logo_block(width: int) -> tuple[str, int]:
+    """Base64-embedded <image> for the wordmark, sized to `width` — returns the
+    SVG fragment and its rendered height. Falls back to a plain text wordmark
+    if the asset is missing, same as matter_label.py's own fallback."""
+    if os.path.isfile(WORDMARK):
+        with Image.open(WORDMARK) as img:
+            ratio = img.height / img.width
+            height = round(width * ratio)
+        with open(WORDMARK, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("ascii")
+        return (
+            f'<image href="data:image/png;base64,{b64}" x="0" y="0" '
+            f'width="{width}" height="{height}"/>',
+            height,
+        )
+    height = 40
+    return (
+        f'<text x="0" y="{height - 8}" font-family="system-ui,sans-serif" '
+        f'font-size="28" font-weight="700" fill="#000000">HomeKit</text>',
+        height,
+    )
+
+
 def compose_card_svg(
     *,
     pairing_code: str,
     setup_uri: str,
 ) -> str:
-    """Full HomeKit label SVG (400×540), matching homekit-code qrcode output."""
     digits = pairing_digits(pairing_code)
     if len(digits) != 8:
         decoded = decode_pairing_from_uri(setup_uri)
@@ -67,32 +90,28 @@ def compose_card_svg(
         raise ValueError("Invalid HomeKit setup URI")
 
     qr_sym = _qr_symbol_fragment(uri)
-    digit_defs = _load_digit_symbols()
-
-    digit_uses = "\n".join(
-        f'  <use href="#{digits[i]}" height="48" width="34" x="{174 + 54 * (i % 4)}" y="{30 if i < 4 else 102}"/>'
-        for i in range(8)
-    )
-
     pairing_display = format_pairing_display(digits)
 
-    # +40 over the original 540 for the "HomeKit" wordmark under the icon and the
-    # xxx-xx-xxx pairing code printed below the QR (previously icon-only, digits-only).
+    logo_w = QR_SIZE
+    logo_svg, logo_h = _logo_block(logo_w)
+    logo_x = (CARD_W - logo_w) // 2
+    logo_y = PAD_Y
+    qr_x = (CARD_W - QR_SIZE) // 2
+    qr_y = logo_y + logo_h + GAP
+    code_y = qr_y + QR_SIZE + GAP
+    card_h = code_y + CODE_H
+
     return f"""<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg viewBox="0 0 400 580" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 {CARD_W} {card_h}" xmlns="http://www.w3.org/2000/svg">
   <title>HomeKit QR Code</title>
   <defs>
-    {digit_defs}
     {qr_sym}
   </defs>
-  <rect fill="#000000" height="580" rx="20" width="400"/>
-  <rect fill="#ffffff" height="570" rx="15" width="390" x="5" y="5"/>
-  <use href="#homekit" height="120" width="130" x="24" y="30"/>
-  <text x="24" y="165" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#000000">HomeKit</text>
-{digit_uses}
-  <use href="#qrCode" height="340" width="340" x="30" y="175"/>
-  <text x="200" y="545" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="#000000">{pairing_display}</text>
+  <rect width="{CARD_W}" height="{card_h}" rx="16" fill="white"/>
+  <rect x="2" y="2" width="{CARD_W - 4}" height="{card_h - 4}" rx="14" fill="none" stroke="black" stroke-width="2"/>
+  <g transform="translate({logo_x},{logo_y})">{logo_svg}</g>
+  <use href="#qrCode" x="{qr_x}" y="{qr_y}" width="{QR_SIZE}" height="{QR_SIZE}"/>
+  <text x="{CARD_W / 2}" y="{code_y + 24}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="black">{pairing_display}</text>
 </svg>"""
 
 
