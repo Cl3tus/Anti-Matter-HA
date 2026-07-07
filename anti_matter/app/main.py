@@ -62,7 +62,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.18"
+APP_VERSION = "1.0.19"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -784,14 +784,12 @@ async def matter_model_info(vendor_id: int, product_id: int):
     return info
 
 
-@app.get("/api/ha/device/{entity_id}")
-async def ha_device(entity_id: str):
-    """Resolve the entity behind an ha_link to its HA device registry id, so the
-    UI can link straight to that device's page in Home Assistant."""
-    device_id = await ha.get_device_id(entity_id)
-    if not device_id:
-        raise HTTPException(404, "No device found for that entity")
-    return {"device_id": device_id}
+@app.get("/api/ha/devices")
+async def ha_devices():
+    """[{id, name}] for every HA device — populates the device-picker in the code
+    dialog so ha_link stores a device_id directly (linking to its own HA page),
+    with no entity_id involved."""
+    return await ha.list_devices()
 
 
 # --- Static UI (relative paths for ingress) ---
@@ -804,7 +802,14 @@ if os.path.isdir(STATIC_DIR):
 async def index():
     index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.isfile(index_path):
-        return FileResponse(index_path)
+        # The entry page itself was the one thing NOT forced to revalidate (only
+        # /static/* got that treatment) — a browser-cached stale index.html keeps
+        # pointing at old ?v=... asset URLs forever, which looks like "the add-on
+        # never picks up updates" even though the new files are already on disk.
+        return FileResponse(
+            index_path,
+            headers={"Cache-Control": "no-store"},
+        )
     return JSONResponse({"service": "anti-matter", "version": APP_VERSION})
 
 

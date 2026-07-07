@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
-import re
 from typing import Any, Optional
 
 import httpx
 
 SUPERVISOR_CORE = "http://supervisor/core/api"
-
-# domain.object_id — HA's own entity_id grammar. Anything else is refused before
-# it ever reaches the Jinja template below.
-_ENTITY_ID_RE = re.compile(r"^[a-z0-9_]+\.[a-z0-9_]+$")
 
 
 class HomeAssistantClient:
@@ -62,21 +58,43 @@ class HomeAssistantClient:
             ids = [e for e in ids if e.startswith(prefix)]
         return sorted(ids)
 
-    async def get_device_id(self, entity_id: str) -> Optional[str]:
-        """Resolve the HA device registry id behind an entity, via the template
-        API's `device_id()` function (no REST device-registry endpoint exists)."""
-        if not self.enabled or not _ENTITY_ID_RE.match(entity_id or ""):
-            return None
+    async def list_devices(self) -> list[dict[str, str]]:
+        """[{id, name}] for every HA device with at least one entity — via the
+        template API's `device_id()`/`device_attr()` functions (no REST
+        device-registry endpoint exists). Lets the UI link to a device's own page
+        (`/config/devices/device/<id>`) without ever needing an entity_id itself."""
+        if not self.enabled:
+            return []
         url = f"{SUPERVISOR_CORE}/template"
-        body = {"template": f"{{{{ device_id('{entity_id}') | default('', true) }}}}"}
+        template = (
+            "{% set ids = states | map(attr='entity_id') | map('device_id')"
+            " | reject('none') | unique | list %}"
+            "{% set ns = namespace(items=[]) %}"
+            "{% for id in ids %}"
+            "{% set ns.items = ns.items + [{'id': id,"
+            " 'name': device_attr(id, 'name_by_user') or device_attr(id, 'name') or id}] %}"
+            "{% endfor %}"
+            "{{ ns.items | to_json }}"
+        )
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.post(url, headers=self._headers(), json=body)
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                resp = await client.post(url, headers=self._headers(), json={"template": template})
                 resp.raise_for_status()
-                device_id = resp.text.strip()
+                raw = resp.text.strip()
         except httpx.HTTPError:
-            return None
-        return device_id or None
+            return []
+        try:
+            devices = json.loads(raw)
+        except (ValueError, TypeError):
+            return []
+        if not isinstance(devices, list):
+            return []
+        out = [
+            {"id": str(d["id"]), "name": str(d.get("name") or d["id"])}
+            for d in devices
+            if isinstance(d, dict) and d.get("id")
+        ]
+        return sorted(out, key=lambda d: d["name"].lower())
 
     async def list_areas(self) -> list[str]:
         """Area names via the HA template API (areas aren't in the REST states list)."""
@@ -92,8 +110,6 @@ class HomeAssistantClient:
         except (httpx.HTTPError, ValueError):
             return []
         try:
-            import json
-
             names = json.loads(raw)
         except (ValueError, TypeError):
             return []

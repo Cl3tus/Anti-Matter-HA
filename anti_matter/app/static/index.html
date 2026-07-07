@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/anti-matter-icon.png" type="image/png" />
-  <script src="./static/brand/js/theme.js?v=1.0.18"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.18" />
-  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.18" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.18" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.18" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.18" />
+  <script src="./static/brand/js/theme.js?v=1.0.19"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.19" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.19" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.19" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.19" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.19" />
 </head>
 <body>
   <header class="header">
@@ -239,11 +239,10 @@
       </details>
       <details id="code-ha-details" class="form-section">
         <summary data-i18n="code.ha_link">Home Assistant link (optional)</summary>
-        <label><span data-i18n="code.entity_id">Entity ID</span>
-          <input type="text" id="code-ha-entity" data-i18n-placeholder="code.entity_placeholder" placeholder="light.living_room" />
+        <label><span data-i18n="code.ha_device">Device</span>
+          <select id="code-ha-device"></select>
         </label>
         <a href="#" id="btn-open-ha-device" class="rm-btn rm-btn-secondary hidden" target="_top" data-i18n="action.open_ha_device">Open device in Home Assistant</a>
-        <p id="ha-device-hint" class="form-hint hidden" data-i18n="code.ha_device_not_found">No device found for that entity.</p>
       </details>
       <div class="dialog-actions">
         <button type="button" class="rm-btn rm-btn-secondary" data-close data-i18n="action.cancel">Cancel</button>
@@ -402,17 +401,17 @@
   </dialog>
 
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.18"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.18"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.18"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.18"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.18"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.18"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.18"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.18"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.18"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.18"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.18"></script>
-  <script src="./static/app.js?v=1.0.18"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.19"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.19"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.19"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.19"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.19"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.19"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.19"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.19"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.19"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.19"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.19"></script>
+  <script src="./static/app.js?v=1.0.19"></script>
 </body>
 </html>

@@ -31,7 +31,7 @@ class Category(BaseModel):
 
 
 class HaLink(BaseModel):
-    entity_id: Optional[str] = None
+    device_id: Optional[str] = None
 
 
 class MatterCode(BaseModel):
@@ -95,7 +95,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.18"
+    addon_version: str = "1.0.19"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 

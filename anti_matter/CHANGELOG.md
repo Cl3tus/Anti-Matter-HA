@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.19
+
+- Fixed the Matter label PNG: the code name pushed the **matter** logo down but the QR
+  wasn't shifted to match, so the logo landed behind the QR. Also made the whole label
+  bigger and sharper (larger QR, bundled DejaVu Sans Mono in the container instead of
+  silently falling back to a tiny bitmap font, and rendered at 2x then downsampled).
+- **HA link redesigned again**: it's a real device picker now (`Device` dropdown, listing
+  every HA device by name) instead of typing a raw entity ID — "Open device in Home
+  Assistant" is a direct link to `/config/devices/device/<id>`, no server round-trip.
+- Fixed the add-on serving a **stale cached page** after updates: the entry `index.html`
+  was the one response missing a no-cache header (every other asset already had one), so a
+  browser-cached copy could keep pointing at old script versions indefinitely. It's
+  `Cache-Control: no-store` now.
+
 ## 1.0.18
 
 - **Home Assistant link replaced**: "Pull from HA" (entity + attribute sync) is gone;

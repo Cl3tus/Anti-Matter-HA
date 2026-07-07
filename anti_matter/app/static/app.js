@@ -779,7 +779,7 @@ function openCodeDialog(code = null) {
   }
   const haDetails = document.getElementById("code-ha-details");
   if (haDetails) {
-    haDetails.open = Boolean(code?.ha_link?.entity_id);
+    haDetails.open = Boolean(code?.ha_link?.device_id);
   }
   document.getElementById("code-category").value = code?.category_id || "";
   setVal("code-manual", code?.manual_code);
@@ -802,41 +802,38 @@ function openCodeDialog(code = null) {
   document.getElementById("code-conn-zigbee").checked = Boolean(code?.conn_zigbee);
   document.getElementById("code-conn-bluetooth").checked = Boolean(code?.conn_bluetooth);
   document.getElementById("code-conn-zwave").checked = Boolean(code?.conn_zwave);
-  setVal("code-ha-entity", code?.ha_link?.entity_id);
-  refreshHaDeviceLink();
+  document.getElementById("code-ha-device").value = code?.ha_link?.device_id || "";
+  updateHaDeviceLink();
   dlg.showModal();
 }
 
-// Debounced: resolves the entity to a HA device and shows/hides the
-// "Open device in Home Assistant" link (target=_top navigates the HA frontend,
-// not just the ingress iframe this add-on runs in).
-let haDeviceLinkTimer = null;
-async function refreshHaDeviceLink() {
+// The picker is device_id -> device_id (options built by loadHaDevices), so the
+// "Open device in Home Assistant" link is just a straight substitution — no
+// server round-trip needed (target=_top navigates the HA frontend, not just the
+// ingress iframe this add-on runs in).
+function updateHaDeviceLink() {
   const link = document.getElementById("btn-open-ha-device");
-  const hint = document.getElementById("ha-device-hint");
+  const deviceId = document.getElementById("code-ha-device")?.value;
   if (!link) return;
-  const entity = trimVal("code-ha-entity");
-  if (!entity) {
+  if (!deviceId) {
     link.classList.add("hidden");
-    hint?.classList.add("hidden");
     return;
   }
-  try {
-    const res = await api(`/ha/device/${encodeURIComponent(entity)}`);
-    link.href = `/config/devices/device/${res.device_id}`;
-    link.classList.remove("hidden");
-    hint?.classList.add("hidden");
-  } catch (err) {
-    link.classList.add("hidden");
-    // Only a confirmed 404 means "no device for this entity" — network errors or
-    // HA being unavailable shouldn't flash a misleading "not found" at the user.
-    hint?.classList.toggle("hidden", err.status !== 404);
-  }
+  link.href = `/config/devices/device/${deviceId}`;
+  link.classList.remove("hidden");
 }
 
-function debouncedRefreshHaDeviceLink() {
-  clearTimeout(haDeviceLinkTimer);
-  haDeviceLinkTimer = setTimeout(refreshHaDeviceLink, 400);
+async function loadHaDevices() {
+  const sel = document.getElementById("code-ha-device");
+  if (!sel) return;
+  try {
+    const devices = await api("/ha/devices");
+    sel.innerHTML =
+      `<option value="">${escapeHtml(t("code.ha_device_none"))}</option>` +
+      devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("");
+  } catch {
+    /* ignore — HA unavailable, field stays empty */
+  }
 }
 
 function openCategoryDialog(cat = null) {
@@ -889,7 +886,7 @@ function baseBody(codeType) {
     conn_bluetooth: document.getElementById("code-conn-bluetooth").checked,
     conn_zwave: document.getElementById("code-conn-zwave").checked,
     ha_link: {
-      entity_id: trimVal("code-ha-entity") || null,
+      device_id: document.getElementById("code-ha-device").value || null,
     },
   };
 }
@@ -1357,7 +1354,7 @@ function bindUi() {
     }
   };
 
-  document.getElementById("code-ha-entity")?.addEventListener("input", debouncedRefreshHaDeviceLink);
+  document.getElementById("code-ha-device")?.addEventListener("change", updateHaDeviceLink);
 
   buildConnFilterPanel();
   document.getElementById("conn-filter-toggle")?.addEventListener("click", (e) => {
@@ -1427,6 +1424,7 @@ async function boot() {
   }
   await loadVault();
   await loadAreas();
+  await loadHaDevices();
   fillDeviceTypeOptions();
   startVaultPolling();
   logEvent(
