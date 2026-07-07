@@ -1,5 +1,8 @@
 # Anti-Matter — Documentation
 
+For the full manual (including a Dutch translation), see the
+[wiki](https://github.com/Cl3tus/Anti-Matter-HA/wiki). This file is a shorter overview.
+
 ## What it does
 
 Anti-Matter is a local vault for your smart-home **pairing codes**: Matter setup codes,
@@ -18,10 +21,16 @@ a scannable QR card so you can re-commission a device without hunting for the or
 
 - **+ Code** opens a modal. Pick the protocol (Matter / HomeKit / Z-Wave), fill in the name
   and any details (vendor, product, area, description, category, notes), and paste the manual
-  code and/or QR payload.
+  code and/or QR payload. The inline **+** next to Category creates a new one without
+  leaving the form.
 - **Scan** (top bar, or inside the form) opens the camera. Point it at the QR on the device
-  or its manual. On phones the rear camera is used. If the browser can't use the camera, use
-  **Or upload a photo**.
+  or its manual, with pinch-to-zoom and tap-to-focus where supported. On phones the rear
+  camera is used. If the browser can't use the camera, use **Or upload a photo**.
+- Opening or editing a Matter code decodes its payload in the background (vendor/product ID,
+  passcode, discriminator, official CSA DCL name/links where available) and auto-fills
+  Device vendor/product — typing something by hand always wins.
+- Saving or restoring a code that matches an existing one by QR payload or manual code is
+  caught, with a Cancel/open-existing (or Cancel/Merge, when restoring) choice.
 - **Home Assistant link (optional)**: pick a **Device** from the dropdown and an **Open
   device in Home Assistant** link appears, jumping straight to that device's page in HA.
 
@@ -33,13 +42,16 @@ If HA doesn't return areas, the field simply behaves as plain text.
 
 ## Filtering and the table view
 
-- The search box and the **Vendor / Product / Type / Area** dropdowns (filled from your own
-  data) combine with the category selection in the sidebar — click several categories to
-  filter by all of them at once.
-- The table-view button swaps the QR canvas for a filterable, spreadsheet-style list (your
-  filters stay active). Click it again to switch back.
-- Double-click a row to open a quick-view popup with the rendered QR/card image and the
-  manual/pairing code.
+- The search box, the **Vendor / Product / Type / Area** dropdowns (filled from your own
+  data) and the **Connectivity** dropdown (checkboxes, matches any type checked) combine
+  with the category selection in the sidebar — click several categories to filter by all of
+  them at once.
+- The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
+  a filterable, spreadsheet-style table (your filters stay active). In table view, a single
+  click on a code's name opens the quick-view popup.
+- Double-click a QR image (grid card or quick-view popup) to open the Matter decode view.
+- The **Invert** button renders QR codes in a dark-friendly negative for reading on dark
+  screens.
 
 ## Backups & storage
 
@@ -69,5 +81,14 @@ Set defaults on the **Configuration** tab:
 
 ## Privacy
 
-Anti-Matter has **no cloud** and makes no outbound internet connections. It only talks to
-your Home Assistant Supervisor (to read entity states and area names) and stores data locally.
+Anti-Matter has **no cloud, no account**. The only outbound internet connection is a
+best-effort, never-required lookup against the official CSA Distributed Compliance Ledger
+(DCL) when decoding a Matter payload, to show the vendor/product's public certification
+name and links if one exists. Otherwise it only talks to your Home Assistant Supervisor
+(entity states, areas, devices) and stores everything locally.
+
+## Credits
+
+Anti-Matter is a rewrite of [Rematters](https://github.com/Rematters/Rematters-HA) by
+Jesse Hulswit ([JesseFPV](https://rematters.casa/)), reworked into a cloud-free, local-only
+add-on. Full credit to Jesse for the original Rematters add-on and its design.
