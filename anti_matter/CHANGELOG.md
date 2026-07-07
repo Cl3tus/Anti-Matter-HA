@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.16
+
+- **Trash now has its own file**, `anti-matter-bin.json`, next to the vault on the SAMBA
+  share — trashed items no longer live inside `anti_matter.json`. Existing trashed items are
+  migrated automatically on first start.
+- Trash button moved between Scan and Backup in the header.
+- **New/Edit code dialog**: a `+` next to Category creates a category without leaving the
+  form, and it's selected automatically once saved.
+- Connectivity renamed **Matter → Thread** throughout (it's the radio, not the protocol).
+- The 5 connectivity filter dropdowns are now a single **Connectivity** dropdown with
+  checkboxes (matches any checked type).
+- Decoding a Matter payload in the New/Edit form now auto-fills Device vendor/product from
+  the official DCL record — unless you've already typed something there, which always wins.
+- Double-clicking a QR image (card or quick-view) opens the decode popup directly.
+- Table view: a single click on a code's name opens the quick-view popup (previously only
+  double-click); double-click no longer risks a duplicate-open error.
+- **Download** on a code also saves a copy under Home Assistant's Media folder
+  (`media/anti_matter/`), alongside the browser download.
+- Fixed **Scan/Upload photo inside the New or Edit dialog silently doing nothing** — it was
+  trying to reopen the already-open code dialog, which throws and drops the scanned data.
+- QR invert button now uses a `mdi:qrcode` icon that flips black/white with the toggle state.
+- Grid/table view toggle moved down into the status bar (bottom-right, next to the code count).
+
 ## 1.0.15
 
 - **Trash bin**: deleting a code or category now moves it to Trash instead of removing it

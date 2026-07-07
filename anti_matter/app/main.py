@@ -29,6 +29,7 @@ from models import (
     MatterCode,
     MatterCodeCreate,
     MatterCodeUpdate,
+    TrashBin,
     utc_now,
 )
 from options import norm_language, norm_theme, opt
@@ -61,9 +62,15 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.15"
+APP_VERSION = "1.0.16"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+# Optional: also save a copy of downloaded QR/label images under HA's Media folder
+# (map: media:rw -> /media), in its own subfolder so it doesn't clutter the root.
+from pathlib import Path as _Path
+
+MEDIA_DIR = _Path(os.environ.get("ANTIMATTER_MEDIA", "/media")) / "anti_matter"
 
 # --- Logging redaction: never write pairing codes / QR payloads to the log ---
 _REDACT_PATTERNS = [
@@ -334,11 +341,8 @@ async def get_vault():
 
 @app.get("/api/trash")
 async def get_trash():
-    vault = storage.load()
-    return {
-        "categories": [c for c in vault.categories if c.deleted_at],
-        "codes": [c for c in vault.codes if c.deleted_at],
-    }
+    bin_data = storage.load_bin()
+    return {"categories": bin_data.categories, "codes": bin_data.codes}
 
 
 @app.get("/api/export")
@@ -437,21 +441,37 @@ async def update_category(category_id: str, body: CategoryUpdate):
     return category
 
 
+def _find_bin_category(bin_data: TrashBin, category_id: str) -> Category:
+    for cat in bin_data.categories:
+        if cat.id == category_id:
+            return cat
+    raise HTTPException(404, "Category not found in trash")
+
+
 @app.delete("/api/categories/{category_id}")
 async def delete_category(category_id: str):
     vault = storage.load()
     category = _find_category(vault, category_id)
-    category.deleted_at = utc_now()
+    vault.categories = [c for c in vault.categories if c.id != category_id]
     storage.save(vault)
+    category.deleted_at = utc_now()
+    bin_data = storage.load_bin()
+    bin_data.categories = [c for c in bin_data.categories if c.id != category_id]
+    bin_data.categories.append(category)
+    storage.save_bin(bin_data)
     _LOGGER.info("Category moved to trash: id=%s name=%s", category_id, _redact(category.name))
     return {"ok": True}
 
 
 @app.post("/api/categories/{category_id}/restore")
 async def restore_category(category_id: str):
-    vault = storage.load()
-    category = _find_category(vault, category_id)
+    bin_data = storage.load_bin()
+    category = _find_bin_category(bin_data, category_id)
+    bin_data.categories = [c for c in bin_data.categories if c.id != category_id]
+    storage.save_bin(bin_data)
     category.deleted_at = None
+    vault = storage.load()
+    vault.categories.append(category)
     storage.save(vault)
     _LOGGER.info("Category restored from trash: id=%s name=%s", category_id, _redact(category.name))
     return category
@@ -461,17 +481,19 @@ async def restore_category(category_id: str):
 async def purge_category(category_id: str):
     from vault_merge import record_deletion
 
+    bin_data = storage.load_bin()
+    category = _find_bin_category(bin_data, category_id)
+    bin_data.categories = [c for c in bin_data.categories if c.id != category_id]
+    storage.save_bin(bin_data)
+
     vault = storage.load()
-    category = _find_category(vault, category_id)
-    category_name = category.name
     data = vault.model_dump(mode="json")
-    data["categories"] = [c for c in data["categories"] if c["id"] != category_id]
     for code in data["codes"]:
         if code.get("category_id") == category_id:
             code["category_id"] = None
     record_deletion(data, "categories", category_id)
     storage.save(Vault.model_validate(data))
-    _LOGGER.info("Category purged: id=%s name=%s", category_id, _redact(category_name))
+    _LOGGER.info("Category purged: id=%s name=%s", category_id, _redact(category.name))
     return {"ok": True}
 
 
@@ -568,21 +590,37 @@ async def update_code(code_id: str, body: MatterCodeUpdate):
     return code
 
 
+def _find_bin_code(bin_data: TrashBin, code_id: str) -> MatterCode:
+    for code in bin_data.codes:
+        if code.id == code_id:
+            return code
+    raise HTTPException(404, "Code not found in trash")
+
+
 @app.delete("/api/codes/{code_id}")
 async def delete_code(code_id: str):
     vault = storage.load()
     code = _find_code(vault, code_id)
-    code.deleted_at = utc_now()
+    vault.codes = [c for c in vault.codes if c.id != code_id]
     storage.save(vault)
+    code.deleted_at = utc_now()
+    bin_data = storage.load_bin()
+    bin_data.codes = [c for c in bin_data.codes if c.id != code_id]
+    bin_data.codes.append(code)
+    storage.save_bin(bin_data)
     _LOGGER.info("Code moved to trash: id=%s name=%s", code_id, _redact(code.name))
     return {"ok": True}
 
 
 @app.post("/api/codes/{code_id}/restore")
 async def restore_code(code_id: str):
-    vault = storage.load()
-    code = _find_code(vault, code_id)
+    bin_data = storage.load_bin()
+    code = _find_bin_code(bin_data, code_id)
+    bin_data.codes = [c for c in bin_data.codes if c.id != code_id]
+    storage.save_bin(bin_data)
     code.deleted_at = None
+    vault = storage.load()
+    vault.codes.append(code)
     storage.save(vault)
     _LOGGER.info("Code restored from trash: id=%s name=%s", code_id, _redact(code.name))
     return code
@@ -592,14 +630,16 @@ async def restore_code(code_id: str):
 async def purge_code(code_id: str):
     from vault_merge import record_deletion
 
+    bin_data = storage.load_bin()
+    code = _find_bin_code(bin_data, code_id)
+    bin_data.codes = [c for c in bin_data.codes if c.id != code_id]
+    storage.save_bin(bin_data)
+
     vault = storage.load()
-    code = _find_code(vault, code_id)
-    code_name = code.name
     data = vault.model_dump(mode="json")
-    data["codes"] = [c for c in data["codes"] if c["id"] != code_id]
     record_deletion(data, "codes", code_id)
     storage.save(Vault.model_validate(data))
-    _LOGGER.info("Code purged: id=%s name=%s", code_id, _redact(code_name))
+    _LOGGER.info("Code purged: id=%s name=%s", code_id, _redact(code.name))
     return {"ok": True}
 
 
@@ -664,6 +704,43 @@ async def code_card_svg(code_id: str):
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     return Response(content=svg, media_type="image/svg+xml; charset=utf-8")
+
+
+@app.post("/api/codes/{code_id}/save-to-media")
+async def save_code_to_media(code_id: str):
+    """Also drop a copy of the downloaded label/card image under /media/anti_matter,
+    so it shows up in HA's Media browser/SMB share, next to the download the browser gets."""
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    proto = _code_protocol(code)
+    safe = re.sub(r"[^\w.-]+", "_", code.name or "code")
+    try:
+        MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        raise HTTPException(500, f"Media folder not available: {e}") from e
+
+    if proto in ("homekit", "zwave"):
+        try:
+            if proto == "homekit":
+                svg = card_svg_for_code(code.model_dump(mode="json"))
+            else:
+                svg = zwave_card_svg_for_code(code.model_dump(mode="json"))
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from e
+        filename = f"antimatter-{safe}.svg"
+        (MEDIA_DIR / filename).write_text(svg, encoding="utf-8")
+    else:
+        try:
+            png = label_png_bytes(code.manual_code or "", code.qr_payload or "")
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from e
+        if not png:
+            raise HTTPException(404, "No Matter code to render")
+        filename = f"antimatter-{safe}.png"
+        (MEDIA_DIR / filename).write_bytes(png)
+
+    _LOGGER.info("Saved to media: code=%s file=%s", code_id, filename)
+    return {"ok": True, "path": f"/media/anti_matter/{filename}"}
 
 
 # --- Home Assistant ---

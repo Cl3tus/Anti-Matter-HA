@@ -12,10 +12,11 @@ import shutil
 from pathlib import Path
 from threading import Lock
 
-from models import Vault
+from models import TrashBin, Vault
 
 DEFAULT_DATA_DIR = "/data"
 VAULT_FILENAME = "anti_matter.json"
+BIN_FILENAME = "anti-matter-bin.json"
 
 
 def _resolve_data_dir(data_dir: str | None) -> Path:
@@ -33,7 +34,9 @@ class VaultStorage:
         self.data_dir = _resolve_data_dir(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.path = self.data_dir / VAULT_FILENAME
+        self.bin_path = self.data_dir / BIN_FILENAME
         self._lock = Lock()
+        self._migrate_inline_trash()
 
     def load(self) -> Vault:
         with self._lock:
@@ -47,6 +50,46 @@ class VaultStorage:
     def save(self, vault: Vault) -> None:
         with self._lock:
             self._write_unlocked(vault)
+
+    def load_bin(self) -> TrashBin:
+        with self._lock:
+            return self._load_bin_unlocked()
+
+    def save_bin(self, bin_data: TrashBin) -> None:
+        with self._lock:
+            self._write_bin_unlocked(bin_data)
+
+    def _load_bin_unlocked(self) -> TrashBin:
+        if not self.bin_path.exists():
+            return TrashBin()
+        raw = json.loads(self.bin_path.read_text(encoding="utf-8"))
+        return TrashBin.model_validate(raw)
+
+    def _write_bin_unlocked(self, bin_data: TrashBin) -> None:
+        tmp = self.bin_path.with_suffix(".tmp")
+        tmp.write_text(bin_data.model_dump_json(indent=2), encoding="utf-8")
+        tmp.replace(self.bin_path)
+
+    def _migrate_inline_trash(self) -> None:
+        """One-time move of pre-v1.0.16 inline-trashed items into the bin file."""
+        if not self.path.exists():
+            return
+        with self._lock:
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+            vault = Vault.model_validate(raw)
+            trashed_cats = [c for c in vault.categories if c.deleted_at]
+            trashed_codes = [c for c in vault.codes if c.deleted_at]
+            if not trashed_cats and not trashed_codes:
+                return
+            vault.categories = [c for c in vault.categories if not c.deleted_at]
+            vault.codes = [c for c in vault.codes if not c.deleted_at]
+            self._write_unlocked(vault)
+            bin_data = self._load_bin_unlocked()
+            existing_cat_ids = {c.id for c in bin_data.categories}
+            existing_code_ids = {c.id for c in bin_data.codes}
+            bin_data.categories.extend(c for c in trashed_cats if c.id not in existing_cat_ids)
+            bin_data.codes.extend(c for c in trashed_codes if c.id not in existing_code_ids)
+            self._write_bin_unlocked(bin_data)
 
     def export_json(self) -> str:
         from models import utc_now

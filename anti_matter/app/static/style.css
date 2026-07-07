@@ -323,6 +323,46 @@
   max-width: 9rem;
 }
 
+/* Connectivity filter: one dropdown, checkboxes inside instead of 5 selects */
+.conn-filter-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.conn-filter-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: var(--rm-space-2);
+  padding: var(--rm-space-3);
+  white-space: nowrap;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-surface-elevated);
+  box-shadow: var(--rm-shadow-md);
+}
+.conn-filter-panel.hidden {
+  display: none;
+}
+.conn-filter-panel label {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-2);
+  font-size: var(--rm-text-sm);
+  cursor: pointer;
+}
+
+/* Category select + inline "add category" button in the code dialog */
+.category-select-row {
+  display: flex;
+  gap: var(--rm-space-2);
+}
+.category-select-row select {
+  flex: 1;
+}
+
 .codes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1035,6 +1075,16 @@ dialog h3 {
   background: var(--rm-accent-soft);
 }
 
+/* QR invert button icon: literal black/white so it mirrors what the toggle
+   actually does to the QR image (normal = black on white, inverted = white on black) */
+#btn-qr-invert-icon {
+  color: #111;
+  transition: color 0.15s ease;
+}
+#btn-qr-invert.is-active #btn-qr-invert-icon {
+  color: #fff;
+}
+
 /* Dark-friendly (inverted) QR rendering — off by default */
 body.qr-invert .matter-sticker-box,
 body.qr-invert .homekit-sticker-img,
@@ -1101,16 +1151,22 @@ body.qr-invert .zwave-sticker--dsk-only {
    v1.0.5 UI
    ============================================================ */
 
-/* Bottom status bar */
+/* Bottom status bar — everything (count + grid/table toggle) lives on the right */
 .statusbar {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: var(--rm-space-3);
   height: 34px;
   padding: 0 var(--rm-space-4);
   border-top: 1px solid var(--rm-border);
   background: var(--rm-surface);
   color: var(--rm-text-muted);
   font-size: var(--rm-text-xs);
+}
+.statusbar .rm-btn {
+  height: 24px;
+  padding: 0 var(--rm-space-2);
 }
 
 /* Collapsible "Device details" section inside the code modal */

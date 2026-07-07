@@ -64,7 +64,7 @@
   "code.in_use": "In gebruik",
   "code.connectivity": "Connectiviteit",
   "code.conn_wifi": "WiFi",
-  "code.conn_matter": "Matter",
+  "code.conn_matter": "Thread",
   "code.conn_zigbee": "Zigbee",
   "code.conn_bluetooth": "Bluetooth",
   "code.conn_zwave": "Z-Wave",

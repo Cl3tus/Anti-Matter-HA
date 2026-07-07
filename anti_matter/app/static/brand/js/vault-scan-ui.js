@@ -106,7 +106,13 @@
         return;
       }
       scanDlg?.close();
-      opts.openCodeDialog(null);
+      // The Scan/Upload buttons embedded inside the code dialog itself (New or Edit)
+      // fire this same handler — the code dialog is already open there, and calling
+      // showModal() on an already-open <dialog> throws, silently swallowing the
+      // scanned data. Only (re)open it fresh when it wasn't already open (the
+      // standalone header "Scan" button, opened from the separate scan dialog).
+      const codeDlg = document.getElementById("code-dialog");
+      if (!codeDlg?.open) opts.openCodeDialog(null);
       applyParsedToForm(parsed);
     }
 

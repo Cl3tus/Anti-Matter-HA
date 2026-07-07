@@ -1,5 +1,5 @@
 name: Anti-Matter
-version: "1.0.15"
+version: "1.0.16"
 slug: anti_matter
 description: Store, organize and back up your Matter, HomeKit and Z-Wave pairing codes and QR payloads.
 url: https://github.com/Cl3tus/Anti-Matter-HA
@@ -25,6 +25,7 @@ hassio_api: false
 # reachable over SAMBA at \\<HA-IP>\addon_configs\<slug> and included in HA backups.
 map:
   - addon_config:rw
+  - media:rw
 
 # --- User options (Configuration tab; rendered as dropdowns with section headers) ---
 #   Language : Auto (follow HA) | Nederlands | English

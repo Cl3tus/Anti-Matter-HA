@@ -191,6 +191,14 @@
         handlers.onDecode(code);
       };
     }
+    // Double-clicking the QR image itself is a shortcut for the decode button.
+    const qrImg = card.querySelector(".matter-sticker-qr");
+    if (qrImg && handlers.onDecode) {
+      qrImg.ondblclick = (e) => {
+        e.stopPropagation();
+        handlers.onDecode(code);
+      };
+    }
     const dlBtn = card.querySelector("[data-download]");
     if (dlBtn && handlers.onDownload) {
       dlBtn.onclick = (e) => {

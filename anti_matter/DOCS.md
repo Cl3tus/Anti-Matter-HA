@@ -45,6 +45,10 @@ If HA doesn't return areas, the field simply behaves as plain text.
 
 - Your vault is `anti_matter.json` in the add-on config folder, reachable over SAMBA at
   `\\<HA-IP>\addon_configs\<slug>_anti_matter\`.
+- Deleted categories/codes live in their own `anti-matter-bin.json` next to it until you
+  restore or permanently delete them from the **Trash** dialog.
+- **Download** on a code also drops a copy of the image under Home Assistant's Media
+  folder, in `media/anti_matter/` (requires the add-on's Media access, granted automatically).
 - The **Backup** button opens a schedule: enable automatic backups Hourly, Daily, Weekly or
   Monthly, pick the time (and weekday/day-of-month where relevant), and how many backups to
   keep. **Backup now** in the same dialog runs one immediately.

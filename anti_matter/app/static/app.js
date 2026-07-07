@@ -15,6 +15,9 @@ let selectedCategoryIds = new Set();
 let lastSelectedCategoryIndex = null;
 let categoryIconPicker = null;
 const NONE_CATEGORY_ID = "__none__";
+// Set right before opening the category dialog from the "+" inside the code form,
+// so the freshly created category gets selected there instead of just in the sidebar list.
+let categoryCreateTargetSelectId = null;
 
 const BRAND_PREFIX = "./static/brand";
 
@@ -86,13 +89,19 @@ const activeFilters = { device_vendor: "", device_product: "", device_type: "", 
 
 const BOOL_FILTER_FIELDS = [
   ["filter-in-use", "in_use", "code.in_use"],
-  ["filter-conn-wifi", "conn_wifi", "code.conn_wifi"],
-  ["filter-conn-matter", "conn_matter", "code.conn_matter"],
-  ["filter-conn-zigbee", "conn_zigbee", "code.conn_zigbee"],
-  ["filter-conn-bluetooth", "conn_bluetooth", "code.conn_bluetooth"],
-  ["filter-conn-zwave", "conn_zwave", "code.conn_zwave"],
 ];
 const boolFilters = {};
+
+// Connectivity: one dropdown with checkboxes instead of 5 separate selects.
+// Checking any box OR-filters codes down to ones with at least one of the checked types.
+const CONN_FILTER_FIELDS = [
+  ["conn_wifi", "code.conn_wifi"],
+  ["conn_matter", "code.conn_matter"],
+  ["conn_zigbee", "code.conn_zigbee"],
+  ["conn_bluetooth", "code.conn_bluetooth"],
+  ["conn_zwave", "code.conn_zwave"],
+];
+const connFilters = new Set();
 
 function fillAttributeFilters() {
   for (const [id, field, labelKey] of ATTR_FILTER_FIELDS) {
@@ -124,6 +133,32 @@ function fillBoolFilters() {
   }
 }
 
+function buildConnFilterPanel() {
+  const panel = document.getElementById("conn-filter-panel");
+  if (!panel) return;
+  panel.innerHTML = CONN_FILTER_FIELDS.map(
+    ([field, labelKey]) =>
+      `<label><input type="checkbox" data-conn-field="${field}" ${connFilters.has(field) ? "checked" : ""} /> <span>${escapeHtml(t(labelKey))}</span></label>`
+  ).join("");
+  panel.querySelectorAll("input[data-conn-field]").forEach((cb) => {
+    cb.onchange = () => {
+      const field = cb.dataset.connField;
+      if (cb.checked) connFilters.add(field);
+      else connFilters.delete(field);
+      updateConnFilterToggleLabel();
+      renderCodes();
+    };
+  });
+  updateConnFilterToggleLabel();
+}
+
+function updateConnFilterToggleLabel() {
+  const btn = document.getElementById("conn-filter-toggle");
+  if (!btn) return;
+  const base = t("code.connectivity");
+  btn.textContent = connFilters.size ? `${base} (${connFilters.size})` : base;
+}
+
 function filteredCodes() {
   let codes = vault.codes;
   if (activeCategories.size) {
@@ -139,6 +174,9 @@ function filteredCodes() {
     const val = boolFilters[field];
     if (val === "yes") codes = codes.filter((c) => Boolean(c[field]));
     else if (val === "no") codes = codes.filter((c) => !c[field]);
+  }
+  if (connFilters.size) {
+    codes = codes.filter((c) => [...connFilters].some((field) => c[field]));
   }
   const q = document.getElementById("search").value.trim().toLowerCase();
   if (!q) return codes;
@@ -321,7 +359,7 @@ let viewMode = localStorage.getItem(VIEW_MODE_KEY) === "table" ? "table" : "grid
 
 const CONN_LABELS = {
   conn_wifi: "WiFi",
-  conn_matter: "Matter",
+  conn_matter: "Thread",
   conn_zigbee: "Zigbee",
   conn_bluetooth: "Bluetooth",
   conn_zwave: "Z-Wave",
@@ -424,7 +462,7 @@ function officialLinkHtml(url, label) {
 // reuses the same Base38/Verhoeff parser the scanner already ships. Renders the
 // base fields immediately, then enriches the Vendor/Product ID rows and adds the
 // official DCL links (vendor site / product page / support page) if found.
-async function renderDecodeInto(box, parsed) {
+async function renderDecodeInto(box, parsed, opts = {}) {
   if (!box) return;
   if (!parsed) {
     box.innerHTML = `<p class="form-hint">${escapeHtml(t("code.decode_mt_empty"))}</p>`;
@@ -461,6 +499,9 @@ async function renderDecodeInto(box, parsed) {
   if (!vendorInfo?.name && !modelInfo?.name) return;
   if (vendorInfo?.name) rows[0][1] = `${vidText} — ${vendorInfo.name}`;
   if (modelInfo?.name) rows[1][1] = `${pidText} — ${modelInfo.name}`;
+  if (typeof opts.onNames === "function") {
+    opts.onNames(vendorInfo?.name || null, modelInfo?.name || null);
+  }
   const links = [
     officialLinkHtml(vendorInfo?.landing_page, t("code.decode_vendor_site")),
     officialLinkHtml(modelInfo?.product_page, t("code.decode_product_page")),
@@ -470,6 +511,24 @@ async function renderDecodeInto(box, parsed) {
     linksHtml = `<div class="mt-decode-links">${links.join("")}</div>`;
   }
   box.innerHTML = paint();
+}
+
+// Once a field is edited by hand (or already had a value when the dialog opened),
+// decode-derived names must never silently overwrite it again.
+function markDeviceFieldUserEdited(id) {
+  const el = document.getElementById(id);
+  if (el) el.dataset.userEdited = "1";
+}
+
+function applyDecodedDeviceNames(vendorName, productName) {
+  const vendorEl = document.getElementById("code-device-vendor");
+  if (vendorEl && vendorName && vendorEl.dataset.userEdited !== "1") {
+    vendorEl.value = vendorName;
+  }
+  const productEl = document.getElementById("code-device-product");
+  if (productEl && productName && productEl.dataset.userEdited !== "1") {
+    productEl.value = productName;
+  }
 }
 
 function renderMtDecode() {
@@ -485,7 +544,7 @@ function renderMtDecode() {
   } catch (e) {
     parsed = null;
   }
-  renderDecodeInto(box, parsed);
+  renderDecodeInto(box, parsed, { onNames: applyDecodedDeviceNames });
 }
 
 function openMtDecodeDialog(code) {
@@ -529,6 +588,9 @@ function openQuickView(code) {
       ? `${API}/codes/${code.id}/card.svg`
       : `${API}/codes/${code.id}/qr.png`;
   wrap.innerHTML = `<img src="${src}" alt="" />`;
+  if (proto === "matter") {
+    wrap.querySelector("img").ondblclick = () => openMtDecodeDialog(code);
+  }
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";
   document.getElementById("quickview-meta").textContent = buildQuickMeta(code, proto);
@@ -542,7 +604,8 @@ function openQuickView(code) {
     decodeBtn.classList.toggle("hidden", proto !== "matter");
     decodeBtn.onclick = () => openMtDecodeDialog(code);
   }
-  document.getElementById("quickview-dialog").showModal();
+  const dlg = document.getElementById("quickview-dialog");
+  if (!dlg.open) dlg.showModal();
 }
 
 function renderCodes() {
@@ -699,6 +762,9 @@ function openCodeDialog(code = null) {
   setVal("code-device-type", code?.device_type);
   setVal("code-device-vendor", code?.device_vendor);
   setVal("code-device-product", code?.device_product);
+  // A field already carrying a value counts as "set" — decode must not clobber it.
+  document.getElementById("code-device-vendor").dataset.userEdited = code?.device_vendor ? "1" : "";
+  document.getElementById("code-device-product").dataset.userEdited = code?.device_product ? "1" : "";
   setVal("code-area", code?.area);
   setVal("code-description", code?.description);
   const details = document.getElementById("code-details");
@@ -982,6 +1048,8 @@ async function downloadCode(code) {
     a.click();
     a.remove();
     URL.revokeObjectURL(a.href);
+    // Best-effort: also drop a copy under HA's Media folder. Silent no-op if /media isn't mounted.
+    api(`/codes/${code.id}/save-to-media`, { method: "POST" }).catch(() => {});
   } catch (err) {
     await uiAlert(err.message || t("alert.download_fail"));
   }
@@ -1003,11 +1071,12 @@ async function saveCategory(e) {
     color: document.getElementById("category-color").value,
     icon: document.getElementById("category-icon").value,
   };
+  let created = null;
   try {
     if (id) {
       await api(`/categories/${id}`, { method: "PUT", body: JSON.stringify(body) });
     } else {
-      await api("/categories", { method: "POST", body: JSON.stringify(body) });
+      created = await api("/categories", { method: "POST", body: JSON.stringify(body) });
     }
   } catch (err) {
     await uiAlert(err.message || t("alert.category_save_fail"));
@@ -1015,6 +1084,11 @@ async function saveCategory(e) {
   }
   document.getElementById("category-dialog").close();
   await loadVault();
+  if (created && categoryCreateTargetSelectId) {
+    const sel = document.getElementById(categoryCreateTargetSelectId);
+    if (sel) sel.value = created.id;
+  }
+  categoryCreateTargetSelectId = null;
 }
 
 async function loadAddonInfo() {
@@ -1064,8 +1138,17 @@ function bindUi() {
   document.getElementById("code-mt-decode")?.addEventListener("toggle", renderMtDecode);
   document.getElementById("code-qr")?.addEventListener("input", renderMtDecode);
   document.getElementById("code-manual")?.addEventListener("input", renderMtDecode);
+  document.getElementById("code-device-vendor")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-vendor"));
+  document.getElementById("code-device-product")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-product"));
   document.getElementById("btn-add-code").onclick = () => openCodeDialog();
-  document.getElementById("btn-add-category").onclick = () => openCategoryDialog();
+  document.getElementById("btn-add-category").onclick = () => {
+    categoryCreateTargetSelectId = null;
+    openCategoryDialog();
+  };
+  document.getElementById("btn-add-category-inline")?.addEventListener("click", () => {
+    categoryCreateTargetSelectId = "code-category";
+    openCategoryDialog();
+  });
   document.getElementById("code-form").onsubmit = saveCode;
   document.getElementById("category-form").onsubmit = saveCategory;
   document.getElementById("search").oninput = renderCodes;
@@ -1099,12 +1182,19 @@ function bindUi() {
       if (tr) deleteCode(tr.dataset.codeId);
       return;
     }
-    if (!(e.shiftKey || e.ctrlKey || e.metaKey)) return;
     const tr = e.target.closest("tr[data-code-id]");
     if (!tr) return;
-    const codes = filteredCodes();
-    const index = codes.findIndex((c) => c.id === tr.dataset.codeId);
-    if (index >= 0) handleCodeSelectClick(e, codes[index], index, codes);
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      const codes = filteredCodes();
+      const index = codes.findIndex((c) => c.id === tr.dataset.codeId);
+      if (index >= 0) handleCodeSelectClick(e, codes[index], index, codes);
+      return;
+    }
+    // Plain click on the name cell — "Excel mode" shortcut to open the QR quickview.
+    if (e.target.closest("td:first-child")) {
+      const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
+      if (code) openQuickView(code);
+    }
   };
   document.getElementById("codes-table-body").oncontextmenu = (e) => {
     const tr = e.target.closest("tr[data-code-id]");
@@ -1240,11 +1330,24 @@ function bindUi() {
     }
   };
 
+  buildConnFilterPanel();
+  document.getElementById("conn-filter-toggle")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("conn-filter-panel")?.classList.toggle("hidden");
+  });
+  document.addEventListener("click", (e) => {
+    const dd = document.getElementById("conn-filter-dropdown");
+    if (dd && !dd.contains(e.target)) {
+      document.getElementById("conn-filter-panel")?.classList.add("hidden");
+    }
+  });
+
   initQrInvert();
   applyViewMode();
 
   window.addEventListener("antimatter:locale", () => {
     render();
+    buildConnFilterPanel();
     updateStorageHint();
   });
 }

@@ -72,6 +72,13 @@ class MatterCode(BaseModel):
         return "matter"
 
 
+class TrashBin(BaseModel):
+    """Soft-deleted categories/codes, stored in their own file (own SMB share entry)."""
+
+    categories: list[Category] = Field(default_factory=list)
+    codes: list[MatterCode] = Field(default_factory=list)
+
+
 class VaultDeletions(BaseModel):
     """Tombstones so deletes propagate correctly across import/export merges."""
 
@@ -89,7 +96,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.15"
+    addon_version: str = "1.0.16"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 

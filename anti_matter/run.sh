@@ -11,7 +11,16 @@ log_line INFO '\033[32m' "Anti-Matter starting on port 8099 (ingress)..."
 export ANTIMATTER_DATA="/data"
 export ANTIMATTER_OPTIONS="/data/options.json"
 export ANTIMATTER_PORT="8099"
-export ADDON_VERSION="1.0.15"
+export ADDON_VERSION="1.0.16"
+
+# media:rw mounts HA's Media folder at /media. Downloaded label/QR images are
+# also saved there (in anti_matter/ subfolder) if present.
+if [ -d "/media" ]; then
+    log_line INFO '\033[32m' "Media folder active: /media/anti_matter (downloaded images also saved there)"
+    export ANTIMATTER_MEDIA="/media"
+else
+    log_line WARNING '\033[33m' "/media not mounted — downloaded images will only save to the browser"
+fi
 
 # addon_config:rw mounts the add-on config folder at /config.
 # On the SAMBA share this shows up as addon_configs\<slug>. Store the vault there
