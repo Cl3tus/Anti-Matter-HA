@@ -373,10 +373,31 @@
   display: flex;
   gap: var(--rm-space-2);
 }
-.category-select-row select {
+.category-checks {
   flex: 1;
   height: 2.3rem;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-3);
+  padding: 0 var(--rm-space-2);
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.category-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rm-space-1);
+  flex-shrink: 0;
+  font-size: var(--rm-text-sm);
+  cursor: pointer;
+}
+.category-check input {
+  margin: 0;
 }
 .category-select-row .btn.icon {
   width: 2.3rem;

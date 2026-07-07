@@ -89,6 +89,12 @@ function categoryName(id) {
   return c ? capitalizeFirst(c.name) : "Uncategorized";
 }
 
+function categoryNamesJoined(ids) {
+  const list = Array.isArray(ids) ? ids : [];
+  if (!list.length) return categoryName(null);
+  return list.map((id) => categoryName(id)).join(", ");
+}
+
 // Every toolbar filter is a checkbox dropdown: within one field, checked values
 // are OR'd together; across fields, results are AND'd.
 const DYNAMIC_FILTER_FIELDS = [
@@ -266,9 +272,10 @@ function clearAllFilters() {
 function filteredCodes() {
   let codes = vault.codes;
   if (activeCategories.size) {
-    codes = codes.filter((c) =>
-      activeCategories.has(c.category_id || NONE_CATEGORY_ID)
-    );
+    codes = codes.filter((c) => {
+      const ids = c.category_ids?.length ? c.category_ids : [NONE_CATEGORY_ID];
+      return ids.some((id) => activeCategories.has(id));
+    });
   }
   if (protocolFilter.size) {
     const Cards = window.AntiMatterVaultCards;
@@ -498,7 +505,7 @@ function renderTable() {
         <td>${escapeHtml(c.device_product)}</td>
         <td>${escapeHtml(c.device_type)}</td>
         <td>${escapeHtml(c.area)}</td>
-        <td>${escapeHtml(categoryName(c.category_id))}</td>
+        <td>${escapeHtml(categoryNamesJoined(c.category_ids))}</td>
         <td>${c.in_use ? "✓" : ""}</td>
         <td>${escapeHtml(connectivitySummary(c))}</td>
         <td class="table-row-actions">
@@ -798,7 +805,7 @@ function buildQuickMeta(code, proto) {
   if (code.device_product) parts.push(`${t("filter.product")}: ${code.device_product}`);
   if (code.device_type) parts.push(`${t("filter.type")}: ${code.device_type}`);
   if (code.area) parts.push(`${t("filter.area")}: ${code.area}`);
-  parts.push(`${t("code.category")}: ${categoryName(code.category_id)}`);
+  parts.push(`${t("code.category")}: ${categoryNamesJoined(code.category_ids)}`);
   parts.push(`${t("code.protocol")}: ${proto}`);
   parts.push(`${t("code.in_use")}: ${code.in_use ? t("filter.yes") : t("filter.no")}`);
   const conn = connectivitySummary(code);
@@ -892,24 +899,38 @@ function render() {
   fillInUseFilterPanel();
   renderCategories();
   renderCodes();
-  fillCategorySelect();
+  fillCategoryChecks();
   const fa = document.getElementById("filter-all");
   if (fa) fa.classList.toggle("active", activeCategories.size === 0);
 }
 
-function fillCategorySelect() {
-  const sel = document.getElementById("code-category");
+function fillCategoryChecks(selectedIds) {
+  const container = document.getElementById("code-category-checks");
+  if (!container) return;
+  const keep = selectedIds || getCheckedCategoryIds(container);
   if (window.AntiMatterVaultCards) {
-    window.AntiMatterVaultCards.fillCategorySelect(sel, vault);
+    window.AntiMatterVaultCards.fillCategoryChecks(container, vault, keep);
     return;
   }
-  sel.innerHTML = `<option value="">No category</option>`;
+  const keepSet = new Set(keep);
+  container.innerHTML = "";
   for (const cat of vault.categories) {
-    const opt = document.createElement("option");
-    opt.value = cat.id;
-    opt.textContent = capitalizeFirst(cat.name);
-    sel.appendChild(opt);
+    const label = document.createElement("label");
+    label.className = "category-check";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = cat.id;
+    input.checked = keepSet.has(cat.id);
+    const span = document.createElement("span");
+    span.textContent = capitalizeFirst(cat.name);
+    label.appendChild(input);
+    label.appendChild(span);
+    container.appendChild(label);
   }
+}
+
+function getCheckedCategoryIds(container) {
+  return [...container.querySelectorAll("input[type=checkbox]:checked")].map((i) => i.value);
 }
 
 function escapeHtml(s) {
@@ -1010,7 +1031,7 @@ function openCodeDialog(code = null) {
   if (haDetails) {
     haDetails.open = Boolean(code?.ha_link?.device_id);
   }
-  document.getElementById("code-category").value = code?.category_id || "";
+  fillCategoryChecks(code?.category_ids || []);
   setVal("code-manual", code?.manual_code);
   setVal("code-qr", code?.qr_payload);
   const mtDecode = document.getElementById("code-mt-decode");
@@ -1109,7 +1130,7 @@ function baseBody(codeType) {
     device_product: trimVal("code-device-product"),
     area: trimVal("code-area"),
     description: trimVal("code-description"),
-    category_id: document.getElementById("code-category").value || null,
+    category_ids: getCheckedCategoryIds(document.getElementById("code-category-checks")),
     notes: trimVal("code-notes"),
     in_use: document.getElementById("code-in-use").checked,
     conn_wifi: document.getElementById("code-conn-wifi").checked,
@@ -1348,8 +1369,9 @@ async function saveCategory(e) {
   document.getElementById("category-dialog").close();
   await loadVault();
   if (created && categoryCreateTargetSelectId) {
-    const sel = document.getElementById(categoryCreateTargetSelectId);
-    if (sel) sel.value = created.id;
+    const container = document.getElementById(categoryCreateTargetSelectId);
+    const input = container?.querySelector(`input[value="${created.id}"]`);
+    if (input) input.checked = true;
   }
   categoryCreateTargetSelectId = null;
 }
@@ -1422,7 +1444,7 @@ function bindUi() {
     openCategoryDialog();
   };
   document.getElementById("btn-add-category-inline")?.addEventListener("click", () => {
-    categoryCreateTargetSelectId = "code-category";
+    categoryCreateTargetSelectId = "code-category-checks";
     openCategoryDialog();
   });
   document.getElementById("code-form").onsubmit = saveCode;

@@ -236,15 +236,21 @@
     return c ? capitalizeFirst(c.name) : none;
   }
 
-  function fillCategorySelect(sel, vault) {
-    const none =
-      global.AntiMatterI18n?.t?.("code.category_none") ?? "No category";
-    sel.innerHTML = `<option value="">${none}</option>`;
+  function fillCategoryChecks(container, vault, selectedIds) {
+    const selected = new Set(selectedIds || []);
+    container.innerHTML = "";
     for (const cat of vault.categories) {
-      const opt = document.createElement("option");
-      opt.value = cat.id;
-      opt.textContent = capitalizeFirst(cat.name);
-      sel.appendChild(opt);
+      const label = document.createElement("label");
+      label.className = "category-check";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = cat.id;
+      input.checked = selected.has(cat.id);
+      const span = document.createElement("span");
+      span.textContent = capitalizeFirst(cat.name);
+      label.appendChild(input);
+      label.appendChild(span);
+      container.appendChild(label);
     }
   }
 
@@ -256,6 +262,6 @@
     buildCodeCardHtml,
     wireCodeCard,
     categoryNameDefault,
-    fillCategorySelect,
+    fillCategoryChecks,
   };
 })(typeof window !== "undefined" ? window : globalThis);

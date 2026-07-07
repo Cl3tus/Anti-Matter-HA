@@ -62,7 +62,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.26"
+APP_VERSION = "1.0.27"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -496,8 +496,9 @@ async def purge_category(category_id: str):
     vault = storage.load()
     data = vault.model_dump(mode="json")
     for code in data["codes"]:
-        if code.get("category_id") == category_id:
-            code["category_id"] = None
+        ids = code.get("category_ids") or []
+        if category_id in ids:
+            code["category_ids"] = [i for i in ids if i != category_id]
     record_deletion(data, "categories", category_id)
     storage.save(Vault.model_validate(data))
     _LOGGER.info("Category purged: id=%s name=%s", category_id, _redact(category.name))
@@ -511,7 +512,7 @@ async def purge_category(category_id: str):
 async def list_codes(category_id: Optional[str] = Query(None)):
     codes = [c for c in storage.load().codes if not c.deleted_at]
     if category_id:
-        codes = [c for c in codes if c.category_id == category_id]
+        codes = [c for c in codes if category_id in c.category_ids]
     return codes
 
 
@@ -553,8 +554,8 @@ async def create_code(body: MatterCodeCreate):
     _apply_code_fields(code)
     if ha_link:
         code.ha_link = ha_link
-    if code.category_id:
-        _find_category(vault, code.category_id)
+    for cid in code.category_ids:
+        _find_category(vault, cid)
     dup = _find_duplicate_code(vault, code.model_dump(mode="json"))
     if dup:
         raise HTTPException(409, detail=_dup_detail(dup))
@@ -571,8 +572,9 @@ async def update_code(code_id: str, body: MatterCodeUpdate):
     vault = storage.load()
     code = _find_code(vault, code_id)
     updates = body.model_dump(exclude_unset=True)
-    if "category_id" in updates and updates["category_id"]:
-        _find_category(vault, updates["category_id"])
+    if "category_ids" in updates:
+        for cid in updates["category_ids"]:
+            _find_category(vault, cid)
     ha_link = updates.pop("ha_link", None)
     for key, value in updates.items():
         setattr(code, key, value)

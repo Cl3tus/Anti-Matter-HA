@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.27
+
+- A code can now belong to **multiple categories**. The category field in the New/Edit
+  dialog is a checkbox row instead of a single-select dropdown; if it has more entries
+  than fit, it scrolls horizontally instead of wrapping. Old vaults with a single
+  `category_id` per code are migrated automatically on load.
+
 ## 1.0.26
 
 - Added a **Clear filters** button next to the filter dropdowns.

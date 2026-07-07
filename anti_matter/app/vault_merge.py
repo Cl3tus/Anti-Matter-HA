@@ -75,6 +75,15 @@ def _dedupe_by_id(items: Any) -> list:
     return out
 
 
+def _migrate_category_id(code: Any) -> Any:
+    """v1.0.26: a code can belong to multiple categories (category_ids) instead of
+    just one (category_id). Old vaults on disk still have the single field."""
+    if isinstance(code, dict) and "category_ids" not in code:
+        old = code.get("category_id")
+        code["category_ids"] = [old] if old else []
+    return code
+
+
 def sanitize_vault_dict(raw: dict[str, Any]) -> dict[str, Any]:
     """Normalize vault JSON before Pydantic validation (import, sync, load)."""
     out = dict(raw)
@@ -82,7 +91,7 @@ def sanitize_vault_dict(raw: dict[str, Any]) -> dict[str, Any]:
     meta["deletions"] = _normalize_deletions(meta)
     out["meta"] = meta
     out["categories"] = _dedupe_by_id(out.get("categories"))
-    out["codes"] = _dedupe_by_id(out.get("codes"))
+    out["codes"] = [_migrate_category_id(c) for c in _dedupe_by_id(out.get("codes"))]
     return out
 
 

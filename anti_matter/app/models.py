@@ -43,7 +43,7 @@ class MatterCode(BaseModel):
     device_product: str = ""  # e.g. MYGGBETT
     area: str = ""  # e.g. Woonkamer (free text or HA area name)
     description: str = ""
-    category_id: Optional[str] = None
+    category_ids: list[str] = Field(default_factory=list)
     manual_code: str = ""
     qr_payload: str = ""
     setup_id: str = ""  # HomeKit 4-char setup ID
@@ -77,6 +77,16 @@ class TrashBin(BaseModel):
     categories: list[Category] = Field(default_factory=list)
     codes: list[MatterCode] = Field(default_factory=list)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_codes(cls, data: object) -> object:
+        if isinstance(data, dict) and isinstance(data.get("codes"), list):
+            from vault_merge import _migrate_category_id
+
+            data = dict(data)
+            data["codes"] = [_migrate_category_id(c) for c in data["codes"]]
+        return data
+
 
 class VaultDeletions(BaseModel):
     """Tombstones so deletes propagate correctly across import/export merges."""
@@ -95,7 +105,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.26"
+    addon_version: str = "1.0.27"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 
@@ -147,7 +157,7 @@ class MatterCodeCreate(BaseModel):
     device_product: str = ""
     area: str = ""
     description: str = ""
-    category_id: Optional[str] = None
+    category_ids: list[str] = Field(default_factory=list)
     manual_code: str = ""
     qr_payload: str = ""
     setup_id: str = ""
@@ -172,7 +182,7 @@ class MatterCodeUpdate(BaseModel):
     device_product: Optional[str] = None
     area: Optional[str] = None
     description: Optional[str] = None
-    category_id: Optional[str] = None
+    category_ids: list[str] = Field(default_factory=list)
     manual_code: Optional[str] = None
     qr_payload: Optional[str] = None
     setup_id: Optional[str] = None
