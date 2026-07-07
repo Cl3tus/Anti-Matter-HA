@@ -1056,6 +1056,15 @@ dialog h3 {
   width: 100%;
 }
 
+.scan-detect-frame {
+  position: absolute;
+  border: 3px solid #22c55e;
+  border-radius: var(--rm-radius-sm);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
 .scan-torch-btn {
   margin: 0 0 var(--rm-space-3);
 }

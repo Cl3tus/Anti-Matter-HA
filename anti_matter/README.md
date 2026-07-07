@@ -4,7 +4,7 @@
 
 # Anti-Matter
 
-[![GitHub release](https://img.shields.io/badge/version-1.0.32-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![GitHub release](https://img.shields.io/badge/version-1.0.33-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Project Stage](https://img.shields.io/badge/project%20stage-experimental-yellow.svg)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)](https://github.com/Cl3tus/Anti-Matter-HA/commits/main)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Cl3tus/Anti-Matter-HA/blob/main/LICENSE)

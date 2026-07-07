@@ -75,16 +75,70 @@
   // a phone at a QR code.
   const SCAN_INTERVAL_MS = 120;
 
-  async function scanWithBarcodeDetector(video, onScan) {
+  // Feeding detect() the raw video element hands it a full-resolution frame
+  // (1080p+ on most phones) every tick, which is both slower to process and no
+  // more reliable for reading a small QR code than a modest, fixed-size frame —
+  // downscaling onto an offscreen canvas first cuts the per-tick workload a lot
+  // (helping both scan speed and the crash risk above) and gives us pixel
+  // coordinates to draw the detected-code box against.
+  const DETECT_MAX_DIM = 720;
+
+  function mapBoxToDisplay(box, canvas, video) {
+    // detector.detect() ran against `canvas` (downscaled copy of the video frame),
+    // but the box needs to land on top of the displayed <video>, which crops via
+    // CSS `object-fit: cover` — replicate that scale-and-center math to translate
+    // canvas-space coordinates into the video element's own displayed box.
+    const scaleToVideo = video.videoWidth / canvas.width;
+    const vx = box.x * scaleToVideo;
+    const vy = box.y * scaleToVideo;
+    const vw = box.width * scaleToVideo;
+    const vh = box.height * scaleToVideo;
+    const cw = video.clientWidth;
+    const ch = video.clientHeight;
+    const coverScale = Math.max(cw / video.videoWidth, ch / video.videoHeight);
+    const offsetX = (cw - video.videoWidth * coverScale) / 2;
+    const offsetY = (ch - video.videoHeight * coverScale) / 2;
+    return {
+      left: vx * coverScale + offsetX,
+      top: vy * coverScale + offsetY,
+      width: vw * coverScale,
+      height: vh * coverScale,
+    };
+  }
+
+  function showDetectFrame(frameEl, rect) {
+    if (!frameEl) return;
+    frameEl.style.left = `${rect.left}px`;
+    frameEl.style.top = `${rect.top}px`;
+    frameEl.style.width = `${rect.width}px`;
+    frameEl.style.height = `${rect.height}px`;
+    frameEl.classList.remove("hidden");
+  }
+
+  async function scanWithBarcodeDetector(video, onScan, frameEl) {
     const detector = new global.BarcodeDetector({ formats: ["qr_code"] });
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     const tick = async () => {
       if (!stream) return;
       try {
         if (video.videoWidth > 0) {
-          const codes = await detector.detect(video);
+          const scale = Math.min(1, DETECT_MAX_DIM / Math.max(video.videoWidth, video.videoHeight));
+          canvas.width = Math.round(video.videoWidth * scale);
+          canvas.height = Math.round(video.videoHeight * scale);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const codes = await detector.detect(canvas);
           if (codes.length > 0 && codes[0].rawValue) {
-            await stopCamera();
-            onScan(codes[0].rawValue);
+            const rect = mapBoxToDisplay(codes[0].boundingBox, canvas, video);
+            showDetectFrame(frameEl, rect);
+            const text = codes[0].rawValue;
+            // Briefly show the detected-code box (like a phone's native camera
+            // scanner) before tearing the camera down, so a successful read is
+            // visibly confirmed rather than the view just vanishing.
+            setTimeout(async () => {
+              await stopCamera();
+              onScan(text);
+            }, 180);
             return;
           }
         }
@@ -182,15 +236,23 @@
       return;
     }
     container.innerHTML = "";
+    container.style.position = "relative";
     const video = document.createElement("video");
     video.setAttribute("playsinline", "true");
     video.muted = true;
     video.className = "scan-video";
     container.appendChild(video);
+    const frameEl = document.createElement("div");
+    frameEl.className = "scan-detect-frame hidden";
+    container.appendChild(frameEl);
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        // Most phone cameras default to 1080p+ (some go much higher with
+        // continuous autofocus engaged) — none of that extra resolution helps
+        // reading a QR code, it just means more pixels to push through detect()
+        // every tick, so ask for something QR-scanning actually needs.
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
     } catch (e) {
@@ -203,7 +265,7 @@
     currentTrack = track || null;
     if (track) wirePinchZoomAndTapFocus(video, track);
     if (typeof onReady === "function") onReady();
-    await scanWithBarcodeDetector(video, onScan);
+    await scanWithBarcodeDetector(video, onScan, frameEl);
   }
 
   function loadScript(url) {

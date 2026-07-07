@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.33
+
+- Camera QR scanning now downscales each frame onto an offscreen canvas before
+  detecting (phones commonly stream 1080p+, far more than a QR code needs — that's
+  extra work every tick for no benefit and part of what could crash the tab during a
+  long scan) and also asks the camera for a more modest 1280x720 instead of whatever
+  resolution it defaults to.
+- The scanner now briefly draws a highlight box around a detected QR code (like a
+  phone's native camera app) before closing, so a successful read is visibly
+  confirmed instead of the view just cutting out.
+
 ## 1.0.32
 
 - Found the actual root cause of the mobile crash-reload during scanning (present
