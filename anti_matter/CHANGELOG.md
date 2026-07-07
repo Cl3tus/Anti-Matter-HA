@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.30
+
+- Fixed a real bug where "Upload photo" silently did nothing on a failed scan: a
+  cleanup call (`Html5Qrcode.clear()`) could return `undefined` instead of a Promise,
+  and calling `.catch()` on that crashed *before* the actual error message ever got
+  a chance to show. The error now also shows inline right under the button instead
+  of only a modal, so it's not missed.
+- Added a Flash button in the Scan dialog (mobile) to turn the camera's torch on for
+  extra light — only shown when the device/browser actually reports the capability.
+
 ## 1.0.29
 
 - Upload photo (New/Edit dialog) now reads "Upload photo" right on the button itself,

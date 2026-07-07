@@ -5,6 +5,7 @@
   let stream = null;
   let rafId = null;
   let html5Instance = null;
+  let currentTrack = null;
 
   function stopCamera() {
     if (rafId) {
@@ -15,12 +16,37 @@
       stream.getTracks().forEach((t) => t.stop());
       stream = null;
     }
+    currentTrack = null;
     if (html5Instance) {
       html5Instance
         .stop()
         .then(() => html5Instance.clear())
         .catch(() => {});
       html5Instance = null;
+    }
+  }
+
+  // Torch (camera flash) — only the native BarcodeDetector path exposes a raw
+  // MediaStreamTrack to apply this constraint on; most desktop webcams (and the
+  // html5-qrcode fallback path) never report the capability, so this is always
+  // feature-detected rather than assumed available.
+  function supportsTorch() {
+    if (!currentTrack) return false;
+    try {
+      const caps = currentTrack.getCapabilities ? currentTrack.getCapabilities() : null;
+      return !!(caps && caps.torch);
+    } catch {
+      return false;
+    }
+  }
+
+  async function setTorch(on) {
+    if (!currentTrack) return false;
+    try {
+      await currentTrack.applyConstraints({ advanced: [{ torch: on }] });
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -124,7 +150,7 @@
     });
   }
 
-  async function startNativeCamera(containerId, onScan, onError) {
+  async function startNativeCamera(containerId, onScan, onError, onReady) {
     const container = document.getElementById(containerId);
     if (!container) {
       onError(new Error("Scanner container not found"));
@@ -149,7 +175,9 @@
     video.srcObject = stream;
     await video.play();
     const track = stream.getVideoTracks()[0];
+    currentTrack = track || null;
     if (track) wirePinchZoomAndTapFocus(video, track);
+    if (typeof onReady === "function") onReady();
     await scanWithBarcodeDetector(video, onScan);
   }
 
@@ -214,6 +242,21 @@
     );
   }
 
+  // Html5Qrcode.clear() doesn't reliably return a Promise (some code paths return
+  // undefined synchronously, e.g. when scanFile() threw before scanning state was
+  // ever set up) — calling .catch() on that crashes with a *new*, uncaught
+  // "Cannot read properties of undefined (reading 'catch')", which pre-empts the
+  // real onError(e) call below it and makes a failed photo scan look like nothing
+  // happened at all instead of showing an error.
+  async function safeClear(inst) {
+    if (!inst) return;
+    try {
+      await inst.clear();
+    } catch (e) {
+      /* ignore cleanup failures */
+    }
+  }
+
   async function scanImageFile(file, onScan, onError, libUrl) {
     if ("BarcodeDetector" in global) {
       try {
@@ -247,14 +290,14 @@
         }
         inst = new global.Html5Qrcode(tmpId);
         const text = await inst.scanFile(file, false);
-        await inst.clear().catch(() => {});
+        await safeClear(inst);
         if (text) {
           onScan(text);
           return;
         }
         onError(new Error("No QR code found in image"));
       } catch (e) {
-        if (inst) await inst.clear().catch(() => {});
+        await safeClear(inst);
         onError(e);
       }
       return;
@@ -268,12 +311,15 @@
    * @param {string} [opts.libUrl] html5-qrcode script URL
    * @param {(text: string) => void} opts.onScan
    * @param {(err: Error) => void} opts.onError
+   * @param {() => void} [opts.onReady] fired once the camera track is live —
+   *   only reached on the native BarcodeDetector path, where torch support can
+   *   actually be feature-detected against the real MediaStreamTrack.
    */
   async function startCamera(opts) {
     stopCamera();
-    const { containerId, libUrl, onScan, onError } = opts;
+    const { containerId, libUrl, onScan, onError, onReady } = opts;
     if ("BarcodeDetector" in global) {
-      await startNativeCamera(containerId, onScan, onError);
+      await startNativeCamera(containerId, onScan, onError, onReady);
       return;
     }
     if (libUrl) {
@@ -290,5 +336,7 @@
     supportsCamera: () =>
       !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
     supportsNativeScan: () => "BarcodeDetector" in global,
+    supportsTorch,
+    setTorch,
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -121,9 +121,34 @@
       applyParsedToForm(parsed);
     }
 
+    const torchBtn = document.getElementById("btn-scan-torch");
+    let torchOn = false;
+
+    function resetTorchButton() {
+      torchOn = false;
+      if (!torchBtn) return;
+      torchBtn.classList.remove("is-active");
+      torchBtn.setAttribute("aria-pressed", "false");
+      torchBtn.classList.add("hidden");
+    }
+
+    function updateTorchButtonVisibility() {
+      if (!torchBtn) return;
+      torchBtn.classList.toggle("hidden", !global.AntiMatterScanner.supportsTorch());
+    }
+
+    torchBtn?.addEventListener("click", async () => {
+      const next = !torchOn;
+      const ok = await global.AntiMatterScanner.setTorch(next);
+      torchOn = ok && next;
+      torchBtn.classList.toggle("is-active", torchOn);
+      torchBtn.setAttribute("aria-pressed", String(torchOn));
+    });
+
     function openScanDialog() {
       if (!scanDlg) return;
       scanDlg.showModal();
+      resetTorchButton();
       const hint = document.getElementById("scan-hint");
       if (hint) {
         hint.textContent = global.AntiMatterScanner.supportsNativeScan()
@@ -144,6 +169,7 @@
             console.warn("scan", err);
             if (hint) hint.textContent = t("scan.camera_denied");
           },
+          onReady: updateTorchButtonVisibility,
         });
       }
     }
@@ -152,6 +178,7 @@
       global.AntiMatterScanner.stopCamera();
       const el = document.getElementById(readerId);
       if (el) el.innerHTML = "";
+      resetTorchButton();
       scanDlg?.close();
     }
 
@@ -174,14 +201,34 @@
       "scan-file-zwave",
     ];
     for (const fid of fileInputIds) {
-      document.getElementById(fid)?.addEventListener("change", (e) => {
+      const input = document.getElementById(fid);
+      if (!input) continue;
+      const errorEl = document.getElementById(`${fid}-error`);
+      input.addEventListener("change", (e) => {
         const file = e.target.files?.[0];
         e.target.value = "";
+        if (errorEl) {
+          errorEl.textContent = "";
+          errorEl.classList.add("hidden");
+        }
         if (!file) return;
         global.AntiMatterScanner.scanImageFile(
           file,
           handleParsedText,
-          (err) => uiAlert(err.message || t("scan.photo_fail")),
+          (err) => {
+            const msg = err.message || t("scan.photo_fail");
+            // The 3 upload buttons embedded in the code form show the error inline
+            // right under the button — a modal alert() here was easy to miss (or,
+            // before a matter-scanner.js bug fix, never even appeared) while heads-down
+            // in a long form. The standalone Scan dialog has no such slot, so it keeps
+            // the modal.
+            if (errorEl) {
+              errorEl.textContent = msg;
+              errorEl.classList.remove("hidden");
+            } else {
+              uiAlert(msg);
+            }
+          },
           opts.libUrl
         );
       });

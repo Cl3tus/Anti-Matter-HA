@@ -192,6 +192,7 @@
   "scan.default_name": "Gescand apparaat",
   "scan.camera_denied": "Camera niet beschikbaar. Upload in plaats daarvan een foto van de QR-code.",
   "scan.photo_fail": "Kon geen QR-code uit die afbeelding lezen.",
+  "scan.torch": "Flits",
   "theme.light": "Licht",
   "theme.dark": "Donker",
   "theme.system": "Auto",

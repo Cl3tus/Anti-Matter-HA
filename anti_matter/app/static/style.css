@@ -700,6 +700,11 @@
   color: var(--rm-text-muted, #64748b);
 }
 
+.scan-photo-error {
+  color: var(--rm-danger);
+  margin-top: -0.4rem;
+}
+
 .homekit-pairing-optional {
   margin-top: 0.25rem;
 }
@@ -1049,6 +1054,16 @@ dialog h3 {
 
 .scan-reader-mount {
   width: 100%;
+}
+
+.scan-torch-btn {
+  margin: 0 0 var(--rm-space-3);
+}
+
+.scan-torch-btn.is-active {
+  background: var(--rm-accent);
+  color: var(--rm-text-inverse);
+  border-color: var(--rm-accent);
 }
 
 .scan-photo-label {

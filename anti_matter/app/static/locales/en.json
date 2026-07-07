@@ -193,6 +193,7 @@
   "scan.default_name": "Scanned device",
   "scan.camera_denied": "Camera unavailable. Upload a photo of the QR code instead.",
   "scan.photo_fail": "Could not read a QR code from that image.",
+  "scan.torch": "Flash",
   "theme.light": "Light",
   "theme.dark": "Dark",
   "theme.system": "Auto",
