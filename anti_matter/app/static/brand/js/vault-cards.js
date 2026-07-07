@@ -154,7 +154,7 @@
       global.AntiMatterVaultShareUi?.cardIconButtonsHtml({
         iconsHref,
         showDownload: true,
-        showDecode: proto === "matter",
+        showDecode: proto === "matter" || proto === "zwave",
         downloadLabel: actionLabel("download", "Download"),
         editLabel: actionLabel("edit", "Edit"),
         deleteLabel: actionLabel("delete", "Delete"),
@@ -191,8 +191,8 @@
         handlers.onDecode(code);
       };
     }
-    // Double-clicking the QR image itself is a shortcut for the decode button.
-    const qrImg = card.querySelector(".matter-sticker-qr");
+    // Double-clicking the QR/card image itself is a shortcut for the decode button.
+    const qrImg = card.querySelector(".matter-sticker-qr, .zwave-sticker-img");
     if (qrImg && handlers.onDecode) {
       qrImg.ondblclick = (e) => {
         e.stopPropagation();

@@ -566,6 +566,83 @@ function openMtDecodeDialog(code) {
   dlg.showModal();
 }
 
+// Z-Wave SmartStart decode: DSK/PIN plus, when a full QR payload is available (a bare
+// DSK alone doesn't carry this), manufacturer/product/device-class metadata from the
+// QR's TLV tail. No official-name lookup like Matter's DCL — Z-Wave has no public
+// equivalent registry — so this is purely a local parse of the payload's own fields.
+function parseZwavePayload(qrPayload, manualCode) {
+  const ZW = window.AntiMatterZWavePayload;
+  if (!ZW) return null;
+  const extracted = qrPayload ? ZW.extractQrString(qrPayload) : "";
+  if (extracted) {
+    const parsed = ZW.parseQrDigits(extracted);
+    if (parsed) return parsed;
+  }
+  if (manualCode && ZW.isValidDskFormatted(manualCode)) {
+    return {
+      dsk: ZW.formatDsk(manualCode),
+      pin: ZW.pinFromDsk(manualCode),
+      meta: {},
+      version: null,
+      smartStart: false,
+    };
+  }
+  return null;
+}
+
+function renderZwaveDecodeInto(box, parsed) {
+  if (!box) return;
+  if (!parsed) {
+    box.innerHTML = `<p class="form-hint">${escapeHtml(t("code.decode_zwave_empty"))}</p>`;
+    return;
+  }
+  const meta = parsed.meta || {};
+  const rows = [
+    [t("code.decode_zwave_dsk"), parsed.dsk || "—"],
+    [t("code.decode_zwave_pin"), parsed.pin || "—"],
+  ];
+  if (parsed.version != null) {
+    rows.push([
+      t("code.decode_zwave_version"),
+      parsed.smartStart ? `${parsed.version} (SmartStart)` : String(parsed.version),
+    ]);
+  }
+  if (meta.manufacturerId != null) rows.push([t("code.decode_zwave_mfg"), String(meta.manufacturerId)]);
+  if (meta.productType != null) rows.push([t("code.decode_zwave_product_type"), String(meta.productType)]);
+  if (meta.productId != null) rows.push([t("code.decode_zwave_product_id"), String(meta.productId)]);
+  if (meta.applicationVersion) rows.push([t("code.decode_zwave_app_version"), meta.applicationVersion]);
+  if (meta.genericDeviceClass != null) {
+    rows.push([t("code.decode_zwave_device_class"), `${meta.genericDeviceClass} / ${meta.specificDeviceClass}`]);
+  }
+  if (meta.installerIconType != null) rows.push([t("code.decode_zwave_icon"), String(meta.installerIconType)]);
+  box.innerHTML =
+    `<table class="mt-decode-table">` +
+    rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
+    `</table>`;
+}
+
+function renderZwaveDecode() {
+  const box = document.getElementById("code-zwave-decode-result");
+  if (!box) return;
+  renderZwaveDecodeInto(box, parseZwavePayload(trimVal("code-zwave-qr"), trimVal("code-zwave-dsk")));
+}
+
+function openZwaveDecodeDialog(code) {
+  const dlg = document.getElementById("zwave-decode-dialog");
+  const box = document.getElementById("zwave-decode-dialog-result");
+  if (!dlg || !box) return;
+  renderZwaveDecodeInto(box, parseZwavePayload(code.qr_payload, code.manual_code));
+  if (!dlg.open) dlg.showModal();
+}
+
+// Card decode icon/dblclick is wired once per card regardless of protocol — dispatch
+// to the right dialog here instead of duplicating the protocol check at each call site.
+function openDecodeDialogForCode(code) {
+  const proto = window.AntiMatterVaultCards?.codeProtocol?.(code) || "matter";
+  if (proto === "zwave") openZwaveDecodeDialog(code);
+  else openMtDecodeDialog(code);
+}
+
 function buildQuickMeta(code, proto) {
   const parts = [];
   if (code.device_vendor) parts.push(`${t("filter.vendor")}: ${code.device_vendor}`);
@@ -593,6 +670,8 @@ function openQuickView(code) {
   wrap.innerHTML = `<img src="${src}" alt="" />`;
   if (proto === "matter") {
     wrap.querySelector("img").ondblclick = () => openMtDecodeDialog(code);
+  } else if (proto === "zwave") {
+    wrap.querySelector("img").ondblclick = () => openZwaveDecodeDialog(code);
   }
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";
@@ -604,8 +683,8 @@ function openQuickView(code) {
   document.getElementById("quickview-download").onclick = () => downloadCode(code);
   const decodeBtn = document.getElementById("quickview-decode");
   if (decodeBtn) {
-    decodeBtn.classList.toggle("hidden", proto !== "matter");
-    decodeBtn.onclick = () => openMtDecodeDialog(code);
+    decodeBtn.classList.toggle("hidden", proto !== "matter" && proto !== "zwave");
+    decodeBtn.onclick = () => (proto === "zwave" ? openZwaveDecodeDialog(code) : openMtDecodeDialog(code));
   }
   const dlg = document.getElementById("quickview-dialog");
   if (!dlg.open) dlg.showModal();
@@ -645,7 +724,7 @@ function renderCodes() {
         onDownload: downloadCode,
         onEdit: openCodeDialog,
         onDelete: deleteCode,
-        onDecode: openMtDecodeDialog,
+        onDecode: openDecodeDialogForCode,
       });
     }
     card.addEventListener("click", (e) => {
@@ -795,6 +874,9 @@ function openCodeDialog(code = null) {
   if (proto === "homekit") syncHomeKitDerived();
   setVal("code-zwave-dsk", proto === "zwave" ? code?.manual_code : "");
   setVal("code-zwave-qr", proto === "zwave" ? code?.qr_payload : "");
+  const zwaveDecode = document.getElementById("code-zwave-decode");
+  if (zwaveDecode) zwaveDecode.open = false;
+  renderZwaveDecode();
   setVal("code-notes", code?.notes);
   document.getElementById("code-in-use").checked = Boolean(code?.in_use);
   document.getElementById("code-conn-wifi").checked = Boolean(code?.conn_wifi);
@@ -1179,6 +1261,9 @@ function bindUi() {
   document.getElementById("code-mt-decode")?.addEventListener("toggle", renderMtDecode);
   document.getElementById("code-qr")?.addEventListener("input", renderMtDecode);
   document.getElementById("code-manual")?.addEventListener("input", renderMtDecode);
+  document.getElementById("code-zwave-decode")?.addEventListener("toggle", renderZwaveDecode);
+  document.getElementById("code-zwave-qr")?.addEventListener("input", renderZwaveDecode);
+  document.getElementById("code-zwave-dsk")?.addEventListener("input", renderZwaveDecode);
   document.getElementById("code-device-vendor")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-vendor"));
   document.getElementById("code-device-product")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-product"));
   document.getElementById("btn-add-code").onclick = () => openCodeDialog();
@@ -1406,6 +1491,7 @@ window.AntiMatterUI = {
   syncHomeKitDerived,
   openCodeDialog,
   renderMtDecode,
+  renderZwaveDecode,
 };
 
 async function boot() {

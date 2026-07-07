@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.22
+
+- Fixed the generated Z-Wave card: the QR code rendered far smaller than intended, with a
+  big empty gap before the DSK digits. The qrcode library labels its own SVG in
+  millimeters, and embedding that verbatim inside our unitless card viewBox made the
+  browser apply an independent mm→px conversion on top of our own scaling — the QR is
+  now full-size and correctly centered.
+- Added a **Z-Wave decode** view (matching the Matter one): DSK, PIN, QR version, and —
+  when a full SmartStart QR (not just a bare DSK) is available — manufacturer ID, product
+  type/ID, application version, device class and installer icon type, all parsed straight
+  from the payload. Available in the New/Edit form, the quick-view popup, and via
+  double-clicking a Z-Wave card.
+
 ## 1.0.21
 
 - Docs only: My-Home-Assistant install badge, Rematters/Jesse Hulswit credits, links to

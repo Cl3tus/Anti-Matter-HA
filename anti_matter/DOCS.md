@@ -29,6 +29,9 @@ a scannable QR card so you can re-commission a device without hunting for the or
 - Opening or editing a Matter code decodes its payload in the background (vendor/product ID,
   passcode, discriminator, official CSA DCL name/links where available) and auto-fills
   Device vendor/product — typing something by hand always wins.
+- Z-Wave codes get their own decode view (DSK, PIN, QR version, and — from a full
+  SmartStart QR — manufacturer/product/device-class fields), available in the form, the
+  quick-view popup, and by double-clicking a Z-Wave card.
 - Saving or restoring a code that matches an existing one by QR payload or manual code is
   caught, with a Cancel/open-existing (or Cancel/Merge, when restoring) choice.
 - **Home Assistant link (optional)**: pick a **Device** from the dropdown and an **Open

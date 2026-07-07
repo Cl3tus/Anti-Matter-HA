@@ -69,6 +69,7 @@
         document.getElementById("code-zwave-dsk").value =
           parsed.manual_code || "";
         document.getElementById("code-zwave-qr").value = parsed.qr_payload || "";
+        global.AntiMatterUI?.renderZwaveDecode?.();
       } else {
         document.getElementById("code-manual").value = parsed.manual_code || "";
         document.getElementById("code-qr").value = parsed.qr_payload || "";

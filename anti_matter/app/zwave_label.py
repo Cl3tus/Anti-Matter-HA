@@ -39,10 +39,6 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
         )
         q.add_data(qr)
         q.make(fit=True)
-        modules = len(q.modules)
-        border = q.border
-        pixel_size = modules + border * 2
-        scale = QR_TARGET_PX / pixel_size
         offset_x = (300 - QR_TARGET_PX) / 2
 
         buf = io.BytesIO()
@@ -50,9 +46,21 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
         svg = buf.getvalue().decode("utf-8")
         match = re.search(r"<svg([^>]*)>(.*)</svg>", svg, re.DOTALL | re.IGNORECASE)
         if match:
+            attrs, body = match.group(1), match.group(2)
+            # qrcode's SvgPathImage sizes its own <svg width/height> in "mm" — embedding
+            # that unit-suffixed size verbatim inside our unitless viewBox makes the
+            # browser resolve it via CSS mm->px conversion, independent of the scale we
+            # apply below, so the QR rendered at a fraction of its intended size with a
+            # large gap of unused space around it. Strip the unit so the nested viewport
+            # is unitless (1:1 with its own viewBox), and scale off that viewBox's actual
+            # width rather than assuming 1 unit == 1 module.
+            box_w_match = re.search(r'width="([\d.]+)mm"', attrs)
+            box_w = float(box_w_match.group(1)) if box_w_match else 3.3
+            attrs = re.sub(r'(width|height)="[\d.]+mm"', rf'\1="{box_w:g}"', attrs)
+            scale = QR_TARGET_PX / box_w
             qr_block = (
                 f'<g transform="translate({offset_x:.1f},{QR_OFFSET_Y}) '
-                f'scale({scale:.4f})"><svg{match.group(1)}>{match.group(2)}</svg></g>'
+                f'scale({scale:.4f})"><svg{attrs}>{body}</svg></g>'
             )
         else:
             qr_block = f'<text x="150" y="140" text-anchor="middle">QR</text>'
