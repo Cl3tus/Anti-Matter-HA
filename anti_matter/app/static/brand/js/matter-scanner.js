@@ -6,11 +6,25 @@
   let rafId = null;
   let html5Instance = null;
   let currentTrack = null;
+  let torchIsOn = false;
 
-  function stopCamera() {
+  async function stopCamera() {
     if (rafId) {
       cancelAnimationFrame(rafId);
       rafId = null;
+    }
+    // Stopping a track while its torch is still on crashes the camera HAL on some
+    // Android phones — the tab's renderer/GPU process dies and Chrome silently
+    // reloads it, which looks like the whole page crashed right after a scan
+    // (torch off -> stop is the safe order; stop -> torch off is not, on those
+    // devices). Always turn it off first and wait for it to actually apply.
+    if (currentTrack && torchIsOn) {
+      try {
+        await currentTrack.applyConstraints({ advanced: [{ torch: false }] });
+      } catch {
+        /* best effort */
+      }
+      torchIsOn = false;
     }
     if (stream) {
       stream.getTracks().forEach((t) => t.stop());
@@ -44,6 +58,7 @@
     if (!currentTrack) return false;
     try {
       await currentTrack.applyConstraints({ advanced: [{ torch: on }] });
+      torchIsOn = on;
       return true;
     } catch {
       return false;
@@ -58,7 +73,7 @@
         if (video.videoWidth > 0) {
           const codes = await detector.detect(video);
           if (codes.length > 0 && codes[0].rawValue) {
-            stopCamera();
+            await stopCamera();
             onScan(codes[0].rawValue);
             return;
           }

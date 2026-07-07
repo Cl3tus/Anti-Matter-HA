@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.31
+
+- Fixed a mobile-only crash: stopping the camera right after a successful scan while
+  the flash/torch was on could crash the phone's camera hardware, which Chrome
+  recovers from by silently reloading the page — looking like the whole app crashed
+  right after reading a code. The torch is now always turned off first and its own
+  turn-off is awaited before the camera track is stopped.
+
 ## 1.0.30
 
 - Fixed a real bug where "Upload photo" silently did nothing on a failed scan: a
