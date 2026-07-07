@@ -11,7 +11,7 @@ log_line INFO '\033[32m' "Anti-Matter starting on port 8099 (ingress)..."
 export ANTIMATTER_DATA="/data"
 export ANTIMATTER_OPTIONS="/data/options.json"
 export ANTIMATTER_PORT="8099"
-export ADDON_VERSION="1.0.28"
+export ADDON_VERSION="1.0.29"
 
 # media:rw mounts HA's Media folder at /media. Downloaded label/QR images are
 # also saved there (in anti_matter/ subfolder) if present.

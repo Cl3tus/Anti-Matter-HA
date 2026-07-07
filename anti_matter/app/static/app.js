@@ -811,11 +811,26 @@ function renderZwaveDecode() {
   });
 }
 
+// devices.zwave-js.io supports jumping straight to a specific device via
+// ?jumpTo=manufacturerId:productType:productId:firmwareVersion — falls back to
+// the plain homepage when the QR's TLV tail didn't carry that metadata.
+function zwaveDeviceDbUrl(meta) {
+  const base = "https://devices.zwave-js.io/";
+  if (!meta || meta.manufacturerId == null || meta.productType == null || meta.productId == null) {
+    return base;
+  }
+  const h = (n) => "0x" + (n >>> 0).toString(16).padStart(4, "0");
+  return `${base}?jumpTo=${h(meta.manufacturerId)}:${h(meta.productType)}:${h(meta.productId)}:0.0`;
+}
+
 function openZwaveDecodeDialog(code) {
   const dlg = document.getElementById("zwave-decode-dialog");
   const box = document.getElementById("zwave-decode-dialog-result");
   if (!dlg || !box) return;
-  renderZwaveDecodeInto(box, parseZwavePayload(code.qr_payload, code.manual_code));
+  const parsed = parseZwavePayload(code.qr_payload, code.manual_code);
+  const link = document.getElementById("zwave-decode-device-db-link");
+  if (link) link.href = zwaveDeviceDbUrl(parsed?.meta);
+  renderZwaveDecodeInto(box, parsed);
   if (!dlg.open) dlg.showModal();
 }
 

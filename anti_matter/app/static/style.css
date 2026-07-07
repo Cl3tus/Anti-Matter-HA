@@ -350,7 +350,9 @@
 }
 .filter-dropdown-panel label {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--rm-space-2);
   font-size: var(--rm-text-sm);
   cursor: pointer;
@@ -1055,41 +1057,6 @@ dialog h3 {
   gap: var(--rm-space-2);
   font-size: var(--rm-text-sm);
   color: var(--rm-text-muted);
-}
-
-/* Style just the button portion of the native file input as a pill matching
-   .rm-btn-secondary — keeps the input itself fully native/clickable (a hidden
-   input behind a styled label was tried before and didn't reliably receive
-   clicks on some browsers), but drops its default bordered "frame" look. */
-.scan-photo-label input[type="file"] {
-  border: none;
-  background: transparent;
-  padding: 0;
-  width: auto;
-  font-size: var(--rm-text-xs);
-  color: var(--rm-text-muted);
-}
-
-.scan-photo-label input[type="file"]::file-selector-button,
-.scan-photo-label input[type="file"]::-webkit-file-upload-button {
-  font: inherit;
-  font-weight: 600;
-  font-size: var(--rm-text-sm);
-  padding: 0.7rem 1.35rem;
-  border-radius: var(--rm-radius-pill);
-  border: 1px solid var(--rm-border);
-  background: var(--rm-surface);
-  color: var(--rm-text);
-  box-shadow: var(--rm-shadow-sm);
-  cursor: pointer;
-  margin-right: var(--rm-space-2);
-  transition: transform 0.18s ease, filter 0.18s ease;
-}
-
-.scan-photo-label input[type="file"]::file-selector-button:hover,
-.scan-photo-label input[type="file"]::-webkit-file-upload-button:hover {
-  border-color: var(--rm-border-focus);
-  background: var(--rm-surface-elevated);
 }
 
 .scan-inline-row {

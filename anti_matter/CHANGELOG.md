@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.29
+
+- Upload photo (New/Edit dialog) now reads "Upload photo" right on the button itself,
+  the redundant heading above it is gone.
+- The Z-Wave device-database link in the decode dialog now jumps straight to the
+  matched device on devices.zwave-js.io (`?jumpTo=mfg:type:id`) when the QR's TLV tail
+  carries that metadata, instead of always linking to the site's homepage.
+- Fixed the category checkboxes in the New/Edit dialog rendering centered/stacked
+  instead of left-aligned — a generic `dialog label { flex-direction: column }` rule
+  was leaking into them.
+
 ## 1.0.28
 
 - The category field in the New/Edit dialog is now a dropdown with checkboxes (like
