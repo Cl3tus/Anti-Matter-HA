@@ -17,23 +17,42 @@ QR_SIZE = 220
 PAD_X = 10
 PAD_Y = 8
 GAP = 6
+NAME_H = 22
 LABEL_W = QR_SIZE + 2 * PAD_X + 4  # 2px border each side
 LABEL_H_WITH_QR = PAD_Y + 47 + GAP + QR_SIZE + GAP + 32 + 10
 LABEL_H_NO_QR = 160
 
 
-def label_png_bytes(manual_code: str, qr_payload: str) -> bytes | None:
+def label_png_bytes(manual_code: str, qr_payload: str, name: str = "") -> bytes | None:
     manual = display_manual(manual_code)
     encode = qr_encode_payload(qr_payload, manual_code)
     if not manual and encode is None:
         return None
 
     has_qr = encode is not None
-    w, h = LABEL_W, LABEL_H_WITH_QR if has_qr else LABEL_H_NO_QR
+    name = (name or "").strip()
+    name_h = NAME_H + GAP if name else 0
+    w, h = LABEL_W, (LABEL_H_WITH_QR if has_qr else LABEL_H_NO_QR) + name_h
 
     img = Image.new("RGB", (w, h), "white")
     draw = ImageDraw.Draw(img)
     draw.rectangle((2, 2, w - 3, h - 3), outline="black", width=2)
+
+    if name:
+        font = _mono_font(16)
+        # Long names would overflow the label width — clip rather than shrink the font.
+        trimmed = False
+        if font:
+            while len(name) > 1 and draw.textbbox((0, 0), name, font=font)[2] > w - 2 * PAD_X:
+                name = name[:-1]
+                trimmed = True
+        label_text = name + "…" if trimmed else name
+        if font:
+            bbox = draw.textbbox((0, 0), label_text, font=font)
+            tw = bbox[2] - bbox[0]
+            draw.text(((w - tw) // 2, PAD_Y), label_text, fill=(60, 60, 60), font=font)
+        else:
+            draw.text((PAD_X, PAD_Y), label_text, fill=(60, 60, 60))
 
     logo_h = 0
     if os.path.isfile(WORDMARK):
@@ -42,10 +61,10 @@ def label_png_bytes(manual_code: str, qr_payload: str) -> bytes | None:
         ratio = target_w / logo.width
         logo = logo.resize((target_w, int(logo.height * ratio)), Image.Resampling.LANCZOS)
         logo_h = logo.height
-        logo_y = PAD_Y
+        logo_y = PAD_Y + name_h
         img.paste(logo, ((w - logo.width) // 2, logo_y), logo)
     else:
-        draw.text((w // 2 - 28, PAD_Y + 4), "matter", fill=(30, 30, 30))
+        draw.text((w // 2 - 28, PAD_Y + name_h + 4), "matter", fill=(30, 30, 30))
         logo_h = 20
 
     if has_qr:

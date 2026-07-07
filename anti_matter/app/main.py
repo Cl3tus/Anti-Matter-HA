@@ -62,7 +62,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.16"
+APP_VERSION = "1.0.17"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -681,7 +681,7 @@ async def code_label_png(code_id: str):
     if proto in ("homekit", "zwave"):
         raise HTTPException(400, "Use card.svg for HomeKit or Z-Wave labels")
     try:
-        png = label_png_bytes(code.manual_code or "", code.qr_payload or "")
+        png = label_png_bytes(code.manual_code or "", code.qr_payload or "", code.name or "")
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     if not png:
@@ -731,7 +731,7 @@ async def save_code_to_media(code_id: str):
         (MEDIA_DIR / filename).write_text(svg, encoding="utf-8")
     else:
         try:
-            png = label_png_bytes(code.manual_code or "", code.qr_payload or "")
+            png = label_png_bytes(code.manual_code or "", code.qr_payload or "", code.name or "")
         except ValueError as e:
             raise HTTPException(400, str(e)) from e
         if not png:

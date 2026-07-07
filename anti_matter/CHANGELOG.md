@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.17
+
+- Connectivity filter dropdown restyled to match the other filter controls exactly
+  (same height/border/radius as the selects, not the pill-shaped button) — checkboxes
+  underneath are also now a consistent size, and the search box lines up with the
+  filters again.
+- The inline "+ category" button in the New/Edit dialog now matches the Category
+  select's height, with the `+` centered.
+- **Device type** is now a suggest-dropdown (light, switch, sensor, lock, cover, …)
+  while still accepting free text, same pattern as Area.
+- The downloadable Matter label PNG (and its saved-to-media copy) now prints the
+  code's name at the top, not just in the filename.
+- New/Edit code dialog is ~10% wider (more room for the device-details fields).
+
 ## 1.0.16
 
 - **Trash now has its own file**, `anti-matter-bin.json`, next to the vault on the SAMBA

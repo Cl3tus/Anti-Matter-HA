@@ -323,10 +323,27 @@
   max-width: 9rem;
 }
 
-/* Connectivity filter: one dropdown, checkboxes inside instead of 5 selects */
+/* Connectivity filter: one dropdown, checkboxes inside instead of 5 selects.
+   Toggle button matches the other filter controls (.attr-filters select) exactly —
+   same height/radius/border, not the pill-shaped .rm-btn. */
 .conn-filter-dropdown {
   position: relative;
   display: inline-block;
+}
+.conn-filter-toggle {
+  height: 2.3rem;
+  box-sizing: border-box;
+  padding: 0 0.6rem;
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-surface);
+  color: var(--rm-text);
+  font-family: inherit;
+  font-size: var(--rm-text-sm);
+  cursor: pointer;
+}
+.conn-filter-toggle:hover {
+  border-color: var(--rm-border-focus);
 }
 .conn-filter-panel {
   position: absolute;
@@ -353,14 +370,29 @@
   font-size: var(--rm-text-sm);
   cursor: pointer;
 }
+.conn-filter-panel input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--rm-accent);
+}
 
-/* Category select + inline "add category" button in the code dialog */
+/* Category select + inline "add category" button in the code dialog — same
+   height as the select, plus glyph centered (overrides the fixed 32x32 sidebar size) */
 .category-select-row {
   display: flex;
   gap: var(--rm-space-2);
 }
 .category-select-row select {
   flex: 1;
+  height: 2.3rem;
+  box-sizing: border-box;
+}
+.category-select-row .btn.icon {
+  width: 2.3rem;
+  height: 2.3rem;
+  flex-shrink: 0;
 }
 
 .codes-grid {
@@ -788,6 +820,12 @@ dialog {
   max-height: 85vh;
   width: calc(100% - 2rem);
   box-shadow: var(--rm-shadow-lg);
+}
+
+/* New/Edit code dialog has the most fields (protocol-specific + device details +
+   HA link) — ~10% wider than the standard dialog width. */
+#code-dialog {
+  max-width: 528px;
 }
 
 /* Scoped to [open]: an unconditional `display: flex` on `dialog` beats the

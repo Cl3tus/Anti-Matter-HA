@@ -1104,6 +1104,21 @@ async function loadAddonInfo() {
   }
 }
 
+// Common device types — suggestions only (datalist), free text still allowed so
+// existing saved values that aren't in this list keep working.
+const DEVICE_TYPE_OPTIONS = [
+  "light", "switch", "plug", "sensor", "binary_sensor", "motion_sensor",
+  "contact_sensor", "climate", "thermostat", "lock", "cover", "garage_door",
+  "fan", "camera", "doorbell", "siren", "smoke_detector", "water_leak_sensor",
+  "button", "remote", "media_player", "speaker", "vacuum", "hub", "other",
+];
+
+function fillDeviceTypeOptions() {
+  const list = document.getElementById("device-type-options");
+  if (!list) return;
+  list.innerHTML = DEVICE_TYPE_OPTIONS.map((v) => `<option value="${escapeHtml(v)}"></option>`).join("");
+}
+
 async function loadAreas() {
   try {
     const areas = await api("/ha/areas");
@@ -1399,6 +1414,7 @@ async function boot() {
   }
   await loadVault();
   await loadAreas();
+  fillDeviceTypeOptions();
   updateStorageHint();
   startVaultPolling();
   logEvent(
