@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.26
+
+- Added a **Clear filters** button next to the filter dropdowns.
+- **In use** filter is now All/Yes/No (exclusive, like a radio button) instead of
+  Yes/No checkboxes that could both be checked at once with no clear meaning.
+- Every checkbox filter that can apply to an unset field (Vendor, Product, Type, Area,
+  Connectivity) now has an **(Empty)** option, so codes with nothing set there are still
+  reachable through the filter instead of just disappearing once you check something else.
+- Fixed **Upload photo inside the New/Edit dialog silently doing nothing** on some
+  browsers/devices: it was a hidden `<input>` behind a styled label, which apparently
+  doesn't reliably forward clicks everywhere — swapped for a plain visible file input,
+  the same one already confirmed working in the standalone Scan dialog.
+- **Categories are case-insensitive** (already true for duplicate detection) and now
+  always display with a capitalized first letter, regardless of how they were typed —
+  the stored name itself isn't changed.
+- Added a link to the Z-Wave JS device database (devices.zwave-js.io) in the Z-Wave
+  decode popup, next to Close.
+
 ## 1.0.25
 
 - Z-Wave card: dropped the manufacturer/type/ID summary line — just PIN and the full DSK

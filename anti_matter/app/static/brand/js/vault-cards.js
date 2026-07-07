@@ -222,11 +222,18 @@
     }
   }
 
+  // Category names are stored exactly as typed (matching is already case-insensitive,
+  // see _find_category_by_name in main.py) — only capitalized for display.
+  function capitalizeFirst(s) {
+    s = String(s || "");
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+
   function categoryNameDefault(vault, categoryId) {
     const c = vault.categories.find((x) => x.id === categoryId);
     const none =
       global.AntiMatterI18n?.t?.("categories.none") ?? "Uncategorized";
-    return c ? c.name : none;
+    return c ? capitalizeFirst(c.name) : none;
   }
 
   function fillCategorySelect(sel, vault) {
@@ -236,7 +243,7 @@
     for (const cat of vault.categories) {
       const opt = document.createElement("option");
       opt.value = cat.id;
-      opt.textContent = cat.name;
+      opt.textContent = capitalizeFirst(cat.name);
       sel.appendChild(opt);
     }
   }

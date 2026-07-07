@@ -957,6 +957,7 @@ dialog h3 {
 
 .dialog-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--rm-space-2);
   margin-top: var(--rm-space-2);
@@ -966,6 +967,16 @@ dialog h3 {
   background: var(--rm-surface-glass);
   padding-top: var(--rm-space-2);
   flex: none;
+}
+
+.dialog-actions-link {
+  font-size: var(--rm-text-xs);
+  color: var(--rm-text-muted);
+  text-decoration: none;
+}
+.dialog-actions-link:hover {
+  color: var(--rm-accent);
+  text-decoration: underline;
 }
 
 /* QR scan */

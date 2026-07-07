@@ -74,12 +74,19 @@ async function loadVault() {
   render();
 }
 
+// Category names are stored exactly as typed (matching is already case-insensitive,
+// see _find_category_by_name in main.py) — only capitalized for display.
+function capitalizeFirst(s) {
+  s = String(s || "");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 function categoryName(id) {
   if (window.AntiMatterVaultCards) {
-    return window.AntiMatterVaultCards.categoryNameDefault(vault, id);
+    return capitalizeFirst(window.AntiMatterVaultCards.categoryNameDefault(vault, id));
   }
   const c = vault.categories.find((x) => x.id === id);
-  return c ? c.name : "Uncategorized";
+  return c ? capitalizeFirst(c.name) : "Uncategorized";
 }
 
 // Every toolbar filter is a checkbox dropdown: within one field, checked values
@@ -104,11 +111,14 @@ const PROTOCOL_FILTER_OPTIONS = [
 ];
 const protocolFilter = new Set();
 
+// In-use is exclusive (All/Yes/No), unlike every other filter — a code can't be both
+// in-use and not, so OR-ing checkboxes here wouldn't mean anything.
 const IN_USE_FILTER_OPTIONS = [
+  ["", "filter.all_short"],
   ["yes", "filter.yes"],
   ["no", "filter.no"],
 ];
-const inUseFilter = new Set();
+let inUseFilterValue = "";
 
 const CONN_FILTER_FIELDS = [
   ["conn_wifi", "code.conn_wifi"],
@@ -117,6 +127,9 @@ const CONN_FILTER_FIELDS = [
   ["conn_bluetooth", "code.conn_bluetooth"],
   ["conn_zwave", "code.conn_zwave"],
 ];
+// Pseudo-field: "none of the 5 connectivity types are set" — not a real code field,
+// so filteredCodes() special-cases it instead of checking c[CONN_EMPTY_VALUE].
+const CONN_EMPTY_VALUE = "__conn_empty__";
 const connFilters = new Set();
 
 function filterToggleLabel(baseLabel, count) {
@@ -151,19 +164,54 @@ function renderCheckboxFilterPanel(panelId, toggleId, baseLabelKey, options, sel
   if (toggle) toggle.textContent = filterToggleLabel(baseLabel, selectedSet.size);
 }
 
+// options: array of [value, alreadyTranslatedLabel] pairs. Only one can be selected —
+// used for In-use (All/Yes/No), unlike the OR-multi-select checkbox panels above.
+function renderRadioFilterPanel(panelId, toggleId, baseLabelKey, options, getValue, setValue) {
+  const panel = document.getElementById(panelId);
+  const toggle = document.getElementById(toggleId);
+  const baseLabel = t(baseLabelKey);
+  const current = getValue();
+  if (panel) {
+    panel.innerHTML = options
+      .map(
+        ([value, label]) =>
+          `<label><input type="radio" name="${panelId}-radio" value="${escapeHtml(value)}" ${current === value ? "checked" : ""} /> <span>${escapeHtml(label)}</span></label>`
+      )
+      .join("");
+    panel.querySelectorAll("input[type=radio]").forEach((rb) => {
+      rb.onchange = () => {
+        setValue(rb.value);
+        const opt = options.find(([v]) => v === rb.value);
+        if (toggle) toggle.textContent = rb.value && opt ? `${baseLabel}: ${opt[1]}` : baseLabel;
+        renderCodes();
+      };
+    });
+  }
+  if (toggle) {
+    const activeOpt = options.find(([v]) => v === current);
+    toggle.textContent = current && activeOpt ? `${baseLabel}: ${activeOpt[1]}` : baseLabel;
+  }
+}
+
 function fillDynamicFilterPanels() {
   for (const [idPrefix, field, labelKey] of DYNAMIC_FILTER_FIELDS) {
-    const values = Array.from(
-      new Set(vault.codes.map((c) => (c[field] || "").trim()).filter(Boolean))
-    ).sort((a, b) => a.localeCompare(b));
+    const rawValues = vault.codes.map((c) => (c[field] || "").trim());
+    const hasEmpty = rawValues.some((v) => !v);
+    const values = Array.from(new Set(rawValues.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    // "" (empty) is itself a valid entry in the selected-values Set — no code above
+    // needs to special-case it, since filteredCodes() just checks Set membership
+    // against each code's (possibly empty) trimmed field value.
     for (const v of [...dynamicFilters[field]]) {
-      if (!values.includes(v)) dynamicFilters[field].delete(v);
+      if (v !== "" && !values.includes(v)) dynamicFilters[field].delete(v);
+      if (v === "" && !hasEmpty) dynamicFilters[field].delete(v);
     }
+    const options = values.map((v) => [v, v]);
+    if (hasEmpty) options.unshift(["", t("filter.empty")]);
     renderCheckboxFilterPanel(
       `${idPrefix}-panel`,
       `${idPrefix}-toggle`,
       labelKey,
-      values.map((v) => [v, v]),
+      options,
       dynamicFilters[field]
     );
   }
@@ -180,12 +228,15 @@ function fillProtocolFilterPanel() {
 }
 
 function fillInUseFilterPanel() {
-  renderCheckboxFilterPanel(
+  renderRadioFilterPanel(
     "filter-in-use-panel",
     "filter-in-use-toggle",
     "code.in_use",
     IN_USE_FILTER_OPTIONS.map(([v, key]) => [v, t(key)]),
-    inUseFilter
+    () => inUseFilterValue,
+    (v) => {
+      inUseFilterValue = v;
+    }
   );
 }
 
@@ -194,9 +245,22 @@ function fillConnFilterPanel() {
     "filter-conn-panel",
     "filter-conn-toggle",
     "code.connectivity",
-    CONN_FILTER_FIELDS.map(([field, key]) => [field, t(key)]),
+    [[CONN_EMPTY_VALUE, t("filter.empty")], ...CONN_FILTER_FIELDS.map(([field, key]) => [field, t(key)])],
     connFilters
   );
+}
+
+function clearAllFilters() {
+  protocolFilter.clear();
+  for (const [, field] of DYNAMIC_FILTER_FIELDS) dynamicFilters[field].clear();
+  inUseFilterValue = "";
+  connFilters.clear();
+  fillDynamicFilterPanels();
+  fillProtocolFilterPanel();
+  fillInUseFilterPanel();
+  fillConnFilterPanel();
+  document.querySelectorAll(".filter-dropdown-panel").forEach((p) => p.classList.add("hidden"));
+  renderCodes();
 }
 
 function filteredCodes() {
@@ -214,13 +278,15 @@ function filteredCodes() {
     const selected = dynamicFilters[field];
     if (selected.size) codes = codes.filter((c) => selected.has((c[field] || "").trim()));
   }
-  if (inUseFilter.size) {
-    codes = codes.filter(
-      (c) => (inUseFilter.has("yes") && c.in_use) || (inUseFilter.has("no") && !c.in_use)
-    );
-  }
+  if (inUseFilterValue === "yes") codes = codes.filter((c) => c.in_use);
+  else if (inUseFilterValue === "no") codes = codes.filter((c) => !c.in_use);
   if (connFilters.size) {
-    codes = codes.filter((c) => [...connFilters].some((field) => c[field]));
+    const wantEmpty = connFilters.has(CONN_EMPTY_VALUE);
+    const realFields = [...connFilters].filter((f) => f !== CONN_EMPTY_VALUE);
+    codes = codes.filter((c) => {
+      if (realFields.some((field) => c[field])) return true;
+      return wantEmpty && CONN_FILTER_FIELDS.every(([field]) => !c[field]);
+    });
   }
   const q = document.getElementById("search").value.trim().toLowerCase();
   if (!q) return codes;
@@ -307,8 +373,9 @@ async function deleteSelectedCategories() {
 }
 
 function trashListItemHtml(item, kind) {
+  const name = kind === "category" ? capitalizeFirst(item.name) : item.name;
   return `<li>
-    <span title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+    <span title="${escapeHtml(name)}">${escapeHtml(name)}</span>
     <button type="button" class="rm-btn rm-btn-secondary" data-restore="${escapeHtml(item.id)}" data-kind="${kind}">${escapeHtml(t("action.restore"))}</button>
     <button type="button" class="rm-btn rm-btn-danger" data-purge="${escapeHtml(item.id)}" data-kind="${kind}">${escapeHtml(t("action.delete_forever"))}</button>
   </li>`;
@@ -368,7 +435,7 @@ function renderCategories() {
     const mark = window.AntiMatterCategoryIcons
       ? window.AntiMatterCategoryIcons.markMarkup(cat, BRAND_PREFIX)
       : `<span class="category-dot" style="background:${cat.color}"></span>`;
-    btn.innerHTML = `${mark}${escapeHtml(cat.name)}`;
+    btn.innerHTML = `${mark}${escapeHtml(capitalizeFirst(cat.name))}`;
     btn.onclick = (e) => {
       if (e.shiftKey || e.ctrlKey || e.metaKey) {
         handleCategorySelectClick(e, cat, i, sorted);
@@ -840,7 +907,7 @@ function fillCategorySelect() {
   for (const cat of vault.categories) {
     const opt = document.createElement("option");
     opt.value = cat.id;
-    opt.textContent = cat.name;
+    opt.textContent = capitalizeFirst(cat.name);
     sel.appendChild(opt);
   }
 }
@@ -1512,6 +1579,10 @@ function bindUi() {
   document.getElementById("code-ha-device")?.addEventListener("change", updateHaDeviceLink);
 
   fillConnFilterPanel();
+  document.getElementById("btn-clear-filters")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    clearAllFilters();
+  });
   document.querySelectorAll(".filter-dropdown-toggle").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
