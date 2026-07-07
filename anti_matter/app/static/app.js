@@ -224,6 +224,33 @@ async function deleteSelectedCategories() {
   await loadVault();
 }
 
+function trashListItemHtml(item, kind) {
+  return `<li>
+    <span title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+    <button type="button" class="rm-btn rm-btn-secondary" data-restore="${escapeHtml(item.id)}" data-kind="${kind}">${escapeHtml(t("action.restore"))}</button>
+    <button type="button" class="rm-btn rm-btn-danger" data-purge="${escapeHtml(item.id)}" data-kind="${kind}">${escapeHtml(t("action.delete_forever"))}</button>
+  </li>`;
+}
+
+async function loadTrash() {
+  const trash = await api("/trash");
+  const catSection = document.getElementById("trash-categories-section");
+  const codeSection = document.getElementById("trash-codes-section");
+  const empty = document.getElementById("trash-empty");
+  const catList = document.getElementById("trash-category-list");
+  const codeList = document.getElementById("trash-code-list");
+  if (catList) catList.innerHTML = trash.categories.map((c) => trashListItemHtml(c, "category")).join("");
+  if (codeList) codeList.innerHTML = trash.codes.map((c) => trashListItemHtml(c, "code")).join("");
+  catSection?.classList.toggle("hidden", trash.categories.length === 0);
+  codeSection?.classList.toggle("hidden", trash.codes.length === 0);
+  empty?.classList.toggle("hidden", trash.categories.length > 0 || trash.codes.length > 0);
+}
+
+async function openTrashDialog() {
+  await loadTrash();
+  document.getElementById("trash-dialog")?.showModal();
+}
+
 function renderCategories() {
   const ul = document.getElementById("category-list");
   ul.innerHTML = "";
@@ -379,11 +406,24 @@ async function lookupOfficialName(path) {
   }
 }
 
+// http(s)-only anchor — matches the safety check generate.matterqr.codes uses
+// before linking out to a DCL-supplied URL.
+function officialLinkHtml(url, label) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    return `<a href="${escapeHtml(parsed.href)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
+  } catch (e) {
+    return "";
+  }
+}
+
 // Decode a Matter QR/manual payload into its fields (vendor/product ID, passcode,
 // discriminator, discovery capabilities, commissioning flow) — fully client-side,
 // reuses the same Base38/Verhoeff parser the scanner already ships. Renders the
-// base fields immediately, then enriches the Vendor/Product ID rows with the
-// official DCL name if a lookup succeeds.
+// base fields immediately, then enriches the Vendor/Product ID rows and adds the
+// official DCL links (vendor site / product page / support page) if found.
 async function renderDecodeInto(box, parsed) {
   if (!box) return;
   if (!parsed) {
@@ -403,10 +443,12 @@ async function renderDecodeInto(box, parsed) {
     [t("code.decode_discovery"), decodeDiscoveryFlags(parsed.discovery) || "—"],
     [t("code.decode_flow"), parsed.flow != null ? t(`code.decode_flow_${parsed.flow}`) || parsed.flow : "—"],
   ];
+  let linksHtml = "";
   const paint = () =>
     `<table class="mt-decode-table">` +
     rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
-    `</table>`;
+    `</table>` +
+    linksHtml;
   box.innerHTML = paint();
 
   if (parsed.vid == null) return;
@@ -419,6 +461,14 @@ async function renderDecodeInto(box, parsed) {
   if (!vendorInfo?.name && !modelInfo?.name) return;
   if (vendorInfo?.name) rows[0][1] = `${vidText} — ${vendorInfo.name}`;
   if (modelInfo?.name) rows[1][1] = `${pidText} — ${modelInfo.name}`;
+  const links = [
+    officialLinkHtml(vendorInfo?.landing_page, t("code.decode_vendor_site")),
+    officialLinkHtml(modelInfo?.product_page, t("code.decode_product_page")),
+    officialLinkHtml(modelInfo?.support_page, t("code.decode_support_page")),
+  ].filter(Boolean);
+  if (links.length) {
+    linksHtml = `<div class="mt-decode-links">${links.join("")}</div>`;
+  }
   box.innerHTML = paint();
 }
 
@@ -529,6 +579,7 @@ function renderCodes() {
         onDownload: downloadCode,
         onEdit: openCodeDialog,
         onDelete: deleteCode,
+        onDecode: openMtDecodeDialog,
       });
     }
     card.addEventListener("click", (e) => {
@@ -1102,6 +1153,26 @@ function bindUi() {
     });
     await loadVault();
   };
+
+  document.getElementById("btn-trash").onclick = openTrashDialog;
+  document.getElementById("trash-dialog")?.addEventListener("click", async (e) => {
+    const restoreBtn = e.target.closest("[data-restore]");
+    if (restoreBtn) {
+      const path = restoreBtn.dataset.kind === "category" ? "categories" : "codes";
+      await api(`/${path}/${restoreBtn.dataset.restore}/restore`, { method: "POST" });
+      await loadTrash();
+      await loadVault();
+      return;
+    }
+    const purgeBtn = e.target.closest("[data-purge]");
+    if (purgeBtn) {
+      if (!(await uiConfirm(t("confirm.delete_forever"), t("action.delete_forever")))) return;
+      const path = purgeBtn.dataset.kind === "category" ? "categories" : "codes";
+      await api(`/${path}/${purgeBtn.dataset.purge}/purge`, { method: "DELETE" });
+      await loadTrash();
+      return;
+    }
+  });
 
   document.getElementById("btn-backup").onclick = openBackupDialog;
   document.getElementById("backup-frequency").onchange = syncBackupFrequencyFields;

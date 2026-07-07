@@ -33,7 +33,11 @@ async def fetch_vendor_info(vendor_id: int) -> Optional[dict[str, Any]]:
     name = (record.get("vendorName") or record.get("companyPreferredName") or "").strip()
     if not name:
         return None
-    return {"vendor_id": vendor_id, "name": name}
+    return {
+        "vendor_id": vendor_id,
+        "name": name,
+        "landing_page": (record.get("vendorLandingPageURL") or "").strip() or None,
+    }
 
 
 async def fetch_model_info(vendor_id: int, product_id: int) -> Optional[dict[str, Any]]:
@@ -53,4 +57,10 @@ async def fetch_model_info(vendor_id: int, product_id: int) -> Optional[dict[str
     name = (record.get("productLabel") or record.get("productName") or "").strip()
     if not name:
         return None
-    return {"vendor_id": vendor_id, "product_id": product_id, "name": name}
+    return {
+        "vendor_id": vendor_id,
+        "product_id": product_id,
+        "name": name,
+        "product_page": (record.get("productUrl") or "").strip() or None,
+        "support_page": (record.get("supportUrl") or "").strip() or None,
+    }

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.15
+
+- **Trash bin**: deleting a code or category now moves it to Trash instead of removing it
+  immediately — a new Trash button in the header lists everything currently trashed, with
+  Restore and Delete forever (permanent, with confirm) per item.
+- Matter payload decode (inline in New/Edit, the popup, and the quick-view) now also shows
+  the official DCL **Vendor site / Product page / Support page** links when the CSA
+  registry has them.
+- Added a small **decode button** next to Download/Edit/Delete on the QR card itself (Matter
+  codes only), not just in the quick-view popup.
+- Fixed the quick-view decode button looking out of place next to Download/Edit — it now
+  uses the same button style/height as its neighbors.
+- **Notes** field moved to the bottom of the Device details section in the New/Edit form.
+
 ## 1.0.14
 
 - **Fixed dialogs staying visible when scrolled to**: a CSS rule meant to pin the dialog

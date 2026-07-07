@@ -22,6 +22,7 @@ class Category(BaseModel):
     color: str = "#6366f1"
     icon: str = "folder"
     sort_order: int = 0
+    deleted_at: Optional[str] = None  # set when moved to trash; cleared on restore
 
     @field_validator("icon")
     @classmethod
@@ -60,6 +61,7 @@ class MatterCode(BaseModel):
     ha_link: HaLink = Field(default_factory=HaLink)
     created_at: str = Field(default_factory=utc_now)
     updated_at: str = Field(default_factory=utc_now)
+    deleted_at: Optional[str] = None  # set when moved to trash; cleared on restore
 
     @field_validator("code_type")
     @classmethod
@@ -87,7 +89,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.14"
+    addon_version: str = "1.0.15"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 

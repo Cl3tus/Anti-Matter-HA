@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/anti-matter-icon.png" type="image/png" />
-  <script src="./static/brand/js/theme.js?v=1.0.14"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.14" />
-  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.14" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.14" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.14" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.14" />
+  <script src="./static/brand/js/theme.js?v=1.0.15"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.15" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.15" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.15" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.15" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.15" />
 </head>
 <body>
   <header class="header">
@@ -43,6 +43,9 @@
       </button>
       <button type="button" id="btn-table-view" class="rm-btn rm-btn-secondary" data-i18n-tip="table.tooltip">
         <i id="btn-table-view-icon" class="mdi mdi-table" aria-hidden="true"></i>
+      </button>
+      <button type="button" id="btn-trash" class="rm-btn rm-btn-secondary" data-i18n-tip="trash.title">
+        <img src="./static/assets/recyclebin.png" alt="" width="18" height="18" />
       </button>
       <span class="header-sep" aria-hidden="true"></span>
       <div class="header-lang-theme">
@@ -198,7 +201,6 @@
         <textarea id="code-zwave-qr" rows="3" data-i18n-placeholder="code.zwave_qr_placeholder" placeholder="9001…"></textarea>
       </label>
       </div>
-      <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
       <details id="code-details" class="form-section">
         <summary data-i18n="code.device_details">Device details</summary>
         <label><span data-i18n="code.device_vendor">Device vendor</span>
@@ -231,6 +233,7 @@
             <label><input type="checkbox" id="code-conn-zwave" /> <span data-i18n="code.conn_zwave">Z-Wave</span></label>
           </div>
         </div>
+        <label><span data-i18n="code.notes">Notes</span> <textarea id="code-notes" rows="2"></textarea></label>
       </details>
       <details id="code-ha-details" class="form-section">
         <summary data-i18n="code.ha_link">Home Assistant link (optional)</summary>
@@ -353,7 +356,7 @@
     <p id="quickview-manual" class="quickview-manual"></p>
     <p id="quickview-meta" class="quickview-meta"></p>
     <div class="dialog-actions">
-      <button type="button" id="quickview-decode" class="card-icon-btn hidden" data-i18n-tip="code.decode_mt">
+      <button type="button" id="quickview-decode" class="rm-btn rm-btn-secondary hidden" data-i18n-tip="code.decode_mt">
         <i class="mdi mdi-information-outline" aria-hidden="true"></i>
       </button>
       <button type="button" id="quickview-download" class="rm-btn rm-btn-secondary" data-i18n="action.download">Download</button>
@@ -371,6 +374,22 @@
     </div>
   </dialog>
 
+  <dialog id="trash-dialog">
+    <h3 data-i18n="trash.title">Trash</h3>
+    <p id="trash-empty" class="form-hint hidden" data-i18n="trash.empty">Trash is empty.</p>
+    <div id="trash-categories-section" class="hidden">
+      <p class="form-field-label" data-i18n="trash.section_categories">Categories</p>
+      <ul id="trash-category-list" class="trash-list"></ul>
+    </div>
+    <div id="trash-codes-section" class="hidden">
+      <p class="form-field-label" data-i18n="trash.section_codes">Codes</p>
+      <ul id="trash-code-list" class="trash-list"></ul>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="rm-btn rm-btn-primary" data-close data-i18n="action.close">Close</button>
+    </div>
+  </dialog>
+
   <dialog id="confirm-dialog" class="confirm-dialog">
     <form method="dialog">
       <h3 id="confirm-title" data-i18n="confirm.title">Please confirm</h3>
@@ -383,17 +402,17 @@
   </dialog>
 
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.14"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.14"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.14"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.14"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.14"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.14"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.14"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.14"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.14"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.14"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.14"></script>
-  <script src="./static/app.js?v=1.0.14"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.15"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.15"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.15"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.15"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.15"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.15"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.15"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.15"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.15"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.15"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.15"></script>
+  <script src="./static/app.js?v=1.0.15"></script>
 </body>
 </html>

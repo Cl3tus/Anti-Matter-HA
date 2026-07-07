@@ -1400,6 +1400,36 @@ body.qr-invert .zwave-sticker--dsk-only {
 .mt-decode-table td {
   font-family: var(--rm-font-mono, monospace);
 }
+.mt-decode-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-2) var(--rm-space-4);
+  margin-top: var(--rm-space-2);
+  font-size: var(--rm-text-sm);
+}
+.mt-decode-links a {
+  color: var(--rm-accent);
+}
+
+.trash-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--rm-space-4);
+}
+.trash-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-2);
+  padding: var(--rm-space-2) 0;
+  border-bottom: 1px solid var(--rm-border);
+}
+.trash-list li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Multi-select (shift/ctrl+click) selection bar — codes and categories */
 .selection-bar {

@@ -61,7 +61,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.14"
+APP_VERSION = "1.0.15"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -326,7 +326,19 @@ async def app_info():
 
 @app.get("/api/vault")
 async def get_vault():
-    return storage.load().model_dump()
+    data = storage.load().model_dump()
+    data["categories"] = [c for c in data["categories"] if not c.get("deleted_at")]
+    data["codes"] = [c for c in data["codes"] if not c.get("deleted_at")]
+    return data
+
+
+@app.get("/api/trash")
+async def get_trash():
+    vault = storage.load()
+    return {
+        "categories": [c for c in vault.categories if c.deleted_at],
+        "codes": [c for c in vault.codes if c.deleted_at],
+    }
 
 
 @app.get("/api/export")
@@ -392,7 +404,7 @@ async def put_backup_settings(body: BackupSettingsBody):
 
 @app.get("/api/categories")
 async def list_categories():
-    return storage.load().categories
+    return [c for c in storage.load().categories if not c.deleted_at]
 
 
 @app.post("/api/categories", status_code=201)
@@ -427,6 +439,26 @@ async def update_category(category_id: str, body: CategoryUpdate):
 
 @app.delete("/api/categories/{category_id}")
 async def delete_category(category_id: str):
+    vault = storage.load()
+    category = _find_category(vault, category_id)
+    category.deleted_at = utc_now()
+    storage.save(vault)
+    _LOGGER.info("Category moved to trash: id=%s name=%s", category_id, _redact(category.name))
+    return {"ok": True}
+
+
+@app.post("/api/categories/{category_id}/restore")
+async def restore_category(category_id: str):
+    vault = storage.load()
+    category = _find_category(vault, category_id)
+    category.deleted_at = None
+    storage.save(vault)
+    _LOGGER.info("Category restored from trash: id=%s name=%s", category_id, _redact(category.name))
+    return category
+
+
+@app.delete("/api/categories/{category_id}/purge")
+async def purge_category(category_id: str):
     from vault_merge import record_deletion
 
     vault = storage.load()
@@ -439,7 +471,7 @@ async def delete_category(category_id: str):
             code["category_id"] = None
     record_deletion(data, "categories", category_id)
     storage.save(Vault.model_validate(data))
-    _LOGGER.info("Category removed: id=%s name=%s", category_id, _redact(category_name))
+    _LOGGER.info("Category purged: id=%s name=%s", category_id, _redact(category_name))
     return {"ok": True}
 
 
@@ -448,7 +480,7 @@ async def delete_category(category_id: str):
 
 @app.get("/api/codes")
 async def list_codes(category_id: Optional[str] = Query(None)):
-    codes = storage.load().codes
+    codes = [c for c in storage.load().codes if not c.deleted_at]
     if category_id:
         codes = [c for c in codes if c.category_id == category_id]
     return codes
@@ -538,6 +570,26 @@ async def update_code(code_id: str, body: MatterCodeUpdate):
 
 @app.delete("/api/codes/{code_id}")
 async def delete_code(code_id: str):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    code.deleted_at = utc_now()
+    storage.save(vault)
+    _LOGGER.info("Code moved to trash: id=%s name=%s", code_id, _redact(code.name))
+    return {"ok": True}
+
+
+@app.post("/api/codes/{code_id}/restore")
+async def restore_code(code_id: str):
+    vault = storage.load()
+    code = _find_code(vault, code_id)
+    code.deleted_at = None
+    storage.save(vault)
+    _LOGGER.info("Code restored from trash: id=%s name=%s", code_id, _redact(code.name))
+    return code
+
+
+@app.delete("/api/codes/{code_id}/purge")
+async def purge_code(code_id: str):
     from vault_merge import record_deletion
 
     vault = storage.load()
@@ -547,7 +599,7 @@ async def delete_code(code_id: str):
     data["codes"] = [c for c in data["codes"] if c["id"] != code_id]
     record_deletion(data, "codes", code_id)
     storage.save(Vault.model_validate(data))
-    _LOGGER.info("Code deleted: id=%s name=%s", code_id, _redact(code_name))
+    _LOGGER.info("Code purged: id=%s name=%s", code_id, _redact(code_name))
     return {"ok": True}
 
 

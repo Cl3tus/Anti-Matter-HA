@@ -12,7 +12,11 @@
     const downloadLabel = opts.downloadLabel || "Download";
     const editLabel = opts.editLabel || "Edit";
     const deleteLabel = opts.deleteLabel || "Delete";
+    const decodeLabel = opts.decodeLabel || "Decode";
     let html = '<div class="card-icon-actions">';
+    if (opts.showDecode) {
+      html += `<button type="button" class="card-icon-btn" data-decode title="${decodeLabel}" aria-label="${decodeLabel}"><i class="mdi mdi-information-outline" aria-hidden="true"></i></button>`;
+    }
     if (download) {
       html += `<button type="button" class="card-icon-btn" data-download title="${downloadLabel}" aria-label="${downloadLabel}">${iconUse(href, "rm-icon-export")}</button>`;
     }
