@@ -63,7 +63,9 @@
     }
 
     const allDigits = text.replace(/\D/g, "");
-    if (ZW && allDigits.length >= 90 && allDigits.startsWith("90")) {
+    // Z-Wave SmartStart QRs vary in length depending on their TLV tail (52 chars
+    // minimum) — a hardcoded 90 misclassified real, shorter QR codes as Matter.
+    if (ZW && allDigits.startsWith("90") && ZW.hasScannableQr(allDigits)) {
       const n = ZW.normalizeFields("", allDigits);
       return {
         code_type: "zwave",

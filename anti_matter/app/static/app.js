@@ -82,21 +82,34 @@ function categoryName(id) {
   return c ? c.name : "Uncategorized";
 }
 
-const ATTR_FILTER_FIELDS = [
+// Every toolbar filter is a checkbox dropdown: within one field, checked values
+// are OR'd together; across fields, results are AND'd.
+const DYNAMIC_FILTER_FIELDS = [
   ["filter-vendor", "device_vendor", "filter.vendor"],
   ["filter-product", "device_product", "filter.product"],
   ["filter-type", "device_type", "filter.type"],
   ["filter-area", "area", "filter.area"],
 ];
-const activeFilters = { device_vendor: "", device_product: "", device_type: "", area: "" };
+const dynamicFilters = {
+  device_vendor: new Set(),
+  device_product: new Set(),
+  device_type: new Set(),
+  area: new Set(),
+};
 
-const BOOL_FILTER_FIELDS = [
-  ["filter-in-use", "in_use", "code.in_use"],
+const PROTOCOL_FILTER_OPTIONS = [
+  ["matter", "code.protocol_matter"],
+  ["homekit", "code.protocol_homekit"],
+  ["zwave", "code.protocol_zwave"],
 ];
-const boolFilters = {};
+const protocolFilter = new Set();
 
-// Connectivity: one dropdown with checkboxes instead of 5 separate selects.
-// Checking any box OR-filters codes down to ones with at least one of the checked types.
+const IN_USE_FILTER_OPTIONS = [
+  ["yes", "filter.yes"],
+  ["no", "filter.no"],
+];
+const inUseFilter = new Set();
+
 const CONN_FILTER_FIELDS = [
   ["conn_wifi", "code.conn_wifi"],
   ["conn_matter", "code.conn_matter"],
@@ -106,60 +119,84 @@ const CONN_FILTER_FIELDS = [
 ];
 const connFilters = new Set();
 
-function fillAttributeFilters() {
-  for (const [id, field, labelKey] of ATTR_FILTER_FIELDS) {
-    const sel = document.getElementById(id);
-    if (!sel) continue;
-    const current = activeFilters[field];
+function filterToggleLabel(baseLabel, count) {
+  return count ? `${baseLabel} (${count})` : baseLabel;
+}
+
+// options: array of [value, alreadyTranslatedLabel] pairs.
+function renderCheckboxFilterPanel(panelId, toggleId, baseLabelKey, options, selectedSet) {
+  const panel = document.getElementById(panelId);
+  const toggle = document.getElementById(toggleId);
+  const baseLabel = t(baseLabelKey);
+  if (panel) {
+    if (!options.length) {
+      panel.innerHTML = `<p class="form-hint">${escapeHtml(t("filter.no_options"))}</p>`;
+    } else {
+      panel.innerHTML = options
+        .map(
+          ([value, label]) =>
+            `<label><input type="checkbox" value="${escapeHtml(value)}" ${selectedSet.has(value) ? "checked" : ""} /> <span>${escapeHtml(label)}</span></label>`
+        )
+        .join("");
+      panel.querySelectorAll("input[type=checkbox]").forEach((cb) => {
+        cb.onchange = () => {
+          if (cb.checked) selectedSet.add(cb.value);
+          else selectedSet.delete(cb.value);
+          if (toggle) toggle.textContent = filterToggleLabel(baseLabel, selectedSet.size);
+          renderCodes();
+        };
+      });
+    }
+  }
+  if (toggle) toggle.textContent = filterToggleLabel(baseLabel, selectedSet.size);
+}
+
+function fillDynamicFilterPanels() {
+  for (const [idPrefix, field, labelKey] of DYNAMIC_FILTER_FIELDS) {
     const values = Array.from(
       new Set(vault.codes.map((c) => (c[field] || "").trim()).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b));
-    if (!values.includes(current)) activeFilters[field] = "";
-    sel.innerHTML =
-      `<option value="">${escapeHtml(t(labelKey))}</option>` +
-      values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-    sel.value = activeFilters[field];
+    for (const v of [...dynamicFilters[field]]) {
+      if (!values.includes(v)) dynamicFilters[field].delete(v);
+    }
+    renderCheckboxFilterPanel(
+      `${idPrefix}-panel`,
+      `${idPrefix}-toggle`,
+      labelKey,
+      values.map((v) => [v, v]),
+      dynamicFilters[field]
+    );
   }
 }
 
-function fillBoolFilters() {
-  for (const [id, field, labelKey] of BOOL_FILTER_FIELDS) {
-    const sel = document.getElementById(id);
-    if (!sel) continue;
-    const label = t(labelKey);
-    const current = boolFilters[field] || "";
-    sel.innerHTML =
-      `<option value="">${escapeHtml(label)}: ${escapeHtml(t("filter.all_short"))}</option>` +
-      `<option value="yes">${escapeHtml(label)}: ${escapeHtml(t("filter.yes"))}</option>` +
-      `<option value="no">${escapeHtml(label)}: ${escapeHtml(t("filter.no"))}</option>`;
-    sel.value = current;
-  }
+function fillProtocolFilterPanel() {
+  renderCheckboxFilterPanel(
+    "filter-protocol-panel",
+    "filter-protocol-toggle",
+    "code.protocol",
+    PROTOCOL_FILTER_OPTIONS.map(([v, key]) => [v, t(key)]),
+    protocolFilter
+  );
 }
 
-function buildConnFilterPanel() {
-  const panel = document.getElementById("conn-filter-panel");
-  if (!panel) return;
-  panel.innerHTML = CONN_FILTER_FIELDS.map(
-    ([field, labelKey]) =>
-      `<label><input type="checkbox" data-conn-field="${field}" ${connFilters.has(field) ? "checked" : ""} /> <span>${escapeHtml(t(labelKey))}</span></label>`
-  ).join("");
-  panel.querySelectorAll("input[data-conn-field]").forEach((cb) => {
-    cb.onchange = () => {
-      const field = cb.dataset.connField;
-      if (cb.checked) connFilters.add(field);
-      else connFilters.delete(field);
-      updateConnFilterToggleLabel();
-      renderCodes();
-    };
-  });
-  updateConnFilterToggleLabel();
+function fillInUseFilterPanel() {
+  renderCheckboxFilterPanel(
+    "filter-in-use-panel",
+    "filter-in-use-toggle",
+    "code.in_use",
+    IN_USE_FILTER_OPTIONS.map(([v, key]) => [v, t(key)]),
+    inUseFilter
+  );
 }
 
-function updateConnFilterToggleLabel() {
-  const btn = document.getElementById("conn-filter-toggle");
-  if (!btn) return;
-  const base = t("code.connectivity");
-  btn.textContent = connFilters.size ? `${base} (${connFilters.size})` : base;
+function fillConnFilterPanel() {
+  renderCheckboxFilterPanel(
+    "filter-conn-panel",
+    "filter-conn-toggle",
+    "code.connectivity",
+    CONN_FILTER_FIELDS.map(([field, key]) => [field, t(key)]),
+    connFilters
+  );
 }
 
 function filteredCodes() {
@@ -169,14 +206,18 @@ function filteredCodes() {
       activeCategories.has(c.category_id || NONE_CATEGORY_ID)
     );
   }
-  for (const [, field] of ATTR_FILTER_FIELDS) {
-    const val = activeFilters[field];
-    if (val) codes = codes.filter((c) => (c[field] || "") === val);
+  if (protocolFilter.size) {
+    const Cards = window.AntiMatterVaultCards;
+    codes = codes.filter((c) => protocolFilter.has(Cards?.codeProtocol?.(c) || "matter"));
   }
-  for (const [, field] of BOOL_FILTER_FIELDS) {
-    const val = boolFilters[field];
-    if (val === "yes") codes = codes.filter((c) => Boolean(c[field]));
-    else if (val === "no") codes = codes.filter((c) => !c[field]);
+  for (const [, field] of DYNAMIC_FILTER_FIELDS) {
+    const selected = dynamicFilters[field];
+    if (selected.size) codes = codes.filter((c) => selected.has((c[field] || "").trim()));
+  }
+  if (inUseFilter.size) {
+    codes = codes.filter(
+      (c) => (inUseFilter.has("yes") && c.in_use) || (inUseFilter.has("no") && !c.in_use)
+    );
   }
   if (connFilters.size) {
     codes = codes.filter((c) => [...connFilters].some((field) => c[field]));
@@ -590,6 +631,20 @@ function parseZwavePayload(qrPayload, manualCode) {
   return null;
 }
 
+// Lowercase, 4-digit hex — matches how zwave-js-ui itself displays these fields
+// (unlike Matter's uppercase hex4(), which follows the CSA/Matter spec's own convention).
+function hex4z(n) {
+  return "0x" + (n >>> 0).toString(16).padStart(4, "0");
+}
+
+function decVal(n) {
+  return n == null ? "—" : `${n} (${hex4z(n)})`;
+}
+
+function zwaveCheckRow(label, checked) {
+  return `<label><input type="checkbox" disabled ${checked ? "checked" : ""} /> ${escapeHtml(label)}</label>`;
+}
+
 function renderZwaveDecodeInto(box, parsed) {
   if (!box) return;
   if (!parsed) {
@@ -597,28 +652,55 @@ function renderZwaveDecodeInto(box, parsed) {
     return;
   }
   const meta = parsed.meta || {};
-  const rows = [
-    [t("code.decode_zwave_dsk"), parsed.dsk || "—"],
-    [t("code.decode_zwave_pin"), parsed.pin || "—"],
-  ];
+  const sec = parsed.requestedSecurityClasses;
+  const proto = meta.supportedProtocols;
+
+  let html = "";
   if (parsed.version != null) {
-    rows.push([
-      t("code.decode_zwave_version"),
-      parsed.smartStart ? `${parsed.version} (SmartStart)` : String(parsed.version),
-    ]);
+    const label = parsed.smartStart ? t("code.decode_zwave_smartstart") : t("code.decode_zwave_s2");
+    html +=
+      `<table class="mt-decode-table">` +
+      `<tr><th>${escapeHtml(t("code.decode_zwave_version"))}</th><td>${escapeHtml(label)} (${parsed.version})</td></tr>` +
+      `</table>`;
   }
-  if (meta.manufacturerId != null) rows.push([t("code.decode_zwave_mfg"), String(meta.manufacturerId)]);
-  if (meta.productType != null) rows.push([t("code.decode_zwave_product_type"), String(meta.productType)]);
-  if (meta.productId != null) rows.push([t("code.decode_zwave_product_id"), String(meta.productId)]);
-  if (meta.applicationVersion) rows.push([t("code.decode_zwave_app_version"), meta.applicationVersion]);
-  if (meta.genericDeviceClass != null) {
-    rows.push([t("code.decode_zwave_device_class"), `${meta.genericDeviceClass} / ${meta.specificDeviceClass}`]);
+  if (sec) {
+    html +=
+      `<p class="form-field-label">${escapeHtml(t("code.decode_zwave_security_classes"))}</p>` +
+      `<div class="connectivity-options zwave-decode-checks">` +
+      zwaveCheckRow(t("code.decode_zwave_s2_access_control"), sec.s2AccessControl) +
+      zwaveCheckRow(t("code.decode_zwave_s2_authenticated"), sec.s2Authenticated) +
+      zwaveCheckRow(t("code.decode_zwave_s2_unauthenticated"), sec.s2Unauthenticated) +
+      zwaveCheckRow(t("code.decode_zwave_s0"), sec.s0Legacy) +
+      `</div>`;
   }
-  if (meta.installerIconType != null) rows.push([t("code.decode_zwave_icon"), String(meta.installerIconType)]);
-  box.innerHTML =
+  if (proto) {
+    html +=
+      `<p class="form-field-label">${escapeHtml(t("code.decode_zwave_protocols"))}</p>` +
+      `<div class="connectivity-options zwave-decode-checks">` +
+      zwaveCheckRow(t("code.decode_zwave_protocol_zwave"), proto.zwave) +
+      zwaveCheckRow(t("code.decode_zwave_protocol_lr"), proto.zwaveLongRange) +
+      `</div>`;
+  }
+
+  const rows = [[t("code.decode_zwave_dsk"), parsed.dsk || "—"]];
+  if (meta.genericDeviceClass != null) rows.push([t("code.decode_zwave_generic_class"), decVal(meta.genericDeviceClass)]);
+  if (meta.specificDeviceClass != null) rows.push([t("code.decode_zwave_specific_class"), decVal(meta.specificDeviceClass)]);
+  if (meta.installerIconType != null) rows.push([t("code.decode_zwave_icon"), decVal(meta.installerIconType)]);
+  if (meta.manufacturerId != null) rows.push([t("code.decode_zwave_mfg"), decVal(meta.manufacturerId)]);
+  if (meta.productType != null) rows.push([t("code.decode_zwave_product_type"), decVal(meta.productType)]);
+  if (meta.productId != null) rows.push([t("code.decode_zwave_product_id"), decVal(meta.productId)]);
+  if (meta.applicationVersion) {
+    const [major, minor] = meta.applicationVersion.split(".");
+    rows.push([t("code.decode_zwave_app_version_major"), major ?? "—"]);
+    rows.push([t("code.decode_zwave_app_version_minor"), minor ?? "—"]);
+  }
+  rows.push([t("code.decode_zwave_pin"), parsed.pin || "—"]);
+  html +=
     `<table class="mt-decode-table">` +
     rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
     `</table>`;
+
+  box.innerHTML = html;
 }
 
 function renderZwaveDecode() {
@@ -738,8 +820,9 @@ function renderCodes() {
 }
 
 function render() {
-  fillAttributeFilters();
-  fillBoolFilters();
+  fillDynamicFilterPanels();
+  fillProtocolFilterPanel();
+  fillInUseFilterPanel();
   renderCategories();
   renderCodes();
   fillCategorySelect();
@@ -1279,19 +1362,6 @@ function bindUi() {
   document.getElementById("category-form").onsubmit = saveCategory;
   document.getElementById("search").oninput = renderCodes;
 
-  for (const [id, field] of ATTR_FILTER_FIELDS) {
-    document.getElementById(id)?.addEventListener("change", (e) => {
-      activeFilters[field] = e.target.value;
-      renderCodes();
-    });
-  }
-  for (const [id, field] of BOOL_FILTER_FIELDS) {
-    document.getElementById(id)?.addEventListener("change", (e) => {
-      boolFilters[field] = e.target.value;
-      renderCodes();
-    });
-  }
-
   document.getElementById("btn-table-view").onclick = toggleViewMode;
   document.getElementById("codes-table-body").ondblclick = (e) => {
     if (e.target.closest("[data-table-delete]")) return;
@@ -1441,16 +1511,21 @@ function bindUi() {
 
   document.getElementById("code-ha-device")?.addEventListener("change", updateHaDeviceLink);
 
-  buildConnFilterPanel();
-  document.getElementById("conn-filter-toggle")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    document.getElementById("conn-filter-panel")?.classList.toggle("hidden");
+  fillConnFilterPanel();
+  document.querySelectorAll(".filter-dropdown-toggle").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const panel = btn.nextElementSibling;
+      document.querySelectorAll(".filter-dropdown-panel").forEach((p) => {
+        if (p !== panel) p.classList.add("hidden");
+      });
+      panel?.classList.toggle("hidden");
+    });
   });
   document.addEventListener("click", (e) => {
-    const dd = document.getElementById("conn-filter-dropdown");
-    if (dd && !dd.contains(e.target)) {
-      document.getElementById("conn-filter-panel")?.classList.add("hidden");
-    }
+    document.querySelectorAll(".filter-dropdown").forEach((dd) => {
+      if (!dd.contains(e.target)) dd.querySelector(".filter-dropdown-panel")?.classList.add("hidden");
+    });
   });
 
   initQrInvert();
@@ -1458,7 +1533,7 @@ function bindUi() {
 
   window.addEventListener("antimatter:locale", () => {
     render();
-    buildConnFilterPanel();
+    fillConnFilterPanel();
   });
 }
 

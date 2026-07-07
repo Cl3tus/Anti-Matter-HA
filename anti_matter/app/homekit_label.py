@@ -9,7 +9,12 @@ from pathlib import Path
 import qrcode
 from qrcode.image.svg import SvgPathImage
 
-from homekit_payload import decode_pairing_from_uri, pairing_digits, qr_encode_payload
+from homekit_payload import (
+    decode_pairing_from_uri,
+    format_pairing_display,
+    pairing_digits,
+    qr_encode_payload,
+)
 
 def _load_digit_symbols() -> str:
     here = Path(__file__).resolve().parent
@@ -69,19 +74,25 @@ def compose_card_svg(
         for i in range(8)
     )
 
+    pairing_display = format_pairing_display(digits)
+
+    # +40 over the original 540 for the "HomeKit" wordmark under the icon and the
+    # xxx-xx-xxx pairing code printed below the QR (previously icon-only, digits-only).
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg viewBox="0 0 400 540" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 400 580" xmlns="http://www.w3.org/2000/svg">
   <title>HomeKit QR Code</title>
   <defs>
     {digit_defs}
     {qr_sym}
   </defs>
-  <rect fill="#000000" height="540" rx="20" width="400"/>
-  <rect fill="#ffffff" height="530" rx="15" width="390" x="5" y="5"/>
+  <rect fill="#000000" height="580" rx="20" width="400"/>
+  <rect fill="#ffffff" height="570" rx="15" width="390" x="5" y="5"/>
   <use href="#homekit" height="120" width="130" x="24" y="30"/>
+  <text x="24" y="165" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#000000">HomeKit</text>
 {digit_uses}
   <use href="#qrCode" height="340" width="340" x="30" y="175"/>
+  <text x="200" y="545" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="#000000">{pairing_display}</text>
 </svg>"""
 
 

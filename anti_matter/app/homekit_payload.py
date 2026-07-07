@@ -47,6 +47,14 @@ def pairing_digits(value: str) -> str:
     return digits if len(digits) == 8 else ""
 
 
+def format_pairing_display(value: str) -> str:
+    """xxx-xx-xxx grouping — matches Apple's own printed HomeKit pairing code format."""
+    d = pairing_digits(value)
+    if len(d) != 8:
+        return (value or "").strip()
+    return f"{d[0:3]}-{d[3:5]}-{d[5:8]}"
+
+
 def normalize_setup_id(value: str) -> str:
     s = re.sub(r"[^0-9A-Za-z]", "", (value or "").strip()).upper()
     return s[:4] if len(s) == 4 else ""

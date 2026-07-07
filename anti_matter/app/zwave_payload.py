@@ -8,8 +8,10 @@ from typing import Any
 
 LEAD_IN = 90
 VERSION_SMART_START = 1
+# Matches zwave-js's ProvisioningInformationType enum (packages/core/src/qr/definitions.ts).
 TLV_PRODUCT_TYPE = 0
-TLV_PRODUCT_ID = 2
+TLV_PRODUCT_ID = 1
+TLV_SUPPORTED_PROTOCOLS = 4
 
 
 def _digits_only(value: str) -> str:
@@ -82,7 +84,29 @@ def _parse_tlvs(tail: str) -> dict[str, Any]:
             meta["product_id"] = int(data[10:15])
             app = int(data[15:20])
             meta["application_version"] = f"{app >> 8}.{app & 0xFF}"
+        elif typ == TLV_SUPPORTED_PROTOCOLS and length in (2, 3, 5):
+            bits = int(data)
+            meta["supported_protocols"] = {
+                "zwave": bool(bits & 0x01),
+                "zwave_long_range": bool(bits & 0x02),
+            }
     return meta
+
+
+def _parse_requested_security_classes(requested_keys_digits: str) -> dict[str, bool]:
+    """RequestedKeys byte (3 decimal digits at QR position 9-12) — bit N corresponds to
+    SecurityClass ordinal N in zwave-js: 0=S2_Unauthenticated, 1=S2_Authenticated,
+    2=S2_AccessControl, 7=S0_Legacy (bits 3-6 are unused/reserved)."""
+    try:
+        bits = int(requested_keys_digits)
+    except ValueError:
+        bits = 0
+    return {
+        "s2_unauthenticated": bool(bits & 0x01),
+        "s2_authenticated": bool(bits & 0x02),
+        "s2_access_control": bool(bits & 0x04),
+        "s0_legacy": bool(bits & 0x80),
+    }
 
 
 def parse_qr_digits(qr_digits: str) -> dict[str, Any] | None:
@@ -103,6 +127,7 @@ def parse_qr_digits(qr_digits: str) -> dict[str, Any] | None:
         "meta": meta,
         "version": version,
         "smart_start": version == VERSION_SMART_START,
+        "requested_security_classes": _parse_requested_security_classes(d[9:12]),
     }
 
 
@@ -122,7 +147,11 @@ def extract_qr_string(text: str) -> str:
 
 
 def has_scannable_qr(qr_payload: str | None) -> bool:
-    return len(extract_qr_string(qr_payload or "")) >= 90
+    # extract_qr_string only ever returns non-empty when it found a subset that
+    # parse_qr_digits fully validated (checksum + DSK) — no extra length threshold
+    # needed, and a hardcoded 90 wrongly rejected valid QR codes with a short or
+    # missing TLV tail (the spec's actual minimum is 52: see parse_qr_digits).
+    return bool(extract_qr_string(qr_payload or ""))
 
 
 def qr_encode_payload(qr_payload: str | None) -> str | None:

@@ -6,8 +6,10 @@
   const LEAD_IN = 90;
   const VERSION_SMART_START = 1;
 
+  // Matches zwave-js's ProvisioningInformationType enum (packages/core/src/qr/definitions.ts).
   const TLV_PRODUCT_TYPE = 0;
-  const TLV_PRODUCT_ID = 2;
+  const TLV_PRODUCT_ID = 1;
+  const TLV_SUPPORTED_PROTOCOLS = 4;
 
   function digitsOnly(value) {
     return String(value || "").replace(/\D/g, "");
@@ -90,9 +92,28 @@
         meta.productId = parseInt(data.slice(10, 15), 10);
         const app = parseInt(data.slice(15, 20), 10);
         meta.applicationVersion = `${app >> 8}.${app & 0xff}`;
+      } else if (typ === TLV_SUPPORTED_PROTOCOLS && (len === 2 || len === 3 || len === 5)) {
+        const bits = parseInt(data, 10);
+        meta.supportedProtocols = {
+          zwave: !!(bits & 0x01),
+          zwaveLongRange: !!(bits & 0x02),
+        };
       }
     }
     return meta;
+  }
+
+  // RequestedKeys byte (3 decimal digits at QR position 9-12) — bit N corresponds to
+  // SecurityClass ordinal N in zwave-js: 0=S2_Unauthenticated, 1=S2_Authenticated,
+  // 2=S2_AccessControl, 7=S0_Legacy (bits 3-6 are unused/reserved).
+  function parseRequestedSecurityClasses(requestedKeysDigits) {
+    const bits = parseInt(requestedKeysDigits, 10) || 0;
+    return {
+      s2Unauthenticated: !!(bits & 0x01),
+      s2Authenticated: !!(bits & 0x02),
+      s2AccessControl: !!(bits & 0x04),
+      s0Legacy: !!(bits & 0x80),
+    };
   }
 
   /**
@@ -112,6 +133,7 @@
       meta,
       version,
       smartStart: version === VERSION_SMART_START,
+      requestedSecurityClasses: parseRequestedSecurityClasses(d.slice(9, 12)),
     };
   }
 
@@ -129,7 +151,11 @@
   }
 
   function hasScannableQr(qrPayload) {
-    return extractQrString(qrPayload).length >= 90;
+    // extractQrString only ever returns non-empty when it found a subset that
+    // parseQrDigits fully validated (checksum + DSK) — no extra length threshold
+    // needed, and a hardcoded 90 wrongly rejected valid QR codes with a short or
+    // missing TLV tail (the spec's actual minimum is 52: see parseQrDigits).
+    return !!extractQrString(qrPayload);
   }
 
   function normalizeFields(manualCode, qrPayload) {

@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.0.23
+
+- **Z-Wave decode expanded**: Version (S2/SmartStart), Security classes (S2 Access
+  Control/Authenticated/Unauthenticated, S0) and Supported protocols (Z-Wave/Long Range)
+  as read-only checkboxes, plus hex values alongside decimal for device class/manufacturer/
+  product fields and a split App version (major/minor) — matches zwave-js-ui's own layout.
+- Fixed a real parsing bug: the Product Id TLV type constant was wrong (2 instead of the
+  spec's 1), so manufacturer/product metadata from a real SmartStart QR's TLV tail was
+  never actually recognized — only appeared to work in hand-built test data that
+  (accidentally) used the same wrong constant on both ends.
+- Fixed `hasScannableQr`/`extractQrString` wrongly requiring a QR string to be at least 90
+  characters — valid SmartStart QR codes with a short or missing TLV tail are shorter than
+  that and were being rejected as "no code yet" or misclassified as Matter during a scan.
+- **All toolbar filters are now checkbox dropdowns** (matching any checked value), including
+  a new **Protocol** filter (Matter/HomeKit/Z-Wave) — Vendor/Product/Type/Area/In use were
+  previously single-select.
+- **HomeKit card redesigned**: adds the "HomeKit" wordmark under the house icon, and prints
+  the xxx-xx-xxx pairing code under the QR (previously icon + big digit boxes only).
+- **HomeKit and Z-Wave cards now match Matter's**: same width, and the download/edit/delete
+  icons are hidden until hover (previously always visible, and smaller than Matter's card).
+- No live vendor/product name lookup for Z-Wave (unlike Matter's CSA DCL) — the Z-Wave
+  Alliance product catalog has no public API for this, only an anti-bot-protected search
+  page, so nothing to reliably call.
+
 ## 1.0.22
 
 - Fixed the generated Z-Wave card: the QR code rendered far smaller than intended, with a

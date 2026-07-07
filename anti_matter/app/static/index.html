@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
   <title>Anti-Matter</title>
   <link rel="icon" href="./static/assets/anti-matter-icon.png" type="image/png" />
-  <script src="./static/brand/js/theme.js?v=1.0.22"></script>
-  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.22" />
-  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.22" />
-  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.22" />
-  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.22" />
-  <link rel="stylesheet" href="./static/style.css?v=1.0.22" />
+  <script src="./static/brand/js/theme.js?v=1.0.23"></script>
+  <link rel="stylesheet" href="./static/vendor/fonts.css?v=1.0.23" />
+  <link rel="stylesheet" href="./static/vendor/mdi/css/materialdesignicons.min.css?v=1.0.23" />
+  <link rel="stylesheet" href="./static/brand/css/tokens.css?v=1.0.23" />
+  <link rel="stylesheet" href="./static/brand/css/components.css?v=1.0.23" />
+  <link rel="stylesheet" href="./static/style.css?v=1.0.23" />
 </head>
 <body>
   <header class="header">
@@ -84,14 +84,33 @@
       <div class="toolbar">
         <input type="search" id="search" data-i18n-placeholder="search.placeholder" placeholder="Search by name, type, or code…" />
         <div class="attr-filters">
-          <select id="filter-vendor"></select>
-          <select id="filter-product"></select>
-          <select id="filter-type"></select>
-          <select id="filter-area"></select>
-          <select id="filter-in-use"></select>
-          <div id="conn-filter-dropdown" class="conn-filter-dropdown">
-            <button type="button" id="conn-filter-toggle" class="conn-filter-toggle" data-i18n="code.connectivity">Connectivity</button>
-            <div id="conn-filter-panel" class="conn-filter-panel hidden"></div>
+          <div class="filter-dropdown" id="filter-protocol-dropdown">
+            <button type="button" id="filter-protocol-toggle" class="filter-dropdown-toggle" data-i18n="code.protocol">Protocol</button>
+            <div id="filter-protocol-panel" class="filter-dropdown-panel hidden"></div>
+          </div>
+          <div class="filter-dropdown" id="filter-vendor-dropdown">
+            <button type="button" id="filter-vendor-toggle" class="filter-dropdown-toggle" data-i18n="filter.vendor">Vendor</button>
+            <div id="filter-vendor-panel" class="filter-dropdown-panel hidden"></div>
+          </div>
+          <div class="filter-dropdown" id="filter-product-dropdown">
+            <button type="button" id="filter-product-toggle" class="filter-dropdown-toggle" data-i18n="filter.product">Product</button>
+            <div id="filter-product-panel" class="filter-dropdown-panel hidden"></div>
+          </div>
+          <div class="filter-dropdown" id="filter-type-dropdown">
+            <button type="button" id="filter-type-toggle" class="filter-dropdown-toggle" data-i18n="filter.type">Type</button>
+            <div id="filter-type-panel" class="filter-dropdown-panel hidden"></div>
+          </div>
+          <div class="filter-dropdown" id="filter-area-dropdown">
+            <button type="button" id="filter-area-toggle" class="filter-dropdown-toggle" data-i18n="filter.area">Area</button>
+            <div id="filter-area-panel" class="filter-dropdown-panel hidden"></div>
+          </div>
+          <div class="filter-dropdown" id="filter-in-use-dropdown">
+            <button type="button" id="filter-in-use-toggle" class="filter-dropdown-toggle" data-i18n="code.in_use">In use</button>
+            <div id="filter-in-use-panel" class="filter-dropdown-panel hidden"></div>
+          </div>
+          <div class="filter-dropdown" id="filter-conn-dropdown">
+            <button type="button" id="filter-conn-toggle" class="filter-dropdown-toggle" data-i18n="code.connectivity">Connectivity</button>
+            <div id="filter-conn-panel" class="filter-dropdown-panel hidden"></div>
           </div>
         </div>
       </div>
@@ -413,17 +432,17 @@
   </dialog>
 
   <script>window.ANTIMATTER_LOCALE_BASE = "./static/locales/";</script>
-  <script src="./static/brand/js/i18n.js?v=1.0.22"></script>
-  <script src="./static/brand/js/homekit-payload.js?v=1.0.22"></script>
-  <script src="./static/brand/js/zwave-payload.js?v=1.0.22"></script>
-  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.22"></script>
-  <script src="./static/brand/js/matter-scan.js?v=1.0.22"></script>
-  <script src="./static/brand/js/matter-scanner.js?v=1.0.22"></script>
-  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.22"></script>
-  <script src="./static/brand/js/category-color-picker.js?v=1.0.22"></script>
-  <script src="./static/brand/js/category-icons.js?v=1.0.22"></script>
-  <script src="./static/brand/js/vault-cards.js?v=1.0.22"></script>
-  <script src="./static/brand/js/vault-share-ui.js?v=1.0.22"></script>
-  <script src="./static/app.js?v=1.0.22"></script>
+  <script src="./static/brand/js/i18n.js?v=1.0.23"></script>
+  <script src="./static/brand/js/homekit-payload.js?v=1.0.23"></script>
+  <script src="./static/brand/js/zwave-payload.js?v=1.0.23"></script>
+  <script src="./static/brand/js/matter-setup-payload.js?v=1.0.23"></script>
+  <script src="./static/brand/js/matter-scan.js?v=1.0.23"></script>
+  <script src="./static/brand/js/matter-scanner.js?v=1.0.23"></script>
+  <script src="./static/brand/js/vault-scan-ui.js?v=1.0.23"></script>
+  <script src="./static/brand/js/category-color-picker.js?v=1.0.23"></script>
+  <script src="./static/brand/js/category-icons.js?v=1.0.23"></script>
+  <script src="./static/brand/js/vault-cards.js?v=1.0.23"></script>
+  <script src="./static/brand/js/vault-share-ui.js?v=1.0.23"></script>
+  <script src="./static/app.js?v=1.0.23"></script>
 </body>
 </html>

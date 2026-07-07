@@ -29,9 +29,11 @@ a scannable QR card so you can re-commission a device without hunting for the or
 - Opening or editing a Matter code decodes its payload in the background (vendor/product ID,
   passcode, discriminator, official CSA DCL name/links where available) and auto-fills
   Device vendor/product — typing something by hand always wins.
-- Z-Wave codes get their own decode view (DSK, PIN, QR version, and — from a full
-  SmartStart QR — manufacturer/product/device-class fields), available in the form, the
-  quick-view popup, and by double-clicking a Z-Wave card.
+- Z-Wave codes get their own decode view — DSK, PIN, QR version, requested security classes
+  (S2/S0) and, from a full SmartStart QR, supported protocols and manufacturer/product/
+  device-class fields (decimal and hex) — available in the form, the quick-view popup, and
+  by double-clicking a Z-Wave card. There's no live vendor/product name lookup like Matter's
+  DCL — Z-Wave has no equivalent public API.
 - Saving or restoring a code that matches an existing one by QR payload or manual code is
   caught, with a Cancel/open-existing (or Cancel/Merge, when restoring) choice.
 - **Home Assistant link (optional)**: pick a **Device** from the dropdown and an **Open
@@ -45,10 +47,10 @@ If HA doesn't return areas, the field simply behaves as plain text.
 
 ## Filtering and the table view
 
-- The search box, the **Vendor / Product / Type / Area** dropdowns (filled from your own
-  data) and the **Connectivity** dropdown (checkboxes, matches any type checked) combine
-  with the category selection in the sidebar — click several categories to filter by all of
-  them at once.
+- Every filter — **Protocol, Vendor, Product, Type, Area, In use, Connectivity** — is a
+  checkbox dropdown (Vendor/Product/Type/Area filled from your own data); checking several
+  values in one dropdown matches any of them. All of that combines with the category
+  selection in the sidebar — click several categories to filter by all of them at once.
 - The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
   a filterable, spreadsheet-style table (your filters stay active). In table view, a single
   click on a code's name opens the quick-view popup.
