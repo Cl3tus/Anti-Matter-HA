@@ -13,7 +13,7 @@ import qrcode
 from PIL import Image
 from qrcode.image.svg import SvgPathImage
 
-from zwave_payload import format_dsk, meta_summary, parse_qr_digits, pin_from_dsk, qr_encode_payload
+from zwave_payload import format_dsk, parse_qr_digits, pin_from_dsk, qr_encode_payload
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 WORDMARK = os.path.join(STATIC_DIR, "assets", "zwave_logo.png")
@@ -85,8 +85,6 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
     if parsed:
         dsk_fmt = parsed["dsk"]
     pin = pin_from_dsk(dsk_fmt)
-    meta = parsed["meta"] if parsed else {}
-    meta_line = html.escape(meta_summary(meta))
 
     groups = dsk_fmt.split("-") if dsk_fmt else []
     dsk_row1 = " · ".join(groups[:4]) if len(groups) >= 4 else dsk_fmt
@@ -109,21 +107,18 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
     pin_line = f'<text x="{CARD_W / 2}" y="{text_y + 18}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="16" fill="black">PIN {html.escape(pin)}</text>' if pin else ""
     dsk_line1 = f'<text x="{CARD_W / 2}" y="{text_y + 40}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#333333">{html.escape(dsk_row1)}</text>' if dsk_row1 else ""
     dsk_line2 = f'<text x="{CARD_W / 2}" y="{text_y + 54}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#333333">{html.escape(dsk_row2)}</text>' if dsk_row2 else ""
-    meta_text = f'<text x="{CARD_W / 2}" y="{text_y + 74}" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#666666">{meta_line}</text>' if meta_line else ""
 
-    card_h = text_y + (80 if pin else 20)
+    card_h = text_y + (60 if pin else 20)
 
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <svg viewBox="0 0 {CARD_W} {card_h}" xmlns="http://www.w3.org/2000/svg">
   <title>Z-Wave SmartStart</title>
   <rect width="{CARD_W}" height="{card_h}" rx="16" fill="white"/>
-  <rect x="2" y="2" width="{CARD_W - 4}" height="{card_h - 4}" rx="14" fill="none" stroke="black" stroke-width="2"/>
   <g transform="translate({logo_x},{logo_y})">{logo_svg}</g>
   {qr_svg}
   {pin_line}
   {dsk_line1}
   {dsk_line2}
-  {meta_text}
 </svg>"""
 
 

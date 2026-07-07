@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.25
+
+- Z-Wave card: dropped the manufacturer/type/ID summary line — just PIN and the full DSK
+  below the QR now.
+- HomeKit and Z-Wave cards: removed the border, matching a plain borderless card.
+
 ## 1.0.24
 
 - **HomeKit and Z-Wave cards redesigned to match Matter's**: same white card, thin black
