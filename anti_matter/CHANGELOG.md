@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.14
+
+- **Fixed dialogs staying visible when scrolled to**: a CSS rule meant to pin the dialog
+  action row unconditionally applied `display: flex` to every `<dialog>`, which — because
+  author styles always beat the browser's own `dialog:not([open]) { display: none }` —
+  kept every closed dialog rendered in the page flow instead of hidden. This is also why
+  **Cancel didn't visibly close the edit dialog**. Scoped the rule to `dialog[open]`.
+- Removed the **Stock** field added in 1.0.13 — In use already covers it.
+- **Matter payload decode now looks up the official vendor/product name** from the CSA
+  Distributed Compliance Ledger (the public Matter certification registry — same source
+  generate.matterqr.codes uses), shown next to the Vendor ID / Product ID rows when a
+  match is found. Best-effort: no internet or an unassigned ID just shows the raw IDs.
+- The quick-view popup gained a small **decode button** that opens the same Matter
+  payload decode table in its own popup (only shown for Matter codes).
+
 ## 1.0.13
 
 - **Logging overhaul**: server now logs export/import counts, backup runs (startup and
@@ -20,11 +35,9 @@
   off-screen, and a long code list no longer scrolls the whole page.
 - Dialogs (New/Edit code, categories, etc.) now keep their Cancel/Save button row **pinned**
   at the bottom while the form content above scrolls.
-- Table view gained **In use** and **Connectivity** columns; the quick-view popup's meta
-  line now also shows In use and Connectivity.
-- **New Stock field** ("Stock (spare units)") on every code, next to In use — for tracking
-  spare/unused devices you haven't installed yet. Shown in the form, the table, and the
-  quick-view popup.
+- Table view gained **In use**, **Stock**, and **Connectivity** columns; the quick-view
+  popup's meta line now also shows In use, Stock, and Connectivity. (Stock was removed
+  again in 1.0.14 — In use covers the same distinction.)
 - **Multi-select + mass delete**: shift-click for a range, ctrl/cmd-click to toggle,
   on both the categories sidebar and the code grid/table. A selection bar shows the count
   with Delete selected / Clear buttons. Plain clicks keep their existing behavior (category

@@ -324,7 +324,6 @@ function renderTable() {
         <td>${escapeHtml(c.area)}</td>
         <td>${escapeHtml(categoryName(c.category_id))}</td>
         <td>${c.in_use ? "✓" : ""}</td>
-        <td>${c.stock || 0}</td>
         <td>${escapeHtml(connectivitySummary(c))}</td>
         <td class="table-row-actions">
           <button type="button" class="card-icon-btn card-icon-btn-danger" data-table-delete title="${escapeHtml(t("action.delete"))}">
@@ -369,9 +368,60 @@ function hex4(n) {
   return "0x" + n.toString(16).toUpperCase().padStart(4, "0");
 }
 
+// Best-effort official vendor/product name from the CSA Distributed
+// Compliance Ledger (public Matter certification registry). Any failure
+// (offline, unassigned VID, timeout) just means no name — never an error.
+async function lookupOfficialName(path) {
+  try {
+    return await api(path);
+  } catch (e) {
+    return null;
+  }
+}
+
 // Decode a Matter QR/manual payload into its fields (vendor/product ID, passcode,
 // discriminator, discovery capabilities, commissioning flow) — fully client-side,
-// reuses the same Base38/Verhoeff parser the scanner already ships.
+// reuses the same Base38/Verhoeff parser the scanner already ships. Renders the
+// base fields immediately, then enriches the Vendor/Product ID rows with the
+// official DCL name if a lookup succeeds.
+async function renderDecodeInto(box, parsed) {
+  if (!box) return;
+  if (!parsed) {
+    box.innerHTML = `<p class="form-hint">${escapeHtml(t("code.decode_mt_empty"))}</p>`;
+    return;
+  }
+  const vidText = parsed.vid != null ? `${hex4(parsed.vid)} (${parsed.vid})` : "—";
+  const pidText = parsed.pid != null ? `${hex4(parsed.pid)} (${parsed.pid})` : "—";
+  const rows = [
+    [t("code.decode_vid"), vidText],
+    [t("code.decode_pid"), pidText],
+    [t("code.decode_passcode"), parsed.pincode != null ? String(parsed.pincode).padStart(8, "0") : "—"],
+    [
+      t("code.decode_discriminator"),
+      parsed.long_discriminator ?? parsed.short_discriminator ?? "—",
+    ],
+    [t("code.decode_discovery"), decodeDiscoveryFlags(parsed.discovery) || "—"],
+    [t("code.decode_flow"), parsed.flow != null ? t(`code.decode_flow_${parsed.flow}`) || parsed.flow : "—"],
+  ];
+  const paint = () =>
+    `<table class="mt-decode-table">` +
+    rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
+    `</table>`;
+  box.innerHTML = paint();
+
+  if (parsed.vid == null) return;
+  const [vendorInfo, modelInfo] = await Promise.all([
+    lookupOfficialName(`/matter/vendor/${parsed.vid}`),
+    parsed.pid != null
+      ? lookupOfficialName(`/matter/model/${parsed.vid}/${parsed.pid}`)
+      : Promise.resolve(null),
+  ]);
+  if (!vendorInfo?.name && !modelInfo?.name) return;
+  if (vendorInfo?.name) rows[0][1] = `${vidText} — ${vendorInfo.name}`;
+  if (modelInfo?.name) rows[1][1] = `${pidText} — ${modelInfo.name}`;
+  box.innerHTML = paint();
+}
+
 function renderMtDecode() {
   const box = document.getElementById("code-mt-decode-result");
   if (!box) return;
@@ -385,25 +435,23 @@ function renderMtDecode() {
   } catch (e) {
     parsed = null;
   }
-  if (!parsed) {
-    box.innerHTML = `<p class="form-hint">${escapeHtml(t("code.decode_mt_empty"))}</p>`;
-    return;
+  renderDecodeInto(box, parsed);
+}
+
+function openMtDecodeDialog(code) {
+  const dlg = document.getElementById("mt-decode-dialog");
+  const box = document.getElementById("mt-decode-dialog-result");
+  if (!dlg || !box) return;
+  const M = window.AntiMatterMatterPayload;
+  let parsed = null;
+  try {
+    if (M && code.qr_payload) parsed = M.parseQrPayload(code.qr_payload);
+    else if (M && code.manual_code) parsed = M.parseManualPayload(code.manual_code);
+  } catch (e) {
+    parsed = null;
   }
-  const rows = [
-    [t("code.decode_vid"), parsed.vid != null ? `${hex4(parsed.vid)} (${parsed.vid})` : "—"],
-    [t("code.decode_pid"), parsed.pid != null ? `${hex4(parsed.pid)} (${parsed.pid})` : "—"],
-    [t("code.decode_passcode"), parsed.pincode != null ? String(parsed.pincode).padStart(8, "0") : "—"],
-    [
-      t("code.decode_discriminator"),
-      parsed.long_discriminator ?? parsed.short_discriminator ?? "—",
-    ],
-    [t("code.decode_discovery"), decodeDiscoveryFlags(parsed.discovery) || "—"],
-    [t("code.decode_flow"), parsed.flow != null ? t(`code.decode_flow_${parsed.flow}`) || parsed.flow : "—"],
-  ];
-  box.innerHTML =
-    `<table class="mt-decode-table">` +
-    rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
-    `</table>`;
+  renderDecodeInto(box, parsed);
+  dlg.showModal();
 }
 
 function buildQuickMeta(code, proto) {
@@ -415,7 +463,6 @@ function buildQuickMeta(code, proto) {
   parts.push(`${t("code.category")}: ${categoryName(code.category_id)}`);
   parts.push(`${t("code.protocol")}: ${proto}`);
   parts.push(`${t("code.in_use")}: ${code.in_use ? t("filter.yes") : t("filter.no")}`);
-  if (code.stock) parts.push(`${t("code.stock")}: ${code.stock}`);
   const conn = connectivitySummary(code);
   if (conn) parts.push(`${t("code.connectivity")}: ${conn}`);
   return parts.join(" · ");
@@ -440,6 +487,11 @@ function openQuickView(code) {
     openCodeDialog(code);
   };
   document.getElementById("quickview-download").onclick = () => downloadCode(code);
+  const decodeBtn = document.getElementById("quickview-decode");
+  if (decodeBtn) {
+    decodeBtn.classList.toggle("hidden", proto !== "matter");
+    decodeBtn.onclick = () => openMtDecodeDialog(code);
+  }
   document.getElementById("quickview-dialog").showModal();
 }
 
@@ -625,7 +677,6 @@ function openCodeDialog(code = null) {
   setVal("code-zwave-qr", proto === "zwave" ? code?.qr_payload : "");
   setVal("code-notes", code?.notes);
   document.getElementById("code-in-use").checked = Boolean(code?.in_use);
-  document.getElementById("code-stock").value = code?.stock ?? 0;
   document.getElementById("code-conn-wifi").checked = Boolean(code?.conn_wifi);
   document.getElementById("code-conn-matter").checked = Boolean(code?.conn_matter);
   document.getElementById("code-conn-zigbee").checked = Boolean(code?.conn_zigbee);
@@ -680,7 +731,6 @@ function baseBody(codeType) {
     category_id: document.getElementById("code-category").value || null,
     notes: trimVal("code-notes"),
     in_use: document.getElementById("code-in-use").checked,
-    stock: parseInt(document.getElementById("code-stock").value, 10) || 0,
     conn_wifi: document.getElementById("code-conn-wifi").checked,
     conn_matter: document.getElementById("code-conn-matter").checked,
     conn_zigbee: document.getElementById("code-conn-zigbee").checked,

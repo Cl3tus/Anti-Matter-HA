@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from backup_schedule import is_due, load_settings, mark_ran, period_key, save_settings
 from ha_client import HomeAssistantClient
+from matter_dcl import fetch_model_info, fetch_vendor_info
 from models import (
     Category,
     CategoryCreate,
@@ -60,7 +61,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.13"
+APP_VERSION = "1.0.14"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -632,6 +633,22 @@ async def ha_attribute(entity_id: str, attribute: str):
     if value is None:
         raise HTTPException(404, "Entity or attribute not found")
     return {"entity_id": entity_id, "attribute": attribute, "value": value}
+
+
+@app.get("/api/matter/vendor/{vendor_id}")
+async def matter_vendor_info(vendor_id: int):
+    info = await fetch_vendor_info(vendor_id)
+    if info is None:
+        raise HTTPException(404, "No official vendor record found")
+    return info
+
+
+@app.get("/api/matter/model/{vendor_id}/{product_id}")
+async def matter_model_info(vendor_id: int, product_id: int):
+    info = await fetch_model_info(vendor_id, product_id)
+    if info is None:
+        raise HTTPException(404, "No official product record found")
+    return info
 
 
 @app.post("/api/codes/{code_id}/sync-from-ha")

@@ -396,6 +396,11 @@
   pointer-events: none;
 }
 
+.card-icon-btn .mdi {
+  font-size: 1.15rem;
+  pointer-events: none;
+}
+
 .card-icon-btn:hover {
   color: var(--rm-accent);
   border-color: var(--rm-accent);
@@ -743,6 +748,13 @@ dialog {
   max-height: 85vh;
   width: calc(100% - 2rem);
   box-shadow: var(--rm-shadow-lg);
+}
+
+/* Scoped to [open]: an unconditional `display: flex` on `dialog` beats the
+   browser's own `dialog:not([open]) { display: none }` (author rules always
+   win over user-agent rules), so every dialog stayed visible in the page
+   flow — this is what made closed modals show up stacked when scrolling. */
+dialog[open] {
   display: flex;
   flex-direction: column;
   overflow: hidden; /* dialog form scrolls internally, see below */
