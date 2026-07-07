@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.21
+
+- Docs only: My-Home-Assistant install badge, Rematters/Jesse Hulswit credits, links to
+  the new bilingual (EN/NL) wiki. No app behavior changes.
+
 ## 1.0.20
 
 - Fixed the **Device dropdown in the Home Assistant link being empty**: the template
