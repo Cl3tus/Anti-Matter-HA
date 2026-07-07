@@ -1442,6 +1442,38 @@ body.qr-invert .zwave-sticker--dsk-only {
   background: var(--rm-surface-elevated);
   font-weight: 600;
 }
+#codes-table thead th[data-sort-key] {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.2rem;
+}
+#codes-table thead th[data-sort-key]:hover {
+  color: var(--rm-accent);
+}
+#codes-table thead th[data-sort-key]::after {
+  content: "";
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  opacity: 0.35;
+}
+#codes-table thead th[data-sort-key]:not(.sorted-asc):not(.sorted-desc)::after {
+  border-top-color: var(--rm-text-muted);
+  margin-top: 2px;
+}
+#codes-table thead th.sorted-asc::after {
+  border-bottom-color: var(--rm-text);
+  margin-top: -2px;
+  opacity: 1;
+}
+#codes-table thead th.sorted-desc::after {
+  border-top-color: var(--rm-text);
+  margin-top: 2px;
+  opacity: 1;
+}
 #codes-table tbody tr {
   cursor: pointer;
 }

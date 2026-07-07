@@ -490,10 +490,44 @@ function connectivitySummary(c) {
     .join(", ");
 }
 
+let tableSortKey = null;
+let tableSortDir = 1; // 1 = ascending, -1 = descending
+
+const TABLE_SORT_ACCESSORS = {
+  name: (c) => c.name || "",
+  protocol: (c) => window.AntiMatterVaultCards?.codeProtocol?.(c) || c.code_type || "matter",
+  device_vendor: (c) => c.device_vendor || "",
+  device_product: (c) => c.device_product || "",
+  device_type: (c) => c.device_type || "",
+  area: (c) => c.area || "",
+  categories: (c) => categoryNamesJoined(c.category_ids),
+  in_use: (c) => (c.in_use ? 1 : 0),
+  connectivity: (c) => connectivitySummary(c),
+};
+
+function sortTableCodes(codes) {
+  const accessor = tableSortKey && TABLE_SORT_ACCESSORS[tableSortKey];
+  if (!accessor) return codes;
+  return [...codes].sort((a, b) => {
+    const va = accessor(a);
+    const vb = accessor(b);
+    if (typeof va === "number" && typeof vb === "number") return (va - vb) * tableSortDir;
+    return String(va).localeCompare(String(vb), undefined, { sensitivity: "base", numeric: true }) * tableSortDir;
+  });
+}
+
+function updateTableSortIndicators() {
+  document.querySelectorAll("#codes-table thead th[data-sort-key]").forEach((th) => {
+    th.classList.toggle("sorted-asc", th.dataset.sortKey === tableSortKey && tableSortDir === 1);
+    th.classList.toggle("sorted-desc", th.dataset.sortKey === tableSortKey && tableSortDir === -1);
+  });
+}
+
 function renderTable() {
   const tbody = document.getElementById("codes-table-body");
   if (!tbody) return;
-  const codes = filteredCodes();
+  const codes = sortTableCodes(filteredCodes());
+  updateTableSortIndicators();
   tbody.innerHTML = codes
     .map((c) => {
       const proto =
@@ -1512,6 +1546,17 @@ function bindUi() {
   document.getElementById("search").oninput = renderCodes;
 
   document.getElementById("btn-table-view").onclick = toggleViewMode;
+  document.querySelectorAll("#codes-table thead th[data-sort-key]").forEach((th) => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sortKey;
+      if (tableSortKey === key) tableSortDir *= -1;
+      else {
+        tableSortKey = key;
+        tableSortDir = 1;
+      }
+      renderTable();
+    });
+  });
   document.getElementById("codes-table-body").ondblclick = (e) => {
     if (e.target.closest("[data-table-delete]")) return;
     const tr = e.target.closest("tr[data-code-id]");

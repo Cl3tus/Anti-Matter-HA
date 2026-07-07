@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.34
+
+- Table view ("Excel mode") column headers are now clickable to sort — click again
+  to reverse direction. Works on all columns including computed ones (Categories,
+  Connectivity).
+
 ## 1.0.33
 
 - Camera QR scanning now downscales each frame onto an offscreen canvas before
