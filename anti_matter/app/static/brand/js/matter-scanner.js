@@ -45,6 +45,77 @@
     rafId = requestAnimationFrame(tick);
   }
 
+  // Pinch-to-zoom (two fingers) and tap-to-focus, using the raw MediaStreamTrack's
+  // constraints. Both are non-standard/experimental (Chrome on Android only) — every
+  // capability is feature-detected, and applyConstraints failures are swallowed, so
+  // this is purely additive on devices/browsers that don't support it.
+  function wirePinchZoomAndTapFocus(video, track) {
+    let caps = null;
+    try {
+      caps = track.getCapabilities ? track.getCapabilities() : null;
+    } catch {
+      caps = null;
+    }
+    const zoomCaps = caps && caps.zoom;
+    const supportsFocus = !!(caps && caps.focusMode && caps.focusMode.includes("single-shot"));
+    if (!zoomCaps && !supportsFocus) return;
+
+    video.style.touchAction = "none";
+    let pinchStartDist = 0;
+    let pinchStartZoom = zoomCaps ? zoomCaps.min : 1;
+    let touchStart = null;
+    let moved = false;
+
+    video.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.touches.length === 2 && zoomCaps) {
+          const [a, b] = e.touches;
+          pinchStartDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          pinchStartZoom = track.getSettings?.().zoom || zoomCaps.min;
+          moved = true;
+        } else if (e.touches.length === 1) {
+          touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          moved = false;
+        }
+      },
+      { passive: true }
+    );
+
+    video.addEventListener(
+      "touchmove",
+      (e) => {
+        if (e.touches.length === 2 && zoomCaps && pinchStartDist) {
+          const [a, b] = e.touches;
+          const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+          const zoom = Math.min(
+            zoomCaps.max,
+            Math.max(zoomCaps.min, pinchStartZoom * (dist / pinchStartDist))
+          );
+          track.applyConstraints({ advanced: [{ zoom }] }).catch(() => {});
+        } else if (touchStart) {
+          const dx = e.touches[0].clientX - touchStart.x;
+          const dy = e.touches[0].clientY - touchStart.y;
+          if (Math.hypot(dx, dy) > 10) moved = true;
+        }
+      },
+      { passive: true }
+    );
+
+    video.addEventListener("touchend", () => {
+      if (!moved && touchStart && supportsFocus) {
+        const rect = video.getBoundingClientRect();
+        const x = (touchStart.x - rect.left) / rect.width;
+        const y = (touchStart.y - rect.top) / rect.height;
+        track
+          .applyConstraints({ advanced: [{ focusMode: "single-shot", pointsOfInterest: [{ x, y }] }] })
+          .catch(() => {});
+      }
+      touchStart = null;
+      pinchStartDist = 0;
+    });
+  }
+
   async function startNativeCamera(containerId, onScan, onError) {
     const container = document.getElementById(containerId);
     if (!container) {
@@ -69,6 +140,8 @@
     }
     video.srcObject = stream;
     await video.play();
+    const track = stream.getVideoTracks()[0];
+    if (track) wirePinchZoomAndTapFocus(video, track);
     await scanWithBarcodeDetector(video, onScan);
   }
 

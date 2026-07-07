@@ -265,14 +265,6 @@
   background: var(--rm-accent-soft);
 }
 
-.backup-status {
-  flex: none;
-  margin-top: var(--rm-space-4);
-  font-size: var(--rm-text-xs);
-  color: var(--rm-text-muted);
-  line-height: 1.45;
-}
-
 .content {
   padding: var(--rm-space-4) var(--rm-space-5);
 }
@@ -853,6 +845,10 @@ dialog form {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  /* Leaving overflow-x at its default 'visible' next to overflow-y:auto computes
+     to 'auto' on both axes per spec — any accidental wide child (long unbroken
+     text in a table cell, etc.) then draws a horizontal scrollbar. Force it off. */
+  overflow-x: hidden;
 }
 
 dialog label {
@@ -1113,14 +1109,21 @@ dialog h3 {
   background: var(--rm-accent-soft);
 }
 
-/* QR invert button icon: literal black/white so it mirrors what the toggle
-   actually does to the QR image (normal = black on white, inverted = white on black) */
+/* QR invert button icon: literal black/white chip so it mirrors what the toggle
+   actually does to the QR image (normal = black on white, inverted = white on black)
+   — a fixed background behind the glyph keeps it visible regardless of the app's
+   own light/dark theme (a plain black icon would vanish on a dark button in dark mode). */
 #btn-qr-invert-icon {
   color: #111;
-  transition: color 0.15s ease;
+  background: #fff;
+  border-radius: var(--rm-radius-sm);
+  padding: 1px 3px;
+  line-height: 1;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 #btn-qr-invert.is-active #btn-qr-invert-icon {
   color: #fff;
+  background: #111;
 }
 
 /* Dark-friendly (inverted) QR rendering — off by default */
@@ -1493,6 +1496,8 @@ body.qr-invert .zwave-sticker--dsk-only {
 }
 .mt-decode-table td {
   font-family: var(--rm-font-mono, monospace);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .mt-decode-links {
   display: flex;

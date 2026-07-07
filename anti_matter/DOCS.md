@@ -22,8 +22,8 @@ a scannable QR card so you can re-commission a device without hunting for the or
 - **Scan** (top bar, or inside the form) opens the camera. Point it at the QR on the device
   or its manual. On phones the rear camera is used. If the browser can't use the camera, use
   **Or upload a photo**.
-- **Pull from HA** reads a value from a linked entity attribute (e.g. a `matter_setup_code`
-  attribute) and fills the code in.
+- **Home Assistant link (optional)**: fill in the entity's ID and an **Open device in Home
+  Assistant** link appears, jumping straight to that device's page in HA.
 
 ## Area suggestions
 

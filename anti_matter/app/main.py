@@ -62,7 +62,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.17"
+APP_VERSION = "1.0.18"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -216,6 +216,13 @@ def _find_duplicate_code(
         if qr_key and qr_key == _normalize_qr_key(existing.qr_payload):
             return existing
     return None
+
+
+def _dup_detail(dup: MatterCode) -> dict[str, Any]:
+    return {
+        "message": f"This code is already saved as “{dup.name}”",
+        "existing": {"id": dup.id, "name": dup.name},
+    }
 
 
 def run_backup(keep_count: int | None = None) -> dict[str, Any]:
@@ -550,10 +557,7 @@ async def create_code(body: MatterCodeCreate):
         _find_category(vault, code.category_id)
     dup = _find_duplicate_code(vault, code.model_dump(mode="json"))
     if dup:
-        raise HTTPException(
-            409,
-            detail=f"This code is already saved as “{dup.name}”",
-        )
+        raise HTTPException(409, detail=_dup_detail(dup))
     vault.codes.append(code)
     storage.save(vault)
     _LOGGER.info(
@@ -579,10 +583,7 @@ async def update_code(code_id: str, body: MatterCodeUpdate):
     code.updated_at = utc_now()
     dup = _find_duplicate_code(vault, code.model_dump(mode="json"), exclude_id=code_id)
     if dup:
-        raise HTTPException(
-            409,
-            detail=f"This code is already saved as “{dup.name}”",
-        )
+        raise HTTPException(409, detail=_dup_detail(dup))
     storage.save(vault)
     _LOGGER.info(
         "Code updated: id=%s name=%s fields=%s", code_id, _redact(code.name), sorted(updates.keys())
@@ -616,10 +617,13 @@ async def delete_code(code_id: str):
 async def restore_code(code_id: str):
     bin_data = storage.load_bin()
     code = _find_bin_code(bin_data, code_id)
+    vault = storage.load()
+    dup = _find_duplicate_code(vault, code.model_dump(mode="json"))
+    if dup:
+        raise HTTPException(409, detail=_dup_detail(dup))
     bin_data.codes = [c for c in bin_data.codes if c.id != code_id]
     storage.save_bin(bin_data)
     code.deleted_at = None
-    vault = storage.load()
     vault.codes.append(code)
     storage.save(vault)
     _LOGGER.info("Code restored from trash: id=%s name=%s", code_id, _redact(code.name))
@@ -780,36 +784,14 @@ async def matter_model_info(vendor_id: int, product_id: int):
     return info
 
 
-@app.post("/api/codes/{code_id}/sync-from-ha")
-async def sync_code_from_ha(code_id: str):
-    vault = storage.load()
-    code = _find_code(vault, code_id)
-    link = code.ha_link
-    if not link.entity_id or not link.attribute:
-        raise HTTPException(400, "No Home Assistant entity/attribute linked")
-    value = await ha.get_attribute(link.entity_id, link.attribute)
-    if value is None:
-        raise HTTPException(404, "Could not read attribute from Home Assistant")
-    if isinstance(value, str):
-        upper = value.upper()
-        if upper.startswith("MT:"):
-            code.qr_payload = value
-        elif upper.startswith("X-HM://"):
-            code.qr_payload = value
-            code.code_type = "homekit"
-            _apply_code_fields(code)
-        elif zwave_extract_qr(value):
-            code.qr_payload = value
-            code.code_type = "zwave"
-            _apply_code_fields(code)
-        else:
-            code.manual_code = value
-    code.updated_at = utc_now()
-    storage.save(vault)
-    _LOGGER.info(
-        "Pulled from HA: code=%s entity=%s attribute=%s", code_id, link.entity_id, link.attribute
-    )
-    return code
+@app.get("/api/ha/device/{entity_id}")
+async def ha_device(entity_id: str):
+    """Resolve the entity behind an ha_link to its HA device registry id, so the
+    UI can link straight to that device's page in Home Assistant."""
+    device_id = await ha.get_device_id(entity_id)
+    if not device_id:
+        raise HTTPException(404, "No device found for that entity")
+    return {"device_id": device_id}
 
 
 # --- Static UI (relative paths for ingress) ---

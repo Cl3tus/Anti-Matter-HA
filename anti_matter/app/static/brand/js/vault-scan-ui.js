@@ -72,6 +72,10 @@
       } else {
         document.getElementById("code-manual").value = parsed.manual_code || "";
         document.getElementById("code-qr").value = parsed.qr_payload || "";
+        // Setting .value directly doesn't fire "input", so the decode (and its
+        // vendor/product auto-fill) would otherwise only run once the user opens
+        // the "Decode Matter payload" details or edits the field by hand.
+        global.AntiMatterUI?.renderMtDecode?.();
       }
 
       const nameEl = document.getElementById("code-name");

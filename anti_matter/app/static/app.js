@@ -42,9 +42,12 @@ async function api(path, options = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const e = new Error(err.detail || res.statusText);
+    // detail is either a plain string, or {message, existing} for duplicate-code 409s.
+    const detail = err.detail;
+    const message = typeof detail === "string" ? detail : detail?.message;
+    const e = new Error(message || res.statusText);
     e.status = res.status;
-    e.existing = err.existing;
+    e.existing = typeof detail === "object" ? detail?.existing : undefined;
     throw e;
   }
   if (res.status === 204) return null;
@@ -776,7 +779,7 @@ function openCodeDialog(code = null) {
   }
   const haDetails = document.getElementById("code-ha-details");
   if (haDetails) {
-    haDetails.open = Boolean(code?.ha_link?.entity_id || code?.ha_link?.attribute);
+    haDetails.open = Boolean(code?.ha_link?.entity_id);
   }
   document.getElementById("code-category").value = code?.category_id || "";
   setVal("code-manual", code?.manual_code);
@@ -800,8 +803,40 @@ function openCodeDialog(code = null) {
   document.getElementById("code-conn-bluetooth").checked = Boolean(code?.conn_bluetooth);
   document.getElementById("code-conn-zwave").checked = Boolean(code?.conn_zwave);
   setVal("code-ha-entity", code?.ha_link?.entity_id);
-  setVal("code-ha-attr", code?.ha_link?.attribute);
+  refreshHaDeviceLink();
   dlg.showModal();
+}
+
+// Debounced: resolves the entity to a HA device and shows/hides the
+// "Open device in Home Assistant" link (target=_top navigates the HA frontend,
+// not just the ingress iframe this add-on runs in).
+let haDeviceLinkTimer = null;
+async function refreshHaDeviceLink() {
+  const link = document.getElementById("btn-open-ha-device");
+  const hint = document.getElementById("ha-device-hint");
+  if (!link) return;
+  const entity = trimVal("code-ha-entity");
+  if (!entity) {
+    link.classList.add("hidden");
+    hint?.classList.add("hidden");
+    return;
+  }
+  try {
+    const res = await api(`/ha/device/${encodeURIComponent(entity)}`);
+    link.href = `/config/devices/device/${res.device_id}`;
+    link.classList.remove("hidden");
+    hint?.classList.add("hidden");
+  } catch (err) {
+    link.classList.add("hidden");
+    // Only a confirmed 404 means "no device for this entity" — network errors or
+    // HA being unavailable shouldn't flash a misleading "not found" at the user.
+    hint?.classList.toggle("hidden", err.status !== 404);
+  }
+}
+
+function debouncedRefreshHaDeviceLink() {
+  clearTimeout(haDeviceLinkTimer);
+  haDeviceLinkTimer = setTimeout(refreshHaDeviceLink, 400);
 }
 
 function openCategoryDialog(cat = null) {
@@ -855,7 +890,6 @@ function baseBody(codeType) {
     conn_zwave: document.getElementById("code-conn-zwave").checked,
     ha_link: {
       entity_id: trimVal("code-ha-entity") || null,
-      attribute: trimVal("code-ha-attr") || null,
     },
   };
 }
@@ -1135,11 +1169,6 @@ async function loadAreas() {
   }
 }
 
-function updateStorageHint() {
-  const el = document.getElementById("backup-status");
-  if (el) el.textContent = t("storage.hint");
-}
-
 function bindUi() {
   window.AntiMatterCategoryColor?.bind();
   ensureCategoryIconPicker();
@@ -1264,7 +1293,25 @@ function bindUi() {
     const restoreBtn = e.target.closest("[data-restore]");
     if (restoreBtn) {
       const path = restoreBtn.dataset.kind === "category" ? "categories" : "codes";
-      await api(`/${path}/${restoreBtn.dataset.restore}/restore`, { method: "POST" });
+      const id = restoreBtn.dataset.restore;
+      try {
+        await api(`/${path}/${id}/restore`, { method: "POST" });
+      } catch (err) {
+        if (err.status === 409 && err.existing?.id) {
+          const msg =
+            t("scan.duplicate", { name: err.existing.name || t("scan.unnamed") }) +
+            "\n" + t("trash.restore_duplicate_hint");
+          if (await uiConfirm(msg, t("action.merge"))) {
+            // "Merge" here means: the active vault already has this code, so the
+            // trashed duplicate is discarded for good rather than restored as a copy.
+            await api(`/${path}/${id}/purge`, { method: "DELETE" });
+            await loadTrash();
+          }
+          return;
+        }
+        await uiAlert(err.message || t("alert.restore_fail"));
+        return;
+      }
       await loadTrash();
       await loadVault();
       return;
@@ -1310,40 +1357,7 @@ function bindUi() {
     }
   };
 
-  document.getElementById("btn-sync-ha").onclick = async () => {
-    const id = document.getElementById("code-id").value;
-    if (!id) {
-      await uiAlert(t("alert.save_before_sync"));
-      return;
-    }
-    const entity_id = trimVal("code-ha-entity") || null;
-    const attribute = trimVal("code-ha-attr") || null;
-    if (!entity_id || !attribute) {
-      const haDetails = document.getElementById("code-ha-details");
-      if (haDetails) haDetails.open = true;
-    }
-    if (!entity_id) {
-      await uiAlert(t("alert.ha_entity_required"));
-      return;
-    }
-    if (!attribute) {
-      await uiAlert(t("alert.ha_attribute_required"));
-      return;
-    }
-    try {
-      // The server pulls from the *saved* ha_link, not the live form — persist it first
-      // so editing Entity ID/Attribute and clicking Pull immediately works.
-      await api(`/codes/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ ha_link: { entity_id, attribute } }),
-      });
-      await api(`/codes/${id}/sync-from-ha`, { method: "POST" });
-      await loadVault();
-      openCodeDialog(vault.codes.find((c) => c.id === id));
-    } catch (err) {
-      await uiAlert(err.message);
-    }
-  };
+  document.getElementById("code-ha-entity")?.addEventListener("input", debouncedRefreshHaDeviceLink);
 
   buildConnFilterPanel();
   document.getElementById("conn-filter-toggle")?.addEventListener("click", (e) => {
@@ -1363,7 +1377,6 @@ function bindUi() {
   window.addEventListener("antimatter:locale", () => {
     render();
     buildConnFilterPanel();
-    updateStorageHint();
   });
 }
 
@@ -1392,10 +1405,10 @@ function applyQrInvert(on) {
 }
 
 window.AntiMatterUI = {
-  refreshBackupStatus: updateStorageHint,
   syncCodeTypeFields,
   syncHomeKitDerived,
   openCodeDialog,
+  renderMtDecode,
 };
 
 async function boot() {
@@ -1415,7 +1428,6 @@ async function boot() {
   await loadVault();
   await loadAreas();
   fillDeviceTypeOptions();
-  updateStorageHint();
   startVaultPolling();
   logEvent(
     `Session started: language=${window.AntiMatterI18n?.getLocale?.() || "?"} ` +

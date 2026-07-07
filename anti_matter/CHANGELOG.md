@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.18
+
+- **Home Assistant link replaced**: "Pull from HA" (entity + attribute sync) is gone;
+  instead the Entity ID field now shows an **"Open device in Home Assistant"** link that
+  jumps straight to that device's page in HA.
+- Mobile scan camera: **pinch-to-zoom** (two fingers) and **tap-to-focus**, where the
+  browser/device supports it (Chrome on Android).
+- Fixed the New/Edit code dialog showing a **horizontal scrollbar**.
+- Matter payload decode (and its vendor/product auto-fill) now also runs right after a
+  **scan**, not only after manually opening "Decode Matter payload" or editing the field —
+  scanning a code fills the form without firing an input event, which is why it didn't
+  trigger before.
+- **Duplicate codes are now also blocked on restore from Trash** (same QR-payload/manual-code
+  check as creating or editing a code): if the trashed code duplicates one already in your
+  vault, you're asked to Cancel or Merge (merge discards the trashed copy).
+- Fixed a latent bug where the duplicate-code warning's "open the existing one" action never
+  actually worked (the server never sent which code it was — now it does).
+- QR invert button icon now has a small fixed-contrast chip so it stays visible in both
+  light and dark theme.
+- Removed the "Vault and backups are stored in…" hint text under Categories.
+- Trash button now has a visible "Trash" label next to its icon.
+- Version badges in both READMEs now track the actual add-on version.
+
 ## 1.0.17
 
 - Connectivity filter dropdown restyled to match the other filter controls exactly
