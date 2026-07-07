@@ -45,10 +45,16 @@
     rafId = requestAnimationFrame(tick);
   }
 
-  // Pinch-to-zoom (two fingers) and tap-to-focus, using the raw MediaStreamTrack's
-  // constraints. Both are non-standard/experimental (Chrome on Android only) — every
-  // capability is feature-detected, and applyConstraints failures are swallowed, so
-  // this is purely additive on devices/browsers that don't support it.
+  // Pinch-to-zoom (two fingers) and tap-to-focus. Hardware zoom via the raw
+  // MediaStreamTrack's constraints is Chrome-on-Android-only and, even there, most
+  // phone cameras don't actually report a zoom capability through getUserMedia —
+  // so pinch always does *something*: hardware zoom when the track supports it,
+  // otherwise a CSS transform: scale() on the video itself (framing aid only —
+  // BarcodeDetector still reads the full, unscaled frame, so decoding is unaffected).
+  // Tap-to-focus has no software fallback and stays feature-detected.
+  const CSS_ZOOM_MIN = 1;
+  const CSS_ZOOM_MAX = 3;
+
   function wirePinchZoomAndTapFocus(video, track) {
     let caps = null;
     try {
@@ -58,21 +64,20 @@
     }
     const zoomCaps = caps && caps.zoom;
     const supportsFocus = !!(caps && caps.focusMode && caps.focusMode.includes("single-shot"));
-    if (!zoomCaps && !supportsFocus) return;
 
-    video.style.touchAction = "none";
     let pinchStartDist = 0;
     let pinchStartZoom = zoomCaps ? zoomCaps.min : 1;
+    let cssScale = 1;
     let touchStart = null;
     let moved = false;
 
     video.addEventListener(
       "touchstart",
       (e) => {
-        if (e.touches.length === 2 && zoomCaps) {
+        if (e.touches.length === 2) {
           const [a, b] = e.touches;
           pinchStartDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-          pinchStartZoom = track.getSettings?.().zoom || zoomCaps.min;
+          pinchStartZoom = zoomCaps ? track.getSettings?.().zoom || zoomCaps.min : cssScale;
           moved = true;
         } else if (e.touches.length === 1) {
           touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -85,14 +90,17 @@
     video.addEventListener(
       "touchmove",
       (e) => {
-        if (e.touches.length === 2 && zoomCaps && pinchStartDist) {
+        if (e.touches.length === 2 && pinchStartDist) {
           const [a, b] = e.touches;
           const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-          const zoom = Math.min(
-            zoomCaps.max,
-            Math.max(zoomCaps.min, pinchStartZoom * (dist / pinchStartDist))
-          );
-          track.applyConstraints({ advanced: [{ zoom }] }).catch(() => {});
+          const ratio = dist / pinchStartDist;
+          if (zoomCaps) {
+            const zoom = Math.min(zoomCaps.max, Math.max(zoomCaps.min, pinchStartZoom * ratio));
+            track.applyConstraints({ advanced: [{ zoom }] }).catch(() => {});
+          } else {
+            cssScale = Math.min(CSS_ZOOM_MAX, Math.max(CSS_ZOOM_MIN, pinchStartZoom * ratio));
+            video.style.transform = cssScale > 1 ? `scale(${cssScale})` : "";
+          }
         } else if (touchStart) {
           const dx = e.touches[0].clientX - touchStart.x;
           const dy = e.touches[0].clientY - touchStart.y;

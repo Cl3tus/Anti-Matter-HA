@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, Optional
 
 import httpx
 
 SUPERVISOR_CORE = "http://supervisor/core/api"
+_LOGGER = logging.getLogger("anti_matter.ha_client")
 
 
 class HomeAssistantClient:
@@ -62,17 +64,25 @@ class HomeAssistantClient:
         """[{id, name}] for every HA device with at least one entity — via the
         template API's `device_id()`/`device_attr()` functions (no REST
         device-registry endpoint exists). Lets the UI link to a device's own page
-        (`/config/devices/device/<id>`) without ever needing an entity_id itself."""
+        (`/config/devices/device/<id>`) without ever needing an entity_id itself.
+
+        device_id() is only a template *function* in HA, not a registered filter —
+        `states | map('device_id')` fails, so this collects ids via a plain for-loop
+        instead of chaining it through `map`."""
         if not self.enabled:
             return []
         url = f"{SUPERVISOR_CORE}/template"
         template = (
-            "{% set ids = states | map(attr='entity_id') | map('device_id')"
-            " | reject('none') | unique | list %}"
-            "{% set ns = namespace(items=[]) %}"
-            "{% for id in ids %}"
-            "{% set ns.items = ns.items + [{'id': id,"
-            " 'name': device_attr(id, 'name_by_user') or device_attr(id, 'name') or id}] %}"
+            "{% set ns = namespace(ids=[], items=[]) %}"
+            "{% for eid in states | map(attribute='entity_id') %}"
+            "{% set did = device_id(eid) %}"
+            "{% if did and did not in ns.ids %}"
+            "{% set ns.ids = ns.ids + [did] %}"
+            "{% endif %}"
+            "{% endfor %}"
+            "{% for did in ns.ids %}"
+            "{% set ns.items = ns.items + [{'id': did,"
+            " 'name': device_attr(did, 'name_by_user') or device_attr(did, 'name') or did}] %}"
             "{% endfor %}"
             "{{ ns.items | to_json }}"
         )
@@ -81,11 +91,13 @@ class HomeAssistantClient:
                 resp = await client.post(url, headers=self._headers(), json={"template": template})
                 resp.raise_for_status()
                 raw = resp.text.strip()
-        except httpx.HTTPError:
+        except httpx.HTTPError as exc:
+            _LOGGER.warning("list_devices: HA template request failed: %s", exc)
             return []
         try:
             devices = json.loads(raw)
         except (ValueError, TypeError):
+            _LOGGER.warning("list_devices: HA returned non-JSON template result: %r", raw[:300])
             return []
         if not isinstance(devices, list):
             return []

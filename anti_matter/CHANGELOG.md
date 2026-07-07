@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.20
+
+- Fixed the **Device dropdown in the Home Assistant link being empty**: the template
+  used `states | map('device_id')`, but `device_id` is only a template *function* in HA,
+  not a registered filter, so the request errored and silently returned no devices. Also
+  fixed `map(attr=...)` → `map(attribute=...)` (wrong keyword, same silent failure).
+- Fixed **pinch-to-zoom on the scan camera not doing anything** on phones whose camera
+  doesn't report a hardware zoom capability (most of them) — it now falls back to a CSS
+  zoom on the video preview so pinching always does something, and `touch-action: none`
+  is set unconditionally so the browser's own page-zoom doesn't hijack the gesture instead.
+
 ## 1.0.19
 
 - Fixed the Matter label PNG: the code name pushed the **matter** logo down but the QR

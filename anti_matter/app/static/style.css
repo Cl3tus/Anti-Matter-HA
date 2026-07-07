@@ -989,6 +989,11 @@ dialog h3 {
   max-height: 280px;
   object-fit: cover;
   display: block;
+  /* Without this, a pinch on the video zooms the whole page (default viewport
+     allows it) instead of reaching our pinch-to-zoom handler in matter-scanner.js —
+     set unconditionally, not just when the camera reports zoom support, so pinching
+     never fights the browser even on hardware without a zoom capability. */
+  touch-action: none;
 }
 
 .scan-reader-mount {
