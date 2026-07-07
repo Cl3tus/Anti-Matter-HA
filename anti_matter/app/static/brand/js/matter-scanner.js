@@ -3,15 +3,15 @@
  */
 (function (global) {
   let stream = null;
-  let rafId = null;
+  let scanTimerId = null;
   let html5Instance = null;
   let currentTrack = null;
   let torchIsOn = false;
 
   async function stopCamera() {
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
+    if (scanTimerId) {
+      clearTimeout(scanTimerId);
+      scanTimerId = null;
     }
     // Stopping a track while its torch is still on crashes the camera HAL on some
     // Android phones — the tab's renderer/GPU process dies and Chrome silently
@@ -65,6 +65,16 @@
     }
   }
 
+  // Sampling every displayed frame via requestAnimationFrame (up to 60-120Hz on a
+  // phone) ran detector.detect() far more often than QR scanning needs, and on
+  // devices without a hardware Shape Detection backend (detect() falls back to a
+  // software/WASM decoder there) that was enough sustained CPU/memory pressure to
+  // crash the tab's renderer mid-scan — Chrome recovers by silently reloading the
+  // page, which looked like the whole app had crashed. ~8 detections/sec (matching
+  // the html5-qrcode fallback's own fps:10) is still plenty responsive for aiming
+  // a phone at a QR code.
+  const SCAN_INTERVAL_MS = 120;
+
   async function scanWithBarcodeDetector(video, onScan) {
     const detector = new global.BarcodeDetector({ formats: ["qr_code"] });
     const tick = async () => {
@@ -81,9 +91,9 @@
       } catch {
         /* skip frame */
       }
-      rafId = requestAnimationFrame(tick);
+      scanTimerId = setTimeout(tick, SCAN_INTERVAL_MS);
     };
-    rafId = requestAnimationFrame(tick);
+    scanTimerId = setTimeout(tick, SCAN_INTERVAL_MS);
   }
 
   // Pinch-to-zoom (two fingers) and tap-to-focus. Hardware zoom via the raw

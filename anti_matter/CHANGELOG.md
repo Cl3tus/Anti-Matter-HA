@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.32
+
+- Found the actual root cause of the mobile crash-reload during scanning (present
+  before the flash feature too, not just with it on): the camera scan loop sampled
+  every displayed video frame via `requestAnimationFrame` — up to 60-120 times a
+  second on a phone — with no throttling at all. On devices without a hardware
+  barcode-detection backend that's enough sustained CPU/memory pressure to crash
+  the tab's renderer while scanning, which Chrome recovers from by silently
+  reloading the page. Throttled to ~8 scans/sec (matching the older-browser
+  fallback's own long-established rate), still plenty responsive.
+
 ## 1.0.31
 
 - Fixed a mobile-only crash: stopping the camera right after a successful scan while
