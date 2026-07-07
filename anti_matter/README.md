@@ -1,8 +1,16 @@
-# Anti-Matter
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/Cl3tus/Anti-Matter-HA/main/anti_matter/banner.png" alt="Anti-Matter" width="100%">
 </p>
+
+# Anti-Matter
+
+[![GitHub release](https://img.shields.io/badge/version-1.0.15-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![Project Stage](https://img.shields.io/badge/project%20stage-experimental-yellow.svg)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)](https://github.com/Cl3tus/Anti-Matter-HA/commits/main)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Cl3tus/Anti-Matter-HA/blob/main/LICENSE)
+
+![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green.svg)
+![Supports amd64](https://img.shields.io/badge/amd64-yes-green.svg)
 
 Store, organize and back up your **Matter**, **HomeKit** and **Z-Wave** pairing codes
 and QR payloads — right inside Home Assistant.
