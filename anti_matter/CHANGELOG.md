@@ -1,6 +1,15 @@
 # Changelog
 
-## 1.0.37
+## 1.0.38
+
+- Fixed the "Invert QR" toggle not doing anything when you opened a code via
+  single-click quickview (its white background was never in the inverted
+  selector list — now the whole quickview panel flips like the card grid
+  does).
+- Quickview now shows the protocol logo next to the code, same as the card
+  grid: Matter gets its logo overlaid next to the QR (HomeKit/Z-Wave already
+  had theirs baked into their card image).
+
 
 - Show the date/time a code was added: new sortable "Added" column in table
   view, and an "Added" line in the code quickview detail.

@@ -925,11 +925,18 @@ function openQuickView(code) {
     proto === "homekit" || proto === "zwave"
       ? `${API}/codes/${code.id}/card.svg`
       : `${API}/codes/${code.id}/qr.png`;
-  wrap.innerHTML = `<img src="${src}" alt="" />`;
+  // HomeKit/Z-Wave card.svg already bakes in their brand logo server-side; Matter's
+  // qr.png doesn't, so overlay the same logo the card grid shows next to its QR.
+  const logo =
+    proto === "matter"
+      ? `<img class="quickview-protocol-logo" src="./static/assets/matter_logo.svg" alt="" />`
+      : "";
+  wrap.innerHTML = `${logo}<img class="quickview-code-img" src="${src}" alt="" />`;
+  const codeImg = wrap.querySelector(".quickview-code-img");
   if (proto === "matter") {
-    wrap.querySelector("img").ondblclick = () => openMtDecodeDialog(code);
+    codeImg.ondblclick = () => openMtDecodeDialog(code);
   } else if (proto === "zwave") {
-    wrap.querySelector("img").ondblclick = () => openZwaveDecodeDialog(code);
+    codeImg.ondblclick = () => openZwaveDecodeDialog(code);
   }
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";

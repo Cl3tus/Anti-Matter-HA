@@ -1282,7 +1282,8 @@ dialog h3 {
 body.qr-invert .matter-sticker-box,
 body.qr-invert .homekit-sticker-img,
 body.qr-invert .zwave-sticker-img,
-body.qr-invert .zwave-sticker--dsk-only {
+body.qr-invert .zwave-sticker--dsk-only,
+body.qr-invert #quickview-image-wrap {
   filter: invert(1);
 }
 
@@ -1571,16 +1572,24 @@ body.qr-invert .zwave-sticker--dsk-only {
 }
 .quickview-image-wrap {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--rm-space-2);
   background: #fff;
   border-radius: var(--rm-radius-md);
   padding: var(--rm-space-4);
   margin: var(--rm-space-3) 0;
 }
-.quickview-image-wrap img {
+.quickview-image-wrap .quickview-code-img {
   max-width: 220px;
   width: 100%;
+  height: auto;
+  display: block;
+}
+.quickview-protocol-logo {
+  max-width: 110px;
+  width: 50%;
   height: auto;
   display: block;
 }
