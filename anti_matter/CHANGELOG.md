@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.36
+
+- Toolbar filter dropdowns (Vendor, Product, Type, Area, etc.) capped to ~6 rows
+  with a scrollbar instead of growing unbounded; rows now have hover highlight
+  and wrap long labels instead of overflowing. Panels also clamp to the
+  viewport edge on open so they don't get clipped on narrow/mobile screens.
+  Values were already alphabetically sorted.
+
+## 1.0.35
+
+- Mobile layout: the categories panel is now collapsed by default (was
+  permanently open at the bottom, eating screen space) and expands as a
+  slide-down overlay when tapped. Closes automatically after picking a
+  category or tapping outside it.
+
 ## 1.0.34
 
 - Table view ("Excel mode") column headers are now clickable to sort — click again

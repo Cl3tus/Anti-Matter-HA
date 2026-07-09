@@ -23,6 +23,7 @@
   "action.qr_invert_label": "Negatief",
   "action.open_ha_device": "Open apparaat in Home Assistant",
   "categories.title": "Categorieën",
+  "categories.toggle": "Categorieën tonen/verbergen",
   "categories.add_title": "Categorie toevoegen",
   "categories.filter_all": "Alle categorieën",
   "categories.none": "Geen categorie",
