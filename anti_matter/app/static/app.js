@@ -923,7 +923,7 @@ function openQuickView(code) {
   const wrap = document.getElementById("quickview-image-wrap");
   const src =
     proto === "homekit" || proto === "zwave"
-      ? `${API}/codes/${code.id}/card.svg`
+      ? `${API}/codes/${code.id}/card.svg?compact=1`
       : `${API}/codes/${code.id}/qr.png`;
   // HomeKit/Z-Wave card.svg already bakes in their brand logo server-side; Matter's
   // qr.png doesn't, so overlay the same logo the card grid shows next to its QR.

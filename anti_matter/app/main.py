@@ -63,7 +63,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.38"
+APP_VERSION = "1.0.39"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -697,7 +697,7 @@ async def code_label_png(code_id: str):
 
 
 @app.get("/api/codes/{code_id}/card.svg")
-async def code_card_svg(code_id: str):
+async def code_card_svg(code_id: str, compact: bool = False):
     vault = storage.load()
     code = _find_code(vault, code_id)
     proto = _code_protocol(code)
@@ -705,9 +705,9 @@ async def code_card_svg(code_id: str):
         raise HTTPException(400, "card.svg is only for HomeKit or Z-Wave codes")
     try:
         if proto == "homekit":
-            svg = card_svg_for_code(code.model_dump(mode="json"))
+            svg = card_svg_for_code(code.model_dump(mode="json"), compact=compact)
         else:
-            svg = zwave_card_svg_for_code(code.model_dump(mode="json"))
+            svg = zwave_card_svg_for_code(code.model_dump(mode="json"), compact=compact)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     return Response(content=svg, media_type="image/svg+xml; charset=utf-8")

@@ -77,6 +77,7 @@ def compose_card_svg(
     *,
     pairing_code: str,
     setup_uri: str,
+    compact: bool = False,
 ) -> str:
     digits = pairing_digits(pairing_code)
     if len(digits) != 8:
@@ -99,7 +100,17 @@ def compose_card_svg(
     qr_x = (CARD_W - QR_SIZE) // 2
     qr_y = logo_y + logo_h + GAP
     code_y = qr_y + QR_SIZE + GAP
-    card_h = code_y + CODE_H
+
+    # Compact mode (quickview) drops the border and the pairing-code text —
+    # the code is already shown just below the image there.
+    if compact:
+        card_h = qr_y + QR_SIZE
+        border = ""
+        code_text = ""
+    else:
+        card_h = code_y + CODE_H
+        border = f'<rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>'
+        code_text = f'<text x="{CARD_W / 2}" y="{code_y + 24}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="black">{pairing_display}</text>'
 
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <svg viewBox="0 0 {CARD_W} {card_h}" xmlns="http://www.w3.org/2000/svg">
@@ -107,14 +118,14 @@ def compose_card_svg(
   <defs>
     {qr_sym}
   </defs>
-  <rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>
+  {border}
   <g transform="translate({logo_x},{logo_y})">{logo_svg}</g>
   <use href="#qrCode" x="{qr_x}" y="{qr_y}" width="{QR_SIZE}" height="{QR_SIZE}"/>
-  <text x="{CARD_W / 2}" y="{code_y + 24}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="black">{pairing_display}</text>
+  {code_text}
 </svg>"""
 
 
-def card_svg_for_code(code: dict) -> str:
+def card_svg_for_code(code: dict, *, compact: bool = False) -> str:
     manual = str(code.get("manual_code") or "")
     qr = str(code.get("qr_payload") or "")
     if not qr and manual:
@@ -128,4 +139,4 @@ def card_svg_for_code(code: dict) -> str:
             qr = compose_setup_uri(
                 category_id=cat, flag=flag, password=digits, setup_id=sid
             )
-    return compose_card_svg(pairing_code=manual, setup_uri=qr)
+    return compose_card_svg(pairing_code=manual, setup_uri=qr, compact=compact)

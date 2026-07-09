@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.39
+
+- Quickview for Z-Wave/HomeKit now renders a compact card image (no border,
+  no full DSK/pairing-code text baked in) — only the PIN (Z-Wave) or nothing
+  extra (HomeKit, code's already shown below) prints on the image itself.
+  The full printable card (grid/download/save-to-media) is unchanged, so
+  physical stickers still carry the full code.
+- Matter's logo in quickview is bigger.
+
 ## 1.0.38
 
 - Fixed the "Invert QR" toggle not doing anything when you opened a code via

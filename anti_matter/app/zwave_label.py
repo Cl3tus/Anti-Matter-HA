@@ -78,7 +78,7 @@ def _qr_block(qr: str, x: int, y: int) -> str:
     return f'<g transform="translate({x},{y}) scale({scale:.4f})"><svg{attrs}>{body}</svg></g>'
 
 
-def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
+def compose_card_svg(*, dsk: str, qr_payload: str, compact: bool = False) -> str:
     qr = qr_encode_payload(qr_payload) or ""
     parsed = parse_qr_digits(qr) if qr else None
     dsk_fmt = format_dsk(dsk)
@@ -105,15 +105,22 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
         text_y = qr_y
 
     pin_line = f'<text x="{CARD_W / 2}" y="{text_y + 18}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="16" fill="black">PIN {html.escape(pin)}</text>' if pin else ""
-    dsk_line1 = f'<text x="{CARD_W / 2}" y="{text_y + 40}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#333333">{html.escape(dsk_row1)}</text>' if dsk_row1 else ""
-    dsk_line2 = f'<text x="{CARD_W / 2}" y="{text_y + 54}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#333333">{html.escape(dsk_row2)}</text>' if dsk_row2 else ""
-
-    card_h = text_y + (60 if pin else 20)
+    # Compact mode (quickview) drops the border and the full DSK — the PIN alone
+    # is what people actually key in, the full DSK is only for printed labels.
+    if compact:
+        dsk_line1 = dsk_line2 = ""
+        border = ""
+        card_h = text_y + (26 if pin else 6)
+    else:
+        dsk_line1 = f'<text x="{CARD_W / 2}" y="{text_y + 40}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#333333">{html.escape(dsk_row1)}</text>' if dsk_row1 else ""
+        dsk_line2 = f'<text x="{CARD_W / 2}" y="{text_y + 54}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#333333">{html.escape(dsk_row2)}</text>' if dsk_row2 else ""
+        card_h = text_y + (60 if pin else 20)
+        border = f'<rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>'
 
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <svg viewBox="0 0 {CARD_W} {card_h}" xmlns="http://www.w3.org/2000/svg">
   <title>Z-Wave SmartStart</title>
-  <rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>
+  {border}
   <g transform="translate({logo_x},{logo_y})">{logo_svg}</g>
   {qr_svg}
   {pin_line}
@@ -122,8 +129,9 @@ def compose_card_svg(*, dsk: str, qr_payload: str) -> str:
 </svg>"""
 
 
-def card_svg_for_code(code: dict) -> str:
+def card_svg_for_code(code: dict, *, compact: bool = False) -> str:
     return compose_card_svg(
         dsk=str(code.get("manual_code") or ""),
         qr_payload=str(code.get("qr_payload") or ""),
+        compact=compact,
     )

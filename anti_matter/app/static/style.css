@@ -1588,8 +1588,8 @@ body.qr-invert #quickview-image-wrap {
   display: block;
 }
 .quickview-protocol-logo {
-  max-width: 110px;
-  width: 50%;
+  max-width: 170px;
+  width: 75%;
   height: auto;
   display: block;
 }
