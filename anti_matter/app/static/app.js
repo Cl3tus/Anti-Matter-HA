@@ -492,6 +492,19 @@ const CONN_LABELS = {
   conn_zwave: "Z-Wave",
 };
 
+function formatDateTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function connectivitySummary(c) {
   return Object.keys(CONN_LABELS)
     .filter((k) => c[k])
@@ -512,6 +525,7 @@ const TABLE_SORT_ACCESSORS = {
   categories: (c) => categoryNamesJoined(c.category_ids),
   in_use: (c) => (c.in_use ? 1 : 0),
   connectivity: (c) => connectivitySummary(c),
+  added_at: (c) => c.created_at || "",
 };
 
 function sortTableCodes(codes) {
@@ -551,6 +565,7 @@ function renderTable() {
         <td>${escapeHtml(categoryNamesJoined(c.category_ids))}</td>
         <td>${c.in_use ? "✓" : ""}</td>
         <td>${escapeHtml(connectivitySummary(c))}</td>
+        <td>${escapeHtml(formatDateTime(c.created_at))}</td>
         <td class="table-row-actions">
           <button type="button" class="card-icon-btn card-icon-btn-danger" data-table-delete title="${escapeHtml(t("action.delete"))}">
             <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-trash"/></svg>
@@ -896,6 +911,7 @@ function buildQuickMeta(code, proto) {
   parts.push(`${t("code.in_use")}: ${code.in_use ? t("filter.yes") : t("filter.no")}`);
   const conn = connectivitySummary(code);
   if (conn) parts.push(`${t("code.connectivity")}: ${conn}`);
+  if (code.created_at) parts.push(`${t("code.added_at")}: ${formatDateTime(code.created_at)}`);
   return parts.join(" · ");
 }
 

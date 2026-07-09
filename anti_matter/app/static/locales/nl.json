@@ -63,6 +63,7 @@
   "code.area": "Ruimte",
   "code.area_placeholder": "bijv. Woonkamer",
   "code.in_use": "In gebruik",
+  "code.added_at": "Toegevoegd",
   "code.connectivity": "Connectiviteit",
   "code.conn_wifi": "WiFi",
   "code.conn_matter": "Thread",

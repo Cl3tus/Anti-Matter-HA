@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.37
+
+- Show the date/time a code was added: new sortable "Added" column in table
+  view, and an "Added" line in the code quickview detail.
+
 ## 1.0.36
 
 - Toolbar filter dropdowns (Vendor, Product, Type, Area, etc.) capped to ~6 rows

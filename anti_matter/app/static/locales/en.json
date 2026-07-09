@@ -63,6 +63,7 @@
   "code.area": "Area",
   "code.area_placeholder": "e.g. Living room",
   "code.in_use": "In use",
+  "code.added_at": "Added",
   "code.connectivity": "Connectivity",
   "code.conn_wifi": "WiFi",
   "code.conn_matter": "Thread",
