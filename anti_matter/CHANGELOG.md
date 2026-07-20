@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.40
+
+- Reworked the Home Assistant connection. The device link in the code editor is
+  no longer a giant unsearchable dropdown of every HA device — it's now a
+  type-to-search field (backed by a datalist), and when a code has no link yet
+  it suggests the best-matching HA device by name/vendor/product for one-click
+  apply. Same-named devices are disambiguated by area.
+- Quickview is now a pairing assistant: tap the code image to blow it up
+  fullscreen for scanning (invert still works), and use "Add in Home Assistant"
+  to jump straight to the Matter / Z-Wave JS / HomeKit integration's add-device
+  page. "Open device in Home Assistant" is now also shown in quickview when a
+  code is linked.
+- The HA device list is cached briefly server-side, so reopening the editor no
+  longer re-runs a template over every entity each time.
+
 ## 1.0.39
 
 - Quickview for Z-Wave/HomeKit now renders a compact card image (no border,

@@ -1283,7 +1283,8 @@ body.qr-invert .matter-sticker-box,
 body.qr-invert .homekit-sticker-img,
 body.qr-invert .zwave-sticker-img,
 body.qr-invert .zwave-sticker--dsk-only,
-body.qr-invert #quickview-image-wrap {
+body.qr-invert #quickview-image-wrap,
+body.qr-invert #qr-fullscreen-wrap {
   filter: invert(1);
 }
 
@@ -1599,6 +1600,61 @@ body.qr-invert #quickview-image-wrap {
   font-size: var(--rm-text-lg);
   letter-spacing: 0.03em;
   margin: 0 0 var(--rm-space-3);
+}
+
+/* Tap the quickview code to enlarge it fullscreen for scanning. */
+.quickview-image-wrap {
+  cursor: zoom-in;
+}
+.quickview-ha-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-2);
+  justify-content: center;
+  margin: 0 0 var(--rm-space-3);
+}
+.quickview-ha-links a.hidden {
+  display: none;
+}
+
+/* Fullscreen scannable code — fills the viewport, white background so a phone or
+   HA camera reads it in any theme; tap anywhere / Esc closes. */
+.qr-fullscreen-dialog {
+  max-width: none;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: #fff;
+}
+.qr-fullscreen-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.9);
+}
+.qr-fullscreen-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rm-space-4);
+  width: 100%;
+  height: 100%;
+  padding: var(--rm-space-4);
+  box-sizing: border-box;
+  background: #fff;
+  cursor: zoom-out;
+}
+.qr-fullscreen-wrap .qr-fullscreen-img {
+  max-width: min(90vw, 90vh);
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+  display: block;
+}
+.qr-fullscreen-wrap .quickview-protocol-logo {
+  max-width: min(60vw, 320px);
+  width: 40%;
 }
 
 .modal-close-x {

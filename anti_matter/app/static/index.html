@@ -276,8 +276,14 @@
       <details id="code-ha-details" class="form-section">
         <summary data-i18n="code.ha_link">Home Assistant link (optional)</summary>
         <label><span data-i18n="code.ha_device">Device</span>
-          <select id="code-ha-device"></select>
+          <input type="text" id="code-ha-device-name" list="ha-device-options" autocomplete="off" data-i18n-placeholder="code.ha_device_placeholder" placeholder="Start typing a device name…" />
+          <datalist id="ha-device-options"></datalist>
+          <input type="hidden" id="code-ha-device" />
         </label>
+        <p id="code-ha-device-suggest" class="form-hint hidden">
+          <span data-i18n="code.ha_device_suggested">Suggested:</span>
+          <a href="#" id="code-ha-device-suggest-apply"></a>
+        </p>
         <a href="#" id="btn-open-ha-device" class="rm-btn rm-btn-secondary hidden" target="_top" data-i18n="action.open_ha_device">Open device in Home Assistant</a>
       </details>
       <div class="dialog-actions">
@@ -391,9 +397,13 @@
 
   <dialog id="quickview-dialog" class="quickview-dialog">
     <h3 id="quickview-name"></h3>
-    <div id="quickview-image-wrap" class="quickview-image-wrap"></div>
+    <div id="quickview-image-wrap" class="quickview-image-wrap" data-i18n-tip="code.qr_fullscreen_tip" role="button" tabindex="0"></div>
     <p id="quickview-manual" class="quickview-manual"></p>
     <p id="quickview-meta" class="quickview-meta"></p>
+    <div class="quickview-ha-links">
+      <a href="#" id="quickview-add-ha" class="rm-btn rm-btn-primary hidden" target="_top" data-i18n="action.add_in_ha">Add in Home Assistant</a>
+      <a href="#" id="quickview-open-ha-device" class="rm-btn rm-btn-secondary hidden" target="_top" data-i18n="action.open_ha_device">Open device in Home Assistant</a>
+    </div>
     <div class="dialog-actions">
       <button type="button" id="quickview-decode" class="rm-btn rm-btn-secondary hidden" data-i18n-tip="code.decode_mt">
         <i class="mdi mdi-information-outline" aria-hidden="true"></i>
@@ -403,6 +413,10 @@
       <span class="dialog-actions-spacer"></span>
       <button type="button" class="rm-btn rm-btn-primary" data-close data-i18n="action.close">Close</button>
     </div>
+  </dialog>
+
+  <dialog id="qr-fullscreen-dialog" class="qr-fullscreen-dialog">
+    <div id="qr-fullscreen-wrap" class="qr-fullscreen-wrap" role="button" tabindex="0" data-i18n-tip="code.qr_fullscreen_close"></div>
   </dialog>
 
   <dialog id="mt-decode-dialog">

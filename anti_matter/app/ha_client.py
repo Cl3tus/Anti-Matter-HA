@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from typing import Any, Optional
 
 import httpx
@@ -12,11 +13,17 @@ import httpx
 SUPERVISOR_CORE = "http://supervisor/core/api"
 _LOGGER = logging.getLogger("anti_matter.ha_client")
 
+# list_devices runs a template over *every* HA state, so the same dialog reopening
+# shouldn't re-run it each time — cache the result briefly.
+_DEVICES_CACHE_TTL = 60.0
+
 
 class HomeAssistantClient:
     def __init__(self) -> None:
         self.token = os.environ.get("SUPERVISOR_TOKEN", "")
         self.enabled = bool(self.token)
+        self._devices_cache: Optional[list[dict[str, str]]] = None
+        self._devices_cache_at = 0.0
 
     def _headers(self) -> dict[str, str]:
         return {
@@ -61,16 +68,23 @@ class HomeAssistantClient:
         return sorted(ids)
 
     async def list_devices(self) -> list[dict[str, str]]:
-        """[{id, name}] for every HA device with at least one entity — via the
-        template API's `device_id()`/`device_attr()` functions (no REST
+        """[{id, name, area}] for every HA device with at least one entity — via the
+        template API's `device_id()`/`device_attr()`/`area_name()` functions (no REST
         device-registry endpoint exists). Lets the UI link to a device's own page
-        (`/config/devices/device/<id>`) without ever needing an entity_id itself.
+        (`/config/devices/device/<id>`) without ever needing an entity_id itself, and
+        the `area` disambiguates same-named devices in the picker / auto-match.
 
         device_id() is only a template *function* in HA, not a registered filter —
         `states | map('device_id')` fails, so this collects ids via a plain for-loop
-        instead of chaining it through `map`."""
+        instead of chaining it through `map`.
+
+        Cached for `_DEVICES_CACHE_TTL` seconds so reopening the edit dialog doesn't
+        re-run the O(entities) template each time."""
         if not self.enabled:
             return []
+        now = time.monotonic()
+        if self._devices_cache is not None and (now - self._devices_cache_at) < _DEVICES_CACHE_TTL:
+            return self._devices_cache
         url = f"{SUPERVISOR_CORE}/template"
         template = (
             "{% set ns = namespace(ids=[], items=[]) %}"
@@ -82,7 +96,8 @@ class HomeAssistantClient:
             "{% endfor %}"
             "{% for did in ns.ids %}"
             "{% set ns.items = ns.items + [{'id': did,"
-            " 'name': device_attr(did, 'name_by_user') or device_attr(did, 'name') or did}] %}"
+            " 'name': device_attr(did, 'name_by_user') or device_attr(did, 'name') or did,"
+            " 'area': area_name(did) or ''}] %}"
             "{% endfor %}"
             "{{ ns.items | to_json }}"
         )
@@ -102,11 +117,18 @@ class HomeAssistantClient:
         if not isinstance(devices, list):
             return []
         out = [
-            {"id": str(d["id"]), "name": str(d.get("name") or d["id"])}
+            {
+                "id": str(d["id"]),
+                "name": str(d.get("name") or d["id"]),
+                "area": str(d.get("area") or ""),
+            }
             for d in devices
             if isinstance(d, dict) and d.get("id")
         ]
-        return sorted(out, key=lambda d: d["name"].lower())
+        out.sort(key=lambda d: d["name"].lower())
+        self._devices_cache = out
+        self._devices_cache_at = now
+        return out
 
     async def list_areas(self) -> list[str]:
         """Area names via the HA template API (areas aren't in the REST states list)."""

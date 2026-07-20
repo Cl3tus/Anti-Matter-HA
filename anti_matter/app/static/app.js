@@ -7,6 +7,12 @@ const { t, initI18n, setLocale } = window.AntiMatterI18n;
 let vault = { categories: [], codes: [] };
 let activeCategories = new Set();
 
+// HA integration state, filled by loadAddonInfo / loadHaDevices.
+let haAvailable = false;
+let haDevices = []; // [{id, name, area}] from /api/ha/devices
+let haDeviceById = new Map(); // id -> device
+let haDisplayToId = new Map(); // datalist display string -> id
+
 // Multi-select for bulk delete (shift/ctrl+click) — separate from the filter
 // selection above and from the category "active" filter state.
 let selectedCodeIds = new Set();
@@ -933,14 +939,40 @@ function openQuickView(code) {
       : "";
   wrap.innerHTML = `${logo}<img class="quickview-code-img" src="${src}" alt="" />`;
   const codeImg = wrap.querySelector(".quickview-code-img");
-  if (proto === "matter") {
-    codeImg.ondblclick = () => openMtDecodeDialog(code);
-  } else if (proto === "zwave") {
-    codeImg.ondblclick = () => openZwaveDecodeDialog(code);
-  }
+  const decode =
+    proto === "matter"
+      ? () => openMtDecodeDialog(code)
+      : proto === "zwave"
+        ? () => openZwaveDecodeDialog(code)
+        : null;
+  // Single click = enlarge fullscreen for scanning; double click = decode
+  // (Matter/Z-Wave only). A click always precedes a dblclick, so defer the
+  // enlarge briefly and cancel it if a second click lands.
+  let clickTimer = null;
+  wrap.onclick = () => {
+    if (clickTimer) return; // 2nd click of a double — let ondblclick handle it
+    clickTimer = setTimeout(() => {
+      clickTimer = null;
+      openQrFullscreen(src, logo);
+    }, 250);
+  };
+  codeImg.ondblclick = () => {
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+    }
+    if (decode) decode();
+  };
+  wrap.onkeydown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openQrFullscreen(src, logo);
+    }
+  };
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";
   document.getElementById("quickview-meta").textContent = buildQuickMeta(code, proto);
+  updateQuickViewHaLinks(code, proto);
   document.getElementById("quickview-edit").onclick = () => {
     document.getElementById("quickview-dialog").close();
     openCodeDialog(code);
@@ -952,6 +984,49 @@ function openQuickView(code) {
     decodeBtn.onclick = () => (proto === "zwave" ? openZwaveDecodeDialog(code) : openMtDecodeDialog(code));
   }
   const dlg = document.getElementById("quickview-dialog");
+  if (!dlg.open) dlg.showModal();
+}
+
+// HA integration page per protocol — HA has no documented URL to *prefill* the setup
+// code, so this just lands on the integration's "Add device" page; the user taps Add
+// there, then scans the enlarged QR.
+const HA_ADD_URLS = {
+  matter: "/config/integrations/integration/matter",
+  zwave: "/config/integrations/integration/zwave_js",
+  homekit: "/config/integrations/integration/homekit_controller",
+};
+
+function updateQuickViewHaLinks(code, proto) {
+  const addLink = document.getElementById("quickview-add-ha");
+  const openLink = document.getElementById("quickview-open-ha-device");
+  if (addLink) {
+    const url = HA_ADD_URLS[proto];
+    if (haAvailable && url) {
+      addLink.href = url;
+      addLink.classList.remove("hidden");
+    } else {
+      addLink.classList.add("hidden");
+    }
+  }
+  if (openLink) {
+    const deviceId = code?.ha_link?.device_id;
+    if (deviceId) {
+      openLink.href = `/config/devices/device/${deviceId}`;
+      openLink.classList.remove("hidden");
+    } else {
+      openLink.classList.add("hidden");
+    }
+  }
+}
+
+// Blow the code image up to fill the screen for scanning; reuses the qr-invert body
+// class so it reads in any theme. Tap / Esc closes.
+function openQrFullscreen(src, logo) {
+  const dlg = document.getElementById("qr-fullscreen-dialog");
+  const wrap = document.getElementById("qr-fullscreen-wrap");
+  if (!dlg || !wrap) return;
+  wrap.innerHTML = `${logo}<img class="qr-fullscreen-img" src="${src}" alt="" />`;
+  logEvent("QR fullscreen opened");
   if (!dlg.open) dlg.showModal();
 }
 
@@ -1178,15 +1253,22 @@ function openCodeDialog(code = null) {
   document.getElementById("code-conn-zigbee").checked = Boolean(code?.conn_zigbee);
   document.getElementById("code-conn-bluetooth").checked = Boolean(code?.conn_bluetooth);
   document.getElementById("code-conn-zwave").checked = Boolean(code?.conn_zwave);
-  document.getElementById("code-ha-device").value = code?.ha_link?.device_id || "";
+  const savedDeviceId = code?.ha_link?.device_id || "";
+  document.getElementById("code-ha-device").value = savedDeviceId;
+  const nameInput = document.getElementById("code-ha-device-name");
+  if (nameInput) {
+    const dev = haDeviceById.get(savedDeviceId);
+    nameInput.value = dev ? haDeviceDisplay(dev) : "";
+  }
   updateHaDeviceLink();
+  suggestHaDevice(code);
   dlg.showModal();
 }
 
-// The picker is device_id -> device_id (options built by loadHaDevices), so the
-// "Open device in Home Assistant" link is just a straight substitution — no
-// server round-trip needed (target=_top navigates the HA frontend, not just the
-// ingress iframe this add-on runs in).
+// The hidden #code-ha-device holds the device_id; the visible #code-ha-device-name
+// is a searchable datalist input. "Open device in Home Assistant" is a straight
+// substitution — no server round-trip (target=_top navigates the HA frontend, not
+// just the ingress iframe this add-on runs in).
 function updateHaDeviceLink() {
   const link = document.getElementById("btn-open-ha-device");
   const deviceId = document.getElementById("code-ha-device")?.value;
@@ -1199,17 +1281,84 @@ function updateHaDeviceLink() {
   link.classList.remove("hidden");
 }
 
+// Datalist options carry the device *name* as their value (users type/recognize
+// names, not opaque ids), so same-named devices are disambiguated by area to keep
+// the display -> id mapping unambiguous.
+function haDeviceDisplay(dev) {
+  const seen = haDevices.filter((d) => d.name === dev.name);
+  if (seen.length > 1 && dev.area) return `${dev.name} — ${dev.area}`;
+  return dev.name;
+}
+
 async function loadHaDevices() {
-  const sel = document.getElementById("code-ha-device");
-  if (!sel) return;
+  const list = document.getElementById("ha-device-options");
+  if (!list) return;
   try {
     const devices = await api("/ha/devices");
-    sel.innerHTML =
-      `<option value="">${escapeHtml(t("code.ha_device_none"))}</option>` +
-      devices.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)}</option>`).join("");
+    haDevices = Array.isArray(devices) ? devices : [];
   } catch {
-    /* ignore — HA unavailable, field stays empty */
+    haDevices = []; // HA unavailable — field just stays free/empty
   }
+  haDeviceById = new Map(haDevices.map((d) => [d.id, d]));
+  haDisplayToId = new Map();
+  list.innerHTML = "";
+  for (const dev of haDevices) {
+    const display = haDeviceDisplay(dev);
+    haDisplayToId.set(display, dev.id);
+    const opt = document.createElement("option");
+    opt.value = display;
+    list.appendChild(opt);
+  }
+}
+
+// Resolve the visible device-name input to a device_id in the hidden field. A link
+// is stored only on an exact match, so partial/garbage text never persists an id.
+function resolveHaDeviceInput() {
+  const nameInput = document.getElementById("code-ha-device-name");
+  const hidden = document.getElementById("code-ha-device");
+  if (!nameInput || !hidden) return;
+  const id = haDisplayToId.get(nameInput.value.trim()) || "";
+  hidden.value = id;
+  updateHaDeviceLink();
+}
+
+// Fuzzy auto-match: propose the HA device whose name best overlaps the code's own
+// name / vendor / product. Suggestion only — never overwrites an existing link.
+function suggestHaDevice(code) {
+  const hint = document.getElementById("code-ha-device-suggest");
+  const applyLink = document.getElementById("code-ha-device-suggest-apply");
+  if (!hint || !applyLink) return;
+  hint.classList.add("hidden");
+  if (!haDevices.length || code?.ha_link?.device_id) return;
+  const needle = [code?.name, code?.device_vendor, code?.device_product]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!needle) return;
+  const tokens = needle.split(/\s+/).filter((w) => w.length >= 3);
+  if (!tokens.length) return;
+  let best = null;
+  let bestScore = 0;
+  for (const dev of haDevices) {
+    const hay = `${dev.name} ${dev.area}`.toLowerCase();
+    let score = 0;
+    for (const tok of tokens) if (hay.includes(tok)) score += tok.length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = dev;
+    }
+  }
+  if (!best) return;
+  const display = haDeviceDisplay(best);
+  applyLink.textContent = display;
+  applyLink.onclick = (e) => {
+    e.preventDefault();
+    document.getElementById("code-ha-device-name").value = display;
+    resolveHaDeviceInput();
+    hint.classList.add("hidden");
+    document.getElementById("code-ha-details")?.setAttribute("open", "");
+  };
+  hint.classList.remove("hidden");
 }
 
 function openCategoryDialog(cat = null) {
@@ -1505,6 +1654,7 @@ async function saveCategory(e) {
 async function loadAddonInfo() {
   try {
     const info = await api("/info");
+    haAvailable = Boolean(info?.ha_available);
     if (info?.language && info.language !== "auto") {
       window.ADDON_LANGUAGE = info.language;
     }
@@ -1564,6 +1714,11 @@ function bindUi() {
   document.getElementById("code-zwave-dsk")?.addEventListener("input", renderZwaveDecode);
   document.getElementById("code-device-vendor")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-vendor"));
   document.getElementById("code-device-product")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-product"));
+  document.getElementById("code-ha-device-name")?.addEventListener("input", resolveHaDeviceInput);
+  document.getElementById("code-ha-device-name")?.addEventListener("change", resolveHaDeviceInput);
+  document.getElementById("qr-fullscreen-wrap")?.addEventListener("click", () =>
+    document.getElementById("qr-fullscreen-dialog")?.close()
+  );
   document.getElementById("btn-add-code").onclick = () => openCodeDialog();
   document.getElementById("btn-add-category").onclick = () => {
     categoryCreateTargetSelectId = null;
@@ -1748,8 +1903,6 @@ function bindUi() {
       await uiAlert(err.message || t("alert.backup_fail"));
     }
   };
-
-  document.getElementById("code-ha-device")?.addEventListener("change", updateHaDeviceLink);
 
   fillConnFilterPanel();
   document.getElementById("btn-clear-filters")?.addEventListener("click", (e) => {
