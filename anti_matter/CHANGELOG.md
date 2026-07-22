@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.41
+
+- The Home Assistant links (open device, add in HA) now open in a new browser
+  tab instead of replacing the whole HA screen.
+
 ## 1.0.40
 
 - Reworked the Home Assistant connection. The device link in the code editor is
