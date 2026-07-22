@@ -4,7 +4,7 @@
 
 # Anti-Matter
 
-[![GitHub release](https://img.shields.io/badge/version-1.0.39-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![GitHub release](https://img.shields.io/badge/version-1.0.41-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Project Stage](https://img.shields.io/badge/project%20stage-experimental-yellow.svg)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)](https://github.com/Cl3tus/Anti-Matter-HA/commits/main)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Cl3tus/Anti-Matter-HA/blob/main/LICENSE)
@@ -45,7 +45,8 @@ The add-on itself lives in [`anti_matter/`](anti_matter/) — see its
 - Webcam scanning (mobile-friendly, with pinch-to-zoom and tap-to-focus) + photo upload,
   fully offline — nothing loads from a CDN.
 - Duplicate detection on save and on restoring from Trash, with a Cancel/Merge choice.
-- Link a code to a Home Assistant device and jump straight to its page.
+- Link a code to a Home Assistant device (searchable, with auto-match) and jump to its page;
+  the quick-view enlarges the QR fullscreen for scanning and links into HA's add-device flow.
 - Local, SAMBA-reachable storage in the add-on config folder, included in HA backups; Trash
   is a separate file, and downloads also save to Home Assistant's Media folder.
 - Backup schedule (hourly/daily/weekly/monthly) with automatic pruning, plus manual

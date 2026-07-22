@@ -4,7 +4,7 @@
 
 # Anti-Matter
 
-[![GitHub release](https://img.shields.io/badge/version-1.0.39-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![GitHub release](https://img.shields.io/badge/version-1.0.41-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Project Stage](https://img.shields.io/badge/project%20stage-experimental-yellow.svg)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)](https://github.com/Cl3tus/Anti-Matter-HA/commits/main)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Cl3tus/Anti-Matter-HA/blob/main/LICENSE)
@@ -36,8 +36,9 @@ over SAMBA and included in Home Assistant's own backups. No cloud, no account.
 - **Matter payload decode** — vendor/product ID, passcode, discriminator and more, with
   official CSA DCL vendor/product names and links where available; auto-fills device
   vendor/product (manual edits always win).
-- **Home Assistant link** — pick a device from a dropdown and jump straight to its page
-  in Home Assistant.
+- **Home Assistant link** — a searchable device field (with an auto-match suggestion) links
+  a code to a device and jumps to its page in a new tab. The quick-view also enlarges the QR
+  fullscreen for scanning and can jump into HA's *add device* flow.
 - **Duplicate detection** — matching QR payload or manual code is caught on save *and* on
   restoring from Trash, with a Cancel/Merge choice.
 - **Categories** — colour- and icon-tagged, in the sidebar.

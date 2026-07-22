@@ -36,8 +36,11 @@ a scannable QR card so you can re-commission a device without hunting for the or
   DCL — Z-Wave has no equivalent public API.
 - Saving or restoring a code that matches an existing one by QR payload or manual code is
   caught, with a Cancel/open-existing (or Cancel/Merge, when restoring) choice.
-- **Home Assistant link (optional)**: pick a **Device** from the dropdown and an **Open
-  device in Home Assistant** link appears, jumping straight to that device's page in HA.
+- **Home Assistant link (optional)**: a type-to-search **Device** field lists your Home
+  Assistant devices (same-named ones show their area). Pick one and an **Open device in Home
+  Assistant** button appears, opening that device's page in HA in a new tab. For an unlinked
+  code it also suggests the best-matching device (**Suggested: …**, click to fill). See the
+  [wiki](https://github.com/Cl3tus/Anti-Matter-HA/wiki/Home-Assistant-Link) for the full flow.
 
 ## Area suggestions
 
@@ -54,7 +57,9 @@ If HA doesn't return areas, the field simply behaves as plain text.
 - The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
   a filterable, spreadsheet-style table (your filters stay active). In table view, a single
   click on a code's name opens the quick-view popup.
-- Double-click a QR image (grid card or quick-view popup) to open the Matter decode view.
+- In the quick-view popup, single-click the QR to enlarge it fullscreen for scanning, and use
+  **Add in Home Assistant** to jump to the matching integration's add-device page. Double-click
+  a QR image (grid card or quick-view popup) to open the Matter decode view.
 - The **Invert** button renders QR codes in a dark-friendly negative for reading on dark
   screens.
 
