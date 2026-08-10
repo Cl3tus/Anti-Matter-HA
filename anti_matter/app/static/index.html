@@ -167,6 +167,7 @@
           <option value="matter" data-i18n="code.protocol_matter">Matter</option>
           <option value="homekit" data-i18n="code.protocol_homekit">HomeKit</option>
           <option value="zwave" data-i18n="code.protocol_zwave">Z-Wave</option>
+          <option value="other" data-i18n="code.protocol_other">Other</option>
         </select>
       </label>
       <label><span data-i18n="code.name">Name</span> <input type="text" id="code-name" required /></label>
@@ -237,6 +238,25 @@
         <summary data-i18n="code.decode_zwave">Decode Z-Wave payload</summary>
         <div id="code-zwave-decode-result" class="mt-decode-result"></div>
       </details>
+      </div>
+      <div id="code-fields-other" class="hidden">
+      <div class="scan-inline-row">
+        <button type="button" id="btn-scan-other" class="rm-btn rm-btn-secondary" data-i18n="action.scan_code">Scan QR</button>
+      </div>
+      <label class="rm-btn rm-btn-secondary file-label scan-photo-label">
+        <span data-i18n="scan.upload_photo">Upload photo</span>
+        <input type="file" id="scan-file-other" accept="image/*" hidden />
+      </label>
+      <p id="scan-file-other-error" class="form-hint scan-photo-error hidden"></p>
+      <label><span data-i18n="code.other_standard">Standard</span>
+        <input type="text" id="code-other-standard" data-i18n-placeholder="code.other_standard_placeholder" placeholder="e.g. Tuya, Zigbee 3.0" />
+      </label>
+      <label><span data-i18n="code.other_manual">Manual code</span>
+        <input type="text" id="code-other-manual" data-i18n-placeholder="code.other_manual_placeholder" placeholder="Any pairing code" />
+      </label>
+      <label><span data-i18n="code.other_qr">QR payload</span>
+        <textarea id="code-other-qr" rows="3" data-i18n-placeholder="code.other_qr_placeholder" placeholder="Raw QR text"></textarea>
+      </label>
       </div>
       <details id="code-details" class="form-section">
         <summary data-i18n="code.device_details">Device details</summary>

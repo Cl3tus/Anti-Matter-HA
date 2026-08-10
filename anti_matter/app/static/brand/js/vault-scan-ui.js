@@ -70,6 +70,10 @@
           parsed.manual_code || "";
         document.getElementById("code-zwave-qr").value = parsed.qr_payload || "";
         global.AntiMatterUI?.renderZwaveDecode?.();
+      } else if (codeType === "other") {
+        document.getElementById("code-other-manual").value =
+          parsed.manual_code || "";
+        document.getElementById("code-other-qr").value = parsed.qr_payload || "";
       } else {
         document.getElementById("code-manual").value = parsed.manual_code || "";
         document.getElementById("code-qr").value = parsed.qr_payload || "";
@@ -187,6 +191,7 @@
       "btn-scan-in-form",
       "btn-scan-homekit",
       "btn-scan-zwave",
+      "btn-scan-other",
     ];
     for (const id of scanButtons) {
       document.getElementById(id)?.addEventListener("click", openScanDialog);
@@ -199,6 +204,7 @@
       "scan-file-in-form",
       "scan-file-homekit",
       "scan-file-zwave",
+      "scan-file-other",
     ];
     for (const fid of fileInputIds) {
       const input = document.getElementById(fid);

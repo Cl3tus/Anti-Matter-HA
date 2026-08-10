@@ -37,7 +37,7 @@ class HaLink(BaseModel):
 class MatterCode(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
-    code_type: str = "matter"  # matter | homekit | zwave
+    code_type: str = "matter"  # matter | homekit | zwave | other
     device_type: str = ""
     device_vendor: str = ""  # e.g. IKEA
     device_product: str = ""  # e.g. MYGGBETT
@@ -46,6 +46,7 @@ class MatterCode(BaseModel):
     category_ids: list[str] = Field(default_factory=list)
     manual_code: str = ""
     qr_payload: str = ""
+    custom_standard: str = ""  # free-text protocol name for code_type "other", e.g. "Tuya"
     setup_id: str = ""  # HomeKit 4-char setup ID
     homekit_category: str = "other"
     homekit_flag: int = 2
@@ -66,7 +67,7 @@ class MatterCode(BaseModel):
     @classmethod
     def _code_type(cls, value: str) -> str:
         v = (value or "matter").strip().lower()
-        if v in ("matter", "homekit", "zwave"):
+        if v in ("matter", "homekit", "zwave", "other"):
             return v
         return "matter"
 
@@ -105,7 +106,7 @@ class VaultDeletions(BaseModel):
 class VaultMeta(BaseModel):
     version: int = 1
     exported_at: Optional[str] = None
-    addon_version: str = "1.0.41"
+    addon_version: str = "1.0.42"
     source: Optional[str] = None
     deletions: VaultDeletions = Field(default_factory=VaultDeletions)
 
@@ -160,6 +161,7 @@ class MatterCodeCreate(BaseModel):
     category_ids: list[str] = Field(default_factory=list)
     manual_code: str = ""
     qr_payload: str = ""
+    custom_standard: str = ""
     setup_id: str = ""
     homekit_category: str = "other"
     homekit_flag: int = 2
@@ -185,6 +187,7 @@ class MatterCodeUpdate(BaseModel):
     category_ids: list[str] = Field(default_factory=list)
     manual_code: Optional[str] = None
     qr_payload: Optional[str] = None
+    custom_standard: Optional[str] = None
     setup_id: Optional[str] = None
     homekit_category: Optional[str] = None
     homekit_flag: Optional[int] = None

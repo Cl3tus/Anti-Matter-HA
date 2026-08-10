@@ -474,7 +474,8 @@
   gap: var(--rm-space-4);
 }
 
-.code-card.matter-sticker-card {
+.code-card.matter-sticker-card,
+.code-card.generic-sticker-card {
   position: relative;
   padding: 0;
   background: transparent;
@@ -495,7 +496,8 @@
 
 .matter-label-wrap .card-actions-overlay,
 .homekit-label-wrap .card-actions-overlay,
-.zwave-label-wrap .card-actions-overlay {
+.zwave-label-wrap .card-actions-overlay,
+.other-label-wrap .card-actions-overlay {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -511,7 +513,9 @@
 .code-card.homekit-sticker-card:hover .card-actions-overlay,
 .code-card.homekit-sticker-card:focus-within .card-actions-overlay,
 .code-card.zwave-sticker-card:hover .card-actions-overlay,
-.code-card.zwave-sticker-card:focus-within .card-actions-overlay {
+.code-card.zwave-sticker-card:focus-within .card-actions-overlay,
+.code-card.generic-sticker-card:hover .card-actions-overlay,
+.code-card.generic-sticker-card:focus-within .card-actions-overlay {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -519,7 +523,8 @@
 
 .matter-label-wrap .card-icon-actions,
 .homekit-label-wrap .card-icon-actions,
-.zwave-label-wrap .card-icon-actions {
+.zwave-label-wrap .card-icon-actions,
+.other-label-wrap .card-icon-actions {
   display: flex;
   gap: 0.3rem;
   padding: 0.25rem;
@@ -633,7 +638,8 @@
   flex-shrink: 0;
 }
 
-.matter-sticker-qr {
+.matter-sticker-qr,
+.generic-sticker-qr {
   display: block;
   width: 100%;
   height: 100%;
@@ -765,6 +771,49 @@
   width: 100%;
   max-width: var(--matter-sticker-outer-w, 244px);
   margin: 0 auto;
+}
+
+.other-label-wrap {
+  position: relative;
+  width: 100%;
+  max-width: var(--matter-sticker-outer-w, 244px);
+  margin: 0 auto;
+}
+
+/* "Other" (unrecognized standard) card — same box/QR-slot/pin proportions as
+   Matter's sticker, minus the protocol logo, plus the user-typed standard name. */
+.generic-sticker {
+  width: 100%;
+}
+
+.generic-sticker-box {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--matter-sticker-outer-w, calc(220px + 2 * 10px + 4px));
+  margin: 0 auto;
+  padding: var(--matter-sticker-pad-y, 8px) var(--matter-sticker-pad-x, 10px) 10px;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--matter-sticker-gap, 6px);
+}
+
+.generic-sticker-box--full {
+  min-height: 0;
+}
+
+.generic-sticker-standard {
+  margin: 0;
+  padding: 0;
+  font-size: var(--rm-text-sm);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rm-text-muted);
+  text-align: center;
 }
 
 .form-hint {
@@ -1283,6 +1332,7 @@ body.qr-invert .matter-sticker-box,
 body.qr-invert .homekit-sticker-img,
 body.qr-invert .zwave-sticker-img,
 body.qr-invert .zwave-sticker--dsk-only,
+body.qr-invert .generic-sticker-box,
 body.qr-invert #quickview-image-wrap,
 body.qr-invert #qr-fullscreen-wrap {
   filter: invert(1);
@@ -1394,7 +1444,8 @@ body.qr-invert #qr-fullscreen-wrap {
 /* Card action buttons: follow the active theme (were hard-coded light) */
 .matter-label-wrap .card-icon-actions,
 .homekit-label-wrap .card-icon-actions,
-.zwave-label-wrap .card-icon-actions {
+.zwave-label-wrap .card-icon-actions,
+.other-label-wrap .card-icon-actions {
   background: var(--rm-surface-glass);
   box-shadow: var(--rm-shadow-md);
 }
@@ -1812,7 +1863,8 @@ body.qr-invert #qr-fullscreen-wrap {
 /* Selected code cards (grid) / rows (table) */
 .code-card.selected .matter-sticker-box,
 .code-card.selected .homekit-sticker,
-.code-card.selected .zwave-sticker {
+.code-card.selected .zwave-sticker,
+.code-card.selected .generic-sticker-box {
   outline: 3px solid var(--rm-accent);
   outline-offset: 2px;
 }

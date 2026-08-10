@@ -11,7 +11,7 @@
 
   function codeProtocol(code) {
     const ct = String(code?.code_type || "").toLowerCase();
-    if (ct === "zwave" || ct === "homekit") return ct;
+    if (ct === "zwave" || ct === "homekit" || ct === "other") return ct;
     const ZW = global.AntiMatterZWavePayload;
     if (ZW?.hasScannableQr?.(code?.qr_payload)) return "zwave";
     const q = String(code.qr_payload || "").trim();
@@ -36,6 +36,7 @@
     }
     const manual = String(code.manual_code || "").trim();
     if (!manual) return "";
+    if (codeProtocol(code) === "other") return manual;
     const digits = manual.replace(/\D/g, "");
     if (digits.length === 11) {
       return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
@@ -139,10 +140,67 @@
     </div>`;
   }
 
+  function hasGenericPayload(code) {
+    return Boolean(String(code.qr_payload || "").trim());
+  }
+
+  function genericQrSlotHtml(code, opts) {
+    const apiPrefix = opts.qrApiPrefix || "/api";
+    if (hasGenericPayload(code)) {
+      // Deliberately NOT .matter-sticker-qr — that class is what wireCodeCard's
+      // dblclick-to-decode selector matches, and there's no decode view for an
+      // unknown standard.
+      return `<div class="matter-sticker-qr-slot">
+        <img class="generic-sticker-qr" src="${apiPrefix}/codes/${code.id}/qr.png?fit=1" alt="" loading="lazy" decoding="async" />
+      </div>`;
+    }
+    return `<div class="matter-sticker-qr-slot" aria-hidden="true">
+      <div class="matter-sticker-qr-placeholder">
+        <svg class="matter-sticker-qr-ph-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+          <path fill="currentColor" stroke="none" d="M7 12h.01M12 12h.01M17 12h.01M12 17h.01"/>
+        </svg>
+      </div>
+    </div>`;
+  }
+
+  function buildGenericStickerHtml(code, opts) {
+    const escapeHtml = opts.escapeHtml;
+    const hasQr = hasGenericPayload(code);
+    const pin = displayManual(code);
+    const standard = String(code.custom_standard || "").trim();
+
+    if (!hasQr && !pin) {
+      return `
+        <div class="generic-sticker generic-sticker--empty">
+          <div class="generic-sticker-box">
+            <p class="matter-sticker-empty-msg">No code yet</p>
+          </div>
+        </div>`;
+    }
+
+    const standardBlock = standard
+      ? `<p class="generic-sticker-standard">${escapeHtml(standard)}</p>`
+      : "";
+    const pinBlock = pin
+      ? `<p class="matter-sticker-pin">${escapeHtml(pin)}</p>`
+      : "";
+
+    return `
+      <div class="generic-sticker">
+        <div class="generic-sticker-box generic-sticker-box--full">
+          ${standardBlock}
+          ${genericQrSlotHtml(code, opts)}
+          ${pinBlock}
+        </div>
+      </div>`;
+  }
+
   function buildStickerHtml(code, opts) {
     const proto = codeProtocol(code);
     if (proto === "homekit") return buildHomeKitStickerHtml(code, opts);
     if (proto === "zwave") return buildZWaveStickerHtml(code, opts);
+    if (proto === "other") return buildGenericStickerHtml(code, opts);
     return buildMatterStickerHtml(code, opts);
   }
 
@@ -166,13 +224,17 @@
         ? "homekit-label-wrap"
         : proto === "zwave"
           ? "zwave-label-wrap"
-          : "matter-label-wrap";
+          : proto === "other"
+            ? "other-label-wrap"
+            : "matter-label-wrap";
     const cardClass =
       proto === "homekit"
         ? "code-card homekit-sticker-card"
         : proto === "zwave"
           ? "code-card zwave-sticker-card"
-          : "code-card matter-sticker-card";
+          : proto === "other"
+            ? "code-card generic-sticker-card"
+            : "code-card matter-sticker-card";
 
     return `
       <div class="${wrapClass}">

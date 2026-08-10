@@ -63,7 +63,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.41"
+APP_VERSION = "1.0.42"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -159,7 +159,7 @@ def _code_protocol(candidate: dict | MatterCode) -> str:
     else:
         data = candidate
     ct = str(data.get("code_type") or "matter").strip().lower()
-    if ct in ("homekit", "zwave"):
+    if ct in ("homekit", "zwave", "other"):
         return ct
     qr = str(data.get("qr_payload") or "").strip().upper()
     if qr.startswith("X-HM://"):
@@ -201,6 +201,23 @@ def _find_duplicate_code(
             if pin and pin == homekit_pairing_digits(existing.manual_code):
                 return existing
             if qr_key and qr_key == _normalize_homekit_qr_key(existing.qr_payload):
+                return existing
+        return None
+    if proto == "other":
+        # No parser exists for an unknown standard, so dedup is a plain exact-string
+        # match on the stripped values — no normalization to fall back on.
+        man_key = str(candidate.get("manual_code", "")).strip()
+        qr_key = str(candidate.get("qr_payload", "")).strip()
+        if not man_key and not qr_key:
+            return None
+        for existing in vault.codes:
+            if exclude_id and existing.id == exclude_id:
+                continue
+            if _code_protocol(existing) != "other":
+                continue
+            if man_key and man_key == (existing.manual_code or "").strip():
+                return existing
+            if qr_key and qr_key == (existing.qr_payload or "").strip():
                 return existing
         return None
     man_key = _normalize_manual_key(str(candidate.get("manual_code", "")))
@@ -540,6 +557,14 @@ def _apply_code_fields(code: MatterCode) -> None:
         code.homekit_category = str(n.get("homekit_category", "other"))
         code.homekit_flag = int(n.get("homekit_flag", 2))
         return
+    if _code_protocol(code) == "other":
+        # No parser exists for an unknown standard — store manual_code/qr_payload/
+        # custom_standard verbatim, unlike the other 3 branches above.
+        code.code_type = "other"
+        code.manual_code = (code.manual_code or "").strip()
+        code.qr_payload = (code.qr_payload or "").strip()
+        code.custom_standard = (code.custom_standard or "").strip()
+        return
     code.code_type = "matter"
     normalized = normalize_fields(code.manual_code or "", code.qr_payload or "")
     code.manual_code = normalized["manual_code"]
@@ -671,6 +696,14 @@ async def code_qr_png(code_id: str):
             io.BytesIO(zwave_qr_png_bytes(payload)),
             media_type="image/png",
         )
+    if proto == "other":
+        payload = (code.qr_payload or "").strip()
+        if not payload:
+            raise HTTPException(400, "No QR payload stored")
+        return StreamingResponse(
+            io.BytesIO(matter_qr_png_bytes(payload)),
+            media_type="image/png",
+        )
     payload = qr_encode_payload(code.qr_payload or "", code.manual_code or "")
     if not payload:
         raise HTTPException(400, "No MT: QR payload stored")
@@ -688,7 +721,13 @@ async def code_label_png(code_id: str):
     if proto in ("homekit", "zwave"):
         raise HTTPException(400, "Use card.svg for HomeKit or Z-Wave labels")
     try:
-        png = label_png_bytes(code.manual_code or "", code.qr_payload or "", code.name or "")
+        png = label_png_bytes(
+            code.manual_code or "",
+            code.qr_payload or "",
+            code.name or "",
+            show_logo=(proto != "other"),
+            raw_qr=(proto == "other"),
+        )
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     if not png:
@@ -738,7 +777,13 @@ async def save_code_to_media(code_id: str):
         (MEDIA_DIR / filename).write_text(svg, encoding="utf-8")
     else:
         try:
-            png = label_png_bytes(code.manual_code or "", code.qr_payload or "", code.name or "")
+            png = label_png_bytes(
+                code.manual_code or "",
+                code.qr_payload or "",
+                code.name or "",
+                show_logo=(proto != "other"),
+                raw_qr=(proto == "other"),
+            )
         except ValueError as e:
             raise HTTPException(400, str(e)) from e
         if not png:

@@ -44,16 +44,26 @@ LABEL_H_WITH_QR = PAD_Y + LOGO_H_EST + GAP + QR_SIZE + GAP + MANUAL_H + TAIL
 LABEL_H_NO_QR = 190 * SCALE
 
 
-def label_png_bytes(manual_code: str, qr_payload: str, name: str = "") -> bytes | None:
+def label_png_bytes(
+    manual_code: str,
+    qr_payload: str,
+    name: str = "",
+    *,
+    show_logo: bool = True,
+    raw_qr: bool = False,
+) -> bytes | None:
     manual = display_manual(manual_code)
-    encode = qr_encode_payload(qr_payload, manual_code)
+    encode = (qr_payload or "").strip() or None if raw_qr else qr_encode_payload(qr_payload, manual_code)
     if not manual and encode is None:
         return None
 
     has_qr = encode is not None
     name = (name or "").strip()
     name_h = NAME_H + GAP if name else 0
-    w, h = LABEL_W, (LABEL_H_WITH_QR if has_qr else LABEL_H_NO_QR) + name_h
+    logo_h = LOGO_H_EST if show_logo else 0
+    label_h_with_qr = PAD_Y + logo_h + (GAP if show_logo else 0) + QR_SIZE + GAP + MANUAL_H + TAIL
+    label_h_no_qr = LABEL_H_NO_QR if show_logo else LABEL_H_NO_QR - LOGO_H_EST
+    w, h = LABEL_W, (label_h_with_qr if has_qr else label_h_no_qr) + name_h
 
     img = Image.new("RGB", (w, h), "white")
     draw = ImageDraw.Draw(img)
@@ -74,22 +84,25 @@ def label_png_bytes(manual_code: str, qr_payload: str, name: str = "") -> bytes 
         else:
             draw.text((PAD_X, PAD_Y), label_text, fill=(60, 60, 60))
 
-    logo_h = LOGO_H_EST
-    if os.path.isfile(WORDMARK):
-        logo = Image.open(WORDMARK).convert("RGBA")
-        target_w = QR_SIZE
-        ratio = target_w / logo.width
-        logo = logo.resize((target_w, round(logo.height * ratio)), Image.Resampling.LANCZOS)
-        logo_h = logo.height
-        logo_y = PAD_Y + name_h
-        img.paste(logo, ((w - logo.width) // 2, logo_y), logo)
-    else:
-        draw.text((w // 2 - 28 * SCALE, PAD_Y + name_h + 4 * SCALE), "matter", fill=(30, 30, 30))
-        logo_h = 20 * SCALE
+    logo_h = 0
+    gap_after_logo = 0
+    if show_logo:
+        gap_after_logo = GAP
+        if os.path.isfile(WORDMARK):
+            logo = Image.open(WORDMARK).convert("RGBA")
+            target_w = QR_SIZE
+            ratio = target_w / logo.width
+            logo = logo.resize((target_w, round(logo.height * ratio)), Image.Resampling.LANCZOS)
+            logo_h = logo.height
+            logo_y = PAD_Y + name_h
+            img.paste(logo, ((w - logo.width) // 2, logo_y), logo)
+        else:
+            draw.text((w // 2 - 28 * SCALE, PAD_Y + name_h + 4 * SCALE), "matter", fill=(30, 30, 30))
+            logo_h = 20 * SCALE
 
     if has_qr:
         qr_img = qr_pil_image(encode, QR_SIZE)
-        qr_y = PAD_Y + name_h + logo_h + GAP
+        qr_y = PAD_Y + name_h + logo_h + gap_after_logo
         img.paste(qr_img, ((w - QR_SIZE) // 2, qr_y))
 
     if manual:

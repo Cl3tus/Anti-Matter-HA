@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.42
+
+- Added a 4th code type, **Other**, for QR/pairing codes that aren't Matter,
+  HomeKit or Z-Wave (Tuya, Wyze, Zigbee 3.0, …). Pick a free-text **Standard**
+  name plus a manual code and/or QR payload — stored and rendered as-is, with
+  no format validation or decoding.
+- Scanning a QR that doesn't match any known standard now saves it as **Other**
+  instead of silently rejecting it or mistagging it as Matter.
+- The Protocol filter and downloaded label now support **Other** the same way
+  they do the other three types.
+
 ## 1.0.41
 
 - The Home Assistant links (open device, add in HA) now open in a new browser

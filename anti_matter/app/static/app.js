@@ -120,6 +120,7 @@ const PROTOCOL_FILTER_OPTIONS = [
   ["matter", "code.protocol_matter"],
   ["homekit", "code.protocol_homekit"],
   ["zwave", "code.protocol_zwave"],
+  ["other", "code.protocol_other"],
 ];
 const protocolFilter = new Set();
 
@@ -1172,6 +1173,7 @@ function syncCodeTypeFields() {
   document.getElementById("code-fields-matter")?.classList.toggle("hidden", type !== "matter");
   document.getElementById("code-fields-homekit")?.classList.toggle("hidden", type !== "homekit");
   document.getElementById("code-fields-zwave")?.classList.toggle("hidden", type !== "zwave");
+  document.getElementById("code-fields-other")?.classList.toggle("hidden", type !== "other");
 }
 
 // Only wired to the protocol dropdown's own onchange (not called when a dialog opens
@@ -1246,6 +1248,9 @@ function openCodeDialog(code = null) {
   const zwaveDecode = document.getElementById("code-zwave-decode");
   if (zwaveDecode) zwaveDecode.open = false;
   renderZwaveDecode();
+  setVal("code-other-standard", proto === "other" ? code?.custom_standard : "");
+  setVal("code-other-manual", proto === "other" ? code?.manual_code : "");
+  setVal("code-other-qr", proto === "other" ? code?.qr_payload : "");
   setVal("code-notes", code?.notes);
   document.getElementById("code-in-use").checked = Boolean(code?.in_use);
   document.getElementById("code-conn-wifi").checked = Boolean(code?.conn_wifi);
@@ -1449,6 +1454,13 @@ async function saveCode(e) {
       manual_code: n.manual_code,
       qr_payload: n.qr_payload,
       zwave_pin: n.zwave_pin,
+    };
+  } else if (codeType === "other") {
+    body = {
+      ...baseBody("other"),
+      manual_code: trimVal("code-other-manual"),
+      qr_payload: trimVal("code-other-qr"),
+      custom_standard: trimVal("code-other-standard"),
     };
   } else {
     body = {

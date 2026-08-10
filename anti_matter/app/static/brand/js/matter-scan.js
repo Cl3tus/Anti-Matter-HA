@@ -111,11 +111,10 @@
       };
     }
 
-    if (/^MT/i.test(text) || text.length > 20) {
-      return { code_type: "matter", qr_payload: text.trim(), manual_code: "" };
-    }
-
-    return null;
+    // Nothing above recognized this text as Matter/HomeKit/Z-Wave — rather than
+    // force-tagging it Matter or dropping it, capture it as an "other" code so an
+    // unrecognized standard (Tuya, Wyze, Zigbee 3.0, …) still gets saved.
+    return { code_type: "other", qr_payload: text.trim(), manual_code: "" };
   }
 
   /**
@@ -127,7 +126,7 @@
     const HK = global.AntiMatterHomeKitPayload;
     const ZW = global.AntiMatterZWavePayload;
     let proto = String(candidate.code_type || "").toLowerCase();
-    if (proto !== "zwave" && proto !== "homekit") {
+    if (proto !== "zwave" && proto !== "homekit" && proto !== "other") {
       if (ZW?.hasScannableQr?.(candidate.qr_payload)) proto = "zwave";
       else if (HK?.hasScannableQr?.(candidate.qr_payload)) proto = "homekit";
       else proto = "matter";
@@ -180,12 +179,28 @@
       return null;
     }
 
+    if (proto === "other") {
+      // No parser exists for an unknown standard — exact-string match, same as
+      // the server-side dedup in main.py's _find_duplicate_code.
+      const manKey = String(candidate.manual_code || "").trim();
+      const qrKey = String(candidate.qr_payload || "").trim();
+      if (!manKey && !qrKey) return null;
+      for (const code of codes) {
+        if (excludeId && code.id === excludeId) continue;
+        if (String(code.code_type || "").toLowerCase() !== "other") continue;
+        if (manKey && String(code.manual_code || "").trim() === manKey) return code;
+        if (qrKey && String(code.qr_payload || "").trim() === qrKey) return code;
+      }
+      return null;
+    }
+
     const manKey = normalizeManualDigits(candidate.manual_code);
     const qrKey = normalizeQr(candidate.qr_payload);
     if (!manKey && !qrKey) return null;
 
     for (const code of codes) {
       if (excludeId && code.id === excludeId) continue;
+      if (String(code.code_type || "").toLowerCase() === "other") continue;
       if (HK && HK.codeProtocol && HK.codeProtocol(code) === "homekit") continue;
       if (ZW && ZW.hasScannableQr?.(code.qr_payload)) continue;
       if (manKey && normalizeManualDigits(code.manual_code) === manKey) {
