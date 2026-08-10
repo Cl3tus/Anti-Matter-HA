@@ -135,8 +135,11 @@
         <p class="zwave-sticker-dsk">${opts.escapeHtml(dsk)}</p>
       </div>`;
     }
+    // compact=1 drops the full DSK text (2 lines) and baked-in border that the
+    // downloadable card keeps — those made the grid card noticeably taller than
+    // Matter's; the grid box border comes from CSS (.zwave-sticker) instead.
     return `<div class="zwave-sticker">
-      <img class="zwave-sticker-img" src="${apiPrefix}/codes/${code.id}/card.svg" alt="" loading="lazy" decoding="async" />
+      <img class="zwave-sticker-img" src="${apiPrefix}/codes/${code.id}/card.svg?compact=1" alt="" loading="lazy" decoding="async" />
     </div>`;
   }
 
@@ -164,24 +167,53 @@
     </div>`;
   }
 
+  // Known standards get a bundled brand logo, same treatment as Matter's own
+  // wordmark — falls back to the plain text label if the asset is missing (or
+  // not one of these), so adding a new standard's logo later is a drop-in.
+  const KNOWN_OTHER_STANDARDS = [{ test: /zigbee/i, file: "zigbee_logo.png" }];
+
+  // Shared with the quickview overlay (app.js) so both places agree on which
+  // "Other" standards get a bundled logo, without duplicating the list.
+  function otherStandardLogoFile(standard) {
+    const known = KNOWN_OTHER_STANDARDS.find((s) => s.test.test(standard || ""));
+    return known ? known.file : null;
+  }
+
+  function standardBrandHtml(standard, opts) {
+    const file = otherStandardLogoFile(standard);
+    if (!file) return "";
+    const assetsPrefix = opts.assetsPrefix || "/assets";
+    return `<div class="generic-sticker-brand" aria-label="${opts.escapeHtml(standard)}">
+      <img class="generic-sticker-logo" src="${assetsPrefix}/${file}" alt=""
+           decoding="async" onerror="this.style.display='none'" />
+    </div>`;
+  }
+
   function buildGenericStickerHtml(code, opts) {
     const escapeHtml = opts.escapeHtml;
     const hasQr = hasGenericPayload(code);
     const pin = displayManual(code);
     const standard = String(code.custom_standard || "").trim();
+    const brand = standardBrandHtml(standard, opts);
+    // A recognized standard shows its logo instead of the plain text label
+    // (mirrors Matter/HomeKit/Z-Wave, which show a logo rather than the
+    // protocol name spelled out).
+    const standardBlock = brand
+      ? brand
+      : standard
+        ? `<p class="generic-sticker-standard">${escapeHtml(standard)}</p>`
+        : "";
 
     if (!hasQr && !pin) {
       return `
         <div class="generic-sticker generic-sticker--empty">
           <div class="generic-sticker-box">
+            ${standardBlock}
             <p class="matter-sticker-empty-msg">No code yet</p>
           </div>
         </div>`;
     }
 
-    const standardBlock = standard
-      ? `<p class="generic-sticker-standard">${escapeHtml(standard)}</p>`
-      : "";
     const pinBlock = pin
       ? `<p class="matter-sticker-pin">${escapeHtml(pin)}</p>`
       : "";
@@ -335,6 +367,7 @@
     codeProtocol,
     hasMtPayload,
     displayManual,
+    otherStandardLogoFile,
     buildCodeCardHtml,
     wireCodeCard,
     categoryNameDefault,

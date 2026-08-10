@@ -934,10 +934,16 @@ function openQuickView(code) {
       : `${API}/codes/${code.id}/qr.png`;
   // HomeKit/Z-Wave card.svg already bakes in their brand logo server-side; Matter's
   // qr.png doesn't, so overlay the same logo the card grid shows next to its QR.
+  // "Other" gets the same treatment when its typed Standard matches a known logo
+  // (e.g. "Zigbee 3.0") — otherStandardLogoFile is the single source of truth,
+  // shared with the grid card build in vault-cards.js.
+  const otherLogoFile = proto === "other" ? Cards?.otherStandardLogoFile?.(code.custom_standard) : null;
   const logo =
     proto === "matter"
       ? `<img class="quickview-protocol-logo" src="./static/assets/matter_logo.svg" alt="" />`
-      : "";
+      : otherLogoFile
+        ? `<img class="quickview-protocol-logo" src="./static/assets/${otherLogoFile}" alt="" />`
+        : "";
   wrap.innerHTML = `${logo}<img class="quickview-code-img" src="${src}" alt="" />`;
   const codeImg = wrap.querySelector(".quickview-code-img");
   const decode =

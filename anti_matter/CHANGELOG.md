@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.43
+
+- Z-Wave grid cards are now roughly the same size as Matter's — the wordmark
+  shrank and the full DSK text (only needed for printed labels) no longer
+  shows on the grid, matching Matter's proportions much more closely.
+- Fixed "Other" QR codes rendering too small on the grid — a shared CSS
+  variable they relied on was only ever defined on Matter's card, so the QR
+  slot had no explicit size outside of it.
+- "Other" codes now show a bundled Zigbee logo when their Standard field
+  contains "Zigbee" (grid card + quick-view), the same way Matter/HomeKit/
+  Z-Wave show their own logo.
+
 ## 1.0.42
 
 - Added a 4th code type, **Other**, for QR/pairing codes that aren't Matter,

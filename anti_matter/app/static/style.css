@@ -724,16 +724,23 @@
 }
 
 .zwave-sticker {
+  box-sizing: border-box;
   width: 100%;
   max-width: var(--matter-sticker-outer-w, 244px);
   margin: 0 auto;
+  /* The grid card uses card.svg?compact=1, which drops its own baked-in
+     border (compact is also used borderless in quickview) — draw the box
+     here instead, matching Matter/Generic's CSS-drawn box. */
+  padding: 6px;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 16px;
 }
 
 .zwave-sticker-img {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 12px;
 }
 
 .zwave-sticker--empty,
@@ -787,22 +794,58 @@
 }
 
 .generic-sticker-box {
+  /* --matter-sticker-* custom properties are scoped to whatever element
+     declares them — .matter-sticker-box declares its own copy, so shared
+     descendant rules (.matter-sticker-qr-slot, .matter-sticker-pin, …) need
+     the same declarations here too, or var(--matter-sticker-qr) etc. resolve
+     to nothing and those elements collapse to zero size. */
+  --matter-sticker-qr: 220px;
+  --matter-sticker-quiet: 4px;
+  --matter-sticker-inner: calc(var(--matter-sticker-qr) - 2 * var(--matter-sticker-quiet));
+  --matter-sticker-pad-x: 10px;
+  --matter-sticker-pad-y: 8px;
+  --matter-sticker-gap: 6px;
+  --matter-sticker-outer-w: calc(var(--matter-sticker-qr) + 2 * var(--matter-sticker-pad-x) + 4px);
   box-sizing: border-box;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, calc(220px + 2 * 10px + 4px));
+  max-width: var(--matter-sticker-outer-w);
   margin: 0 auto;
-  padding: var(--matter-sticker-pad-y, 8px) var(--matter-sticker-pad-x, 10px) 10px;
+  padding: var(--matter-sticker-pad-y) var(--matter-sticker-pad-x) 10px;
   background: #fff;
   border: 2px solid #000;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--matter-sticker-gap, 6px);
+  gap: var(--matter-sticker-gap);
 }
 
 .generic-sticker-box--full {
   min-height: 0;
+}
+
+.generic-sticker-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--matter-sticker-qr);
+  max-width: 100%;
+  min-height: 0;
+  padding: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.generic-sticker-logo {
+  display: block;
+  width: var(--matter-sticker-inner);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center;
+  box-sizing: border-box;
 }
 
 .generic-sticker-standard {

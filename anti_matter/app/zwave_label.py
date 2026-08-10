@@ -23,6 +23,9 @@ PAD_X = 12
 PAD_Y = 10
 GAP = 8
 QR_SIZE = 260
+# Narrower than the QR — the wordmark previously matched QR_SIZE and, combined
+# with the DSK/PIN text below, made the card noticeably taller than Matter's.
+LOGO_W = 150
 
 
 def _logo_block(width: int) -> tuple[str, int]:
@@ -90,7 +93,7 @@ def compose_card_svg(*, dsk: str, qr_payload: str, compact: bool = False) -> str
     dsk_row1 = " · ".join(groups[:4]) if len(groups) >= 4 else dsk_fmt
     dsk_row2 = " · ".join(groups[4:8]) if len(groups) >= 8 else ""
 
-    logo_w = QR_SIZE
+    logo_w = LOGO_W
     logo_svg, logo_h = _logo_block(logo_w)
     logo_x = (CARD_W - logo_w) // 2
     logo_y = PAD_Y
