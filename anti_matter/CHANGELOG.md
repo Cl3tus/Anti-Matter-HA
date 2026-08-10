@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.44
+
+- Unified the click behavior between the grid (QR card) view and table ("Excel
+  mode") view: a single click on any code — card or table row — now opens the
+  quick-view popup; a right-click opens it for editing instead. Previously the
+  grid had no click-to-preview at all, and the table only reacted to clicks on
+  the name cell.
+- Removed the "Add in Home Assistant" button from quick-view — Home Assistant
+  has no way to pre-fill a setup code from a link, so it never did more than
+  open a generic integration page. "Open device in Home Assistant" (shown only
+  when a code is linked to one) is unaffected.
+
 ## 1.0.43
 
 - Z-Wave grid cards are now roughly the same size as Matter's — the wordmark

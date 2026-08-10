@@ -57,9 +57,10 @@ If HA doesn't return areas, the field simply behaves as plain text.
 - The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
   a filterable, spreadsheet-style table (your filters stay active). In table view, a single
   click on a code's name opens the quick-view popup.
-- In the quick-view popup, single-click the QR to enlarge it fullscreen for scanning, and use
-  **Add in Home Assistant** to jump to the matching integration's add-device page. Double-click
-  a QR image (grid card or quick-view popup) to open the Matter decode view.
+- A single click on a code (grid card or table row) opens the quick-view popup; a right-click
+  opens it for editing instead. In the popup, single-click the QR to enlarge it fullscreen for
+  scanning. Double-click a QR image (grid card or quick-view popup) to open the Matter decode
+  view.
 - The **Invert** button renders QR codes in a dark-friendly negative for reading on dark
   screens.
 

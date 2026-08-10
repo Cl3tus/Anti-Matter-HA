@@ -7,8 +7,7 @@ const { t, initI18n, setLocale } = window.AntiMatterI18n;
 let vault = { categories: [], codes: [] };
 let activeCategories = new Set();
 
-// HA integration state, filled by loadAddonInfo / loadHaDevices.
-let haAvailable = false;
+// HA integration state, filled by loadHaDevices.
 let haDevices = []; // [{id, name, area}] from /api/ha/devices
 let haDeviceById = new Map(); // id -> device
 let haDisplayToId = new Map(); // datalist display string -> id
@@ -979,7 +978,7 @@ function openQuickView(code) {
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";
   document.getElementById("quickview-meta").textContent = buildQuickMeta(code, proto);
-  updateQuickViewHaLinks(code, proto);
+  updateQuickViewHaLinks(code);
   document.getElementById("quickview-edit").onclick = () => {
     document.getElementById("quickview-dialog").close();
     openCodeDialog(code);
@@ -994,27 +993,8 @@ function openQuickView(code) {
   if (!dlg.open) dlg.showModal();
 }
 
-// HA integration page per protocol — HA has no documented URL to *prefill* the setup
-// code, so this just lands on the integration's "Add device" page; the user taps Add
-// there, then scans the enlarged QR.
-const HA_ADD_URLS = {
-  matter: "/config/integrations/integration/matter",
-  zwave: "/config/integrations/integration/zwave_js",
-  homekit: "/config/integrations/integration/homekit_controller",
-};
-
-function updateQuickViewHaLinks(code, proto) {
-  const addLink = document.getElementById("quickview-add-ha");
+function updateQuickViewHaLinks(code) {
   const openLink = document.getElementById("quickview-open-ha-device");
-  if (addLink) {
-    const url = HA_ADD_URLS[proto];
-    if (haAvailable && url) {
-      addLink.href = url;
-      addLink.classList.remove("hidden");
-    } else {
-      addLink.classList.add("hidden");
-    }
-  }
   if (openLink) {
     const deviceId = code?.ha_link?.device_id;
     if (deviceId) {
@@ -1074,11 +1054,23 @@ function renderCodes() {
         onDecode: openDecodeDialogForCode,
       });
     }
+    // Universal card interaction, same as table view below: plain click opens
+    // quickview, right-click opens edit. The overlay icon buttons (edit/download/
+    // delete/decode) stop propagation in wireCodeCard, so they aren't affected.
     card.addEventListener("click", (e) => {
       if (e.shiftKey || e.ctrlKey || e.metaKey) {
         handleCodeSelectClick(e, code, index, codes);
+        return;
       }
+      // Matter/Z-Wave's QR image has its own dblclick-to-decode handler — skip
+      // opening quickview there so a double-click doesn't flash it open first.
+      if (e.target.closest(".matter-sticker-qr, .zwave-sticker-img")) return;
+      openQuickView(code);
     });
+    card.oncontextmenu = (e) => {
+      e.preventDefault();
+      openCodeDialog(code);
+    };
     grid.appendChild(card);
   });
   updateCodeSelectionUi();
@@ -1672,7 +1664,6 @@ async function saveCategory(e) {
 async function loadAddonInfo() {
   try {
     const info = await api("/info");
-    haAvailable = Boolean(info?.ha_available);
     if (info?.language && info.language !== "auto") {
       window.ADDON_LANGUAGE = info.language;
     }
@@ -1762,13 +1753,6 @@ function bindUi() {
       renderTable();
     });
   });
-  document.getElementById("codes-table-body").ondblclick = (e) => {
-    if (e.target.closest("[data-table-delete]")) return;
-    const tr = e.target.closest("tr[data-code-id]");
-    if (!tr) return;
-    const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
-    if (code) openQuickView(code);
-  };
   document.getElementById("codes-table-body").onclick = (e) => {
     const btn = e.target.closest("[data-table-delete]");
     if (btn) {
@@ -1785,11 +1769,10 @@ function bindUi() {
       if (index >= 0) handleCodeSelectClick(e, codes[index], index, codes);
       return;
     }
-    // Plain click on the name cell — "Excel mode" shortcut to open the QR quickview.
-    if (e.target.closest("td:first-child")) {
-      const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
-      if (code) openQuickView(code);
-    }
+    // Plain click anywhere on the row opens quickview — right-click (below)
+    // opens edit, same interaction as the grid card view.
+    const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
+    if (code) openQuickView(code);
   };
   document.getElementById("codes-table-body").oncontextmenu = (e) => {
     const tr = e.target.closest("tr[data-code-id]");

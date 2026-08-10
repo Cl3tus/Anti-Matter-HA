@@ -469,6 +469,7 @@
 }
 
 .codes-grid {
+  --card-h: 400px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--rm-space-4);
@@ -600,7 +601,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--matter-sticker-gap);
+  /* Universal card footprint — every protocol's card is this tall regardless
+     of its own logo/QR/text proportions, so the grid never looks ragged. */
+  height: var(--card-h, 400px);
 }
 
 .matter-sticker-box--full {
@@ -692,16 +697,31 @@
 }
 
 .homekit-sticker {
+  box-sizing: border-box;
   width: 100%;
   max-width: var(--matter-sticker-outer-w, 244px);
+  height: var(--card-h, 400px);
   margin: 0 auto;
+  /* Grid uses card.svg?compact=1, which drops its own baked-in border (same
+     as quickview) — the box is drawn here instead, and object-fit:contain
+     letterboxes the image so every card hits the same fixed height. */
+  padding: 6px;
+  background: #fff;
+  border: 2px solid #000;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .homekit-sticker-img {
   display: block;
-  width: 100%;
+  width: auto;
   height: auto;
-  border-radius: 12px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .homekit-sticker--empty {
@@ -727,24 +747,39 @@
   box-sizing: border-box;
   width: 100%;
   max-width: var(--matter-sticker-outer-w, 244px);
+  height: var(--card-h, 400px);
   margin: 0 auto;
   /* The grid card uses card.svg?compact=1, which drops its own baked-in
      border (compact is also used borderless in quickview) — draw the box
-     here instead, matching Matter/Generic's CSS-drawn box. */
+     here instead, matching Matter/Generic's CSS-drawn box. object-fit:contain
+     letterboxes the image so every card hits the same fixed height. */
   padding: 6px;
   background: #fff;
   border: 2px solid #000;
   border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .zwave-sticker-img {
   display: block;
-  width: 100%;
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .zwave-sticker--empty,
 .zwave-sticker--dsk-only {
+  box-sizing: border-box;
+  height: var(--card-h, 400px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: var(--rm-space-4);
   text-align: center;
   border-radius: 12px;
@@ -817,7 +852,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--matter-sticker-gap);
+  height: var(--card-h, 400px);
 }
 
 .generic-sticker-box--full {
@@ -1372,8 +1409,8 @@ dialog h3 {
 
 /* Dark-friendly (inverted) QR rendering — off by default */
 body.qr-invert .matter-sticker-box,
-body.qr-invert .homekit-sticker-img,
-body.qr-invert .zwave-sticker-img,
+body.qr-invert .homekit-sticker,
+body.qr-invert .zwave-sticker,
 body.qr-invert .zwave-sticker--dsk-only,
 body.qr-invert .generic-sticker-box,
 body.qr-invert #quickview-image-wrap,

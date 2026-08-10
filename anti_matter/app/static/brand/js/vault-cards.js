@@ -113,8 +113,10 @@
         <p class="matter-sticker-empty-msg">No HomeKit code yet</p>
       </div>`;
     }
+    // compact=1 drops the baked-in border — the grid box border comes from
+    // CSS (.homekit-sticker) instead, same treatment as Z-Wave's grid card.
     return `<div class="homekit-sticker">
-      <img class="homekit-sticker-img" src="${apiPrefix}/codes/${code.id}/card.svg" alt="" loading="lazy" decoding="async" />
+      <img class="homekit-sticker-img" src="${apiPrefix}/codes/${code.id}/card.svg?compact=1" alt="" loading="lazy" decoding="async" />
     </div>`;
   }
 

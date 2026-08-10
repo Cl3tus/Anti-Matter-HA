@@ -22,7 +22,6 @@
   "action.qr_invert": "Dark-friendly QR (invert)",
   "action.qr_invert_label": "Invert",
   "action.open_ha_device": "Open device in Home Assistant",
-  "action.add_in_ha": "Add in Home Assistant",
   "categories.title": "Categories",
   "categories.toggle": "Show/hide categories",
   "categories.add_title": "Add category",
