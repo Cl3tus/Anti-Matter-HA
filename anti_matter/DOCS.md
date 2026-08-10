@@ -55,12 +55,10 @@ If HA doesn't return areas, the field simply behaves as plain text.
   values in one dropdown matches any of them. All of that combines with the category
   selection in the sidebar — click several categories to filter by all of them at once.
 - The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
-  a filterable, spreadsheet-style table (your filters stay active). In table view, a single
-  click on a code's name opens the quick-view popup.
-- A single click on a code (grid card or table row) opens the quick-view popup; a right-click
-  opens it for editing instead. In the popup, single-click the QR to enlarge it fullscreen for
-  scanning. Double-click a QR image (grid card or quick-view popup) to open the Matter decode
-  view.
+  a filterable, spreadsheet-style table (your filters stay active).
+- A double-click on a code (grid card or table row) opens the quick-view popup; a right-click
+  opens it for editing instead. Double-clicking a Matter/Z-Wave QR image specifically (grid
+  card or quick-view popup) opens the decode view there instead of quick-view.
 - The **Invert** button renders QR codes in a dark-friendly negative for reading on dark
   screens.
 

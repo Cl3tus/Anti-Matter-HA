@@ -131,8 +131,6 @@
   "code.ha_device_none": "Geen apparaat",
   "code.ha_device_placeholder": "Begin met typen van een apparaatnaam…",
   "code.ha_device_suggested": "Suggestie:",
-  "code.qr_fullscreen_tip": "Tik om te vergroten voor scannen",
-  "code.qr_fullscreen_close": "Tik om te sluiten",
   "confirm.title": "Bevestigen",
   "confirm.delete_code": "Deze code verwijderen?",
   "confirm.delete_category": "Deze categorie verwijderen? De codes blijven bestaan en komen zonder categorie terug.",

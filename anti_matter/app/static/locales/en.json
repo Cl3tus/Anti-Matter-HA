@@ -131,8 +131,6 @@
   "code.ha_device_none": "No device",
   "code.ha_device_placeholder": "Start typing a device name…",
   "code.ha_device_suggested": "Suggested:",
-  "code.qr_fullscreen_tip": "Tap to enlarge for scanning",
-  "code.qr_fullscreen_close": "Tap to close",
   "confirm.title": "Please confirm",
   "confirm.delete_code": "Delete this code?",
   "confirm.delete_category": "Delete this category? Its codes stay and move to no category.",

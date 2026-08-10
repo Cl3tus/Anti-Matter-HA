@@ -951,29 +951,10 @@ function openQuickView(code) {
       : proto === "zwave"
         ? () => openZwaveDecodeDialog(code)
         : null;
-  // Single click = enlarge fullscreen for scanning; double click = decode
-  // (Matter/Z-Wave only). A click always precedes a dblclick, so defer the
-  // enlarge briefly and cancel it if a second click lands.
-  let clickTimer = null;
-  wrap.onclick = () => {
-    if (clickTimer) return; // 2nd click of a double — let ondblclick handle it
-    clickTimer = setTimeout(() => {
-      clickTimer = null;
-      openQrFullscreen(src, logo);
-    }, 250);
-  };
+  // Double-click the QR to decode it (Matter/Z-Wave only) — no other click
+  // behavior on the image; the modal already shows the code at a large size.
   codeImg.ondblclick = () => {
-    if (clickTimer) {
-      clearTimeout(clickTimer);
-      clickTimer = null;
-    }
     if (decode) decode();
-  };
-  wrap.onkeydown = (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      openQrFullscreen(src, logo);
-    }
   };
   document.getElementById("quickview-manual").textContent =
     Cards?.displayManual?.(code) || code.manual_code || "";
@@ -1004,17 +985,6 @@ function updateQuickViewHaLinks(code) {
       openLink.classList.add("hidden");
     }
   }
-}
-
-// Blow the code image up to fill the screen for scanning; reuses the qr-invert body
-// class so it reads in any theme. Tap / Esc closes.
-function openQrFullscreen(src, logo) {
-  const dlg = document.getElementById("qr-fullscreen-dialog");
-  const wrap = document.getElementById("qr-fullscreen-wrap");
-  if (!dlg || !wrap) return;
-  wrap.innerHTML = `${logo}<img class="qr-fullscreen-img" src="${src}" alt="" />`;
-  logEvent("QR fullscreen opened");
-  if (!dlg.open) dlg.showModal();
 }
 
 function renderCodes() {
@@ -1054,19 +1024,18 @@ function renderCodes() {
         onDecode: openDecodeDialogForCode,
       });
     }
-    // Universal card interaction, same as table view below: plain click opens
-    // quickview, right-click opens edit. The overlay icon buttons (edit/download/
-    // delete/decode) stop propagation in wireCodeCard, so they aren't affected.
+    // Universal card interaction, same as table view below: double-click opens
+    // quickview, right-click opens edit. Matter/Z-Wave's QR image has its own
+    // dblclick-to-decode handler (wireCodeCard) which stops propagation, so a
+    // double-click there decodes instead — anywhere else on the card previews.
+    // The overlay icon buttons (edit/download/delete/decode) stop propagation
+    // too, so they aren't affected either.
     card.addEventListener("click", (e) => {
       if (e.shiftKey || e.ctrlKey || e.metaKey) {
         handleCodeSelectClick(e, code, index, codes);
-        return;
       }
-      // Matter/Z-Wave's QR image has its own dblclick-to-decode handler — skip
-      // opening quickview there so a double-click doesn't flash it open first.
-      if (e.target.closest(".matter-sticker-qr, .zwave-sticker-img")) return;
-      openQuickView(code);
     });
+    card.addEventListener("dblclick", () => openQuickView(code));
     card.oncontextmenu = (e) => {
       e.preventDefault();
       openCodeDialog(code);
@@ -1725,9 +1694,6 @@ function bindUi() {
   document.getElementById("code-device-product")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-product"));
   document.getElementById("code-ha-device-name")?.addEventListener("input", resolveHaDeviceInput);
   document.getElementById("code-ha-device-name")?.addEventListener("change", resolveHaDeviceInput);
-  document.getElementById("qr-fullscreen-wrap")?.addEventListener("click", () =>
-    document.getElementById("qr-fullscreen-dialog")?.close()
-  );
   document.getElementById("btn-add-code").onclick = () => openCodeDialog();
   document.getElementById("btn-add-category").onclick = () => {
     categoryCreateTargetSelectId = null;
@@ -1767,10 +1733,14 @@ function bindUi() {
       const codes = filteredCodes();
       const index = codes.findIndex((c) => c.id === tr.dataset.codeId);
       if (index >= 0) handleCodeSelectClick(e, codes[index], index, codes);
-      return;
     }
-    // Plain click anywhere on the row opens quickview — right-click (below)
-    // opens edit, same interaction as the grid card view.
+  };
+  // Double-click a row to open quickview — right-click (below) opens edit,
+  // same interaction as the grid card view.
+  document.getElementById("codes-table-body").ondblclick = (e) => {
+    if (e.target.closest("[data-table-delete]")) return;
+    const tr = e.target.closest("tr[data-code-id]");
+    if (!tr) return;
     const code = vault.codes.find((c) => c.id === tr.dataset.codeId);
     if (code) openQuickView(code);
   };

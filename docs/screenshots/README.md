@@ -26,7 +26,6 @@ Matter/Z-Wave setup code is a live pairing secret.
 | `ha-device-search.png` | Edit dialog → "Home Assistant link" open, typing in the device field with filtered suggestions showing. |
 | `ha-device-suggestion.png` | The "Suggested: &lt;device&gt;" auto-match hint under the device field. |
 | `quickview-ha-links.png` | Quick-view popup showing "Open device in Home Assistant" (only appears once a code is linked). |
-| `qr-fullscreen.png` | The fullscreen scannable QR overlay (after tapping the QR in quick-view). |
 | `trash-dialog.png` | The Trash dialog. |
 | `backup-dialog.png` | The Backup dialog with a schedule configured. |
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.45
+
+- Fixed the click-behavior fix from 1.0.44: single-click conflicted with
+  Matter/Z-Wave's QR dblclick-to-decode over most of the card's area, making
+  those cards effectively unclickable. Grid and table now use **double-click**
+  to open quick-view (right-click still edits) — this can never conflict with
+  the QR's own dblclick-to-decode, since only one of them fires depending on
+  where exactly you double-click.
+- Removed the "tap the QR to enlarge fullscreen" feature from quick-view —
+  redundant given quick-view already shows the code at a large size.
+  Double-click still opens the Matter/Z-Wave decode view.
+- Verified (against a running instance, not just the isolated CSS) that grid
+  cards render at exactly 400px for every protocol.
+
 ## 1.0.44
 
 - Unified the click behavior between the grid (QR card) view and table ("Excel

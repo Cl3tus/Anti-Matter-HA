@@ -46,8 +46,8 @@ The add-on itself lives in [`anti_matter/`](anti_matter/) — see its
   fully offline — nothing loads from a CDN.
 - Duplicate detection on save and on restoring from Trash, with a Cancel/Merge choice.
 - Link a code to a Home Assistant device (searchable, with auto-match) and jump to its page;
-  a single click on any code opens a quick-view with the QR enlarged fullscreen for scanning,
-  right-click to edit instead.
+  double-click any code (grid card or table row) for a quick-view with a large QR, right-click
+  to edit instead.
 - Local, SAMBA-reachable storage in the add-on config folder, included in HA backups; Trash
   is a separate file, and downloads also save to Home Assistant's Media folder.
 - Backup schedule (hourly/daily/weekly/monthly) with automatic pruning, plus manual

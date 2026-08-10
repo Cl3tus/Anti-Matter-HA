@@ -37,8 +37,8 @@ over SAMBA and included in Home Assistant's own backups. No cloud, no account.
   official CSA DCL vendor/product names and links where available; auto-fills device
   vendor/product (manual edits always win).
 - **Home Assistant link** — a searchable device field (with an auto-match suggestion) links
-  a code to a device and jumps to its page in a new tab. Click any code for a quick-view with
-  the QR enlarged fullscreen for scanning; right-click to edit instead.
+  a code to a device and jumps to its page in a new tab. Double-click any code (grid card or
+  table row) for a quick-view with a large QR; right-click to edit instead.
 - **Duplicate detection** — matching QR payload or manual code is caught on save *and* on
   restoring from Trash, with a Cancel/Merge choice.
 - **Categories** — colour- and icon-tagged, in the sidebar.
