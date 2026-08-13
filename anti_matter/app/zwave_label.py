@@ -23,9 +23,10 @@ PAD_X = 12
 PAD_Y = 10
 GAP = 8
 QR_SIZE = 260
-# Narrower than the QR — the wordmark previously matched QR_SIZE and, combined
-# with the DSK/PIN text below, made the card noticeably taller than Matter's.
-LOGO_W = 150
+# Tuned so the compact card's own aspect ratio (h/w) is close to the grid's
+# fixed content-box aspect ratio — minimizes letterboxing from object-fit:
+# contain without needing per-protocol special-casing in CSS.
+LOGO_W = 193
 
 
 def _logo_block(width: int) -> tuple[str, int]:

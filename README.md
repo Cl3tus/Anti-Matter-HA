@@ -39,6 +39,9 @@ The add-on itself lives in [`anti_matter/`](anti_matter/) — see its
 
 - Add, scan and organize Matter / HomeKit / Z-Wave pairing codes with branded, scannable
   QR cards, or switch to a filterable spreadsheet-style table view.
+- **Other** covers anything else (Tuya, Wyze, Zigbee 3.0, …) — free-text standard name plus
+  a manual code/QR payload, no parsing required; a scanned QR that matches none of the known
+  protocols lands here automatically instead of being rejected.
 - Vendor, product name, area (with Home Assistant area suggestions), device type,
   connectivity and category on every code — Matter payload decode auto-fills vendor/product
   from the official CSA DCL registry.

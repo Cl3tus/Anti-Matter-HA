@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.46
+
+- Double-clicking a QR image on a grid card now always opens quick-view, on
+  every protocol (Matter, HomeKit, Z-Wave, Other) — decode is no longer
+  double-click's job on the grid, only the small decode icon (and, inside
+  quick-view itself, double-clicking the QR there) still reach it. Also fixed
+  a real bug this exposed: "Other" cards' outer `<article>` never got the
+  `generic-sticker-card` class, so hover/selection CSS scoped to it silently
+  never matched.
+- Grid cards are now a uniform 300×400 for every protocol, with far less
+  padding than 1.0.43/1.0.44 — logos sit in a fixed-height slot (object-fit,
+  not aspect-ratio-derived) so a tall logo (Z-Wave) or a wide one (Matter)
+  no longer changes how much empty space surrounds it. Verified against a
+  live instance: every card renders at exactly 300×400px.
+- Fixed HomeKit's grid card silently losing its visible pairing code when it
+  switched to the compact SVG in 1.0.44 (compact mode dropped the code text
+  entirely) — the grid now keeps it, quick-view still omits it since it's
+  already shown separately there (`hide_code` query param on `card.svg`).
+- "Other" codes now recognize **Tuya** too (bundled logo), same treatment as
+  Zigbee; anything else still falls back to the typed standard name as text.
+
 ## 1.0.45
 
 - Fixed the click-behavior fix from 1.0.44: single-click conflicted with

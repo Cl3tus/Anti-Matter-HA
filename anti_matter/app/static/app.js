@@ -927,9 +927,12 @@ function openQuickView(code) {
   const proto = Cards?.codeProtocol?.(code) || "matter";
   document.getElementById("quickview-name").textContent = code.name || "";
   const wrap = document.getElementById("quickview-image-wrap");
+  // hide_code only affects HomeKit (drops its baked-in pairing-code text,
+  // since quickview already shows the code separately below); Z-Wave ignores
+  // the param and keeps its PIN line either way.
   const src =
     proto === "homekit" || proto === "zwave"
-      ? `${API}/codes/${code.id}/card.svg?compact=1`
+      ? `${API}/codes/${code.id}/card.svg?compact=1&hide_code=1`
       : `${API}/codes/${code.id}/qr.png`;
   // HomeKit/Z-Wave card.svg already bakes in their brand logo server-side; Matter's
   // qr.png doesn't, so overlay the same logo the card grid shows next to its QR.
@@ -1007,7 +1010,9 @@ function renderCodes() {
         ? "homekit-sticker-card"
         : proto === "zwave"
           ? "zwave-sticker-card"
-          : "matter-sticker-card") +
+          : proto === "other"
+            ? "generic-sticker-card"
+            : "matter-sticker-card") +
       (selectedCodeIds.has(code.id) ? " selected" : "");
     if (Cards) {
       card.innerHTML = Cards.buildCodeCardHtml(code, {
@@ -1024,12 +1029,10 @@ function renderCodes() {
         onDecode: openDecodeDialogForCode,
       });
     }
-    // Universal card interaction, same as table view below: double-click opens
-    // quickview, right-click opens edit. Matter/Z-Wave's QR image has its own
-    // dblclick-to-decode handler (wireCodeCard) which stops propagation, so a
-    // double-click there decodes instead — anywhere else on the card previews.
-    // The overlay icon buttons (edit/download/delete/decode) stop propagation
-    // too, so they aren't affected either.
+    // Universal card interaction, same as table view below: double-click
+    // anywhere on the card (including the QR image) opens quickview,
+    // right-click opens edit. The overlay icon buttons (edit/download/delete/
+    // decode) stop propagation in wireCodeCard, so they aren't affected.
     card.addEventListener("click", (e) => {
       if (e.shiftKey || e.ctrlKey || e.metaKey) {
         handleCodeSelectClick(e, code, index, codes);

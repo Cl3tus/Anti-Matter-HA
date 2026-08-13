@@ -24,10 +24,13 @@ over SAMBA and included in Home Assistant's own backups. No cloud, no account.
 ## Features
 
 - **+ Code** — add a code manually or by scanning, with an inline **+** to create a new
-  category without leaving the form.
+  category without leaving the form. Matter, HomeKit and Z-Wave are natively decoded; pick
+  **Other** for anything else (Tuya, Wyze, Zigbee 3.0, …) — a free-text standard name plus a
+  manual code/QR payload, stored as-is. Zigbee and Tuya get their own logo on the card.
 - **Scan** — webcam QR scanning (works on mobile, with pinch-to-zoom and tap-to-focus
   where the device supports it), with a photo-upload fallback. Fully offline: the scanner
-  fallback library is bundled, nothing is loaded from a CDN.
+  fallback library is bundled, nothing is loaded from a CDN. An unrecognized QR is captured
+  as an **Other** code instead of being rejected.
 - **Rich fields** — name, device type (suggest-dropdown), **vendor**, **product name**,
   **area**, **description**, category, connectivity (WiFi/Thread/Zigbee/Bluetooth/Z-Wave),
   notes, plus the protocol code + QR payload.

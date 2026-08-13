@@ -172,7 +172,10 @@
   // Known standards get a bundled brand logo, same treatment as Matter's own
   // wordmark — falls back to the plain text label if the asset is missing (or
   // not one of these), so adding a new standard's logo later is a drop-in.
-  const KNOWN_OTHER_STANDARDS = [{ test: /zigbee/i, file: "zigbee_logo.png" }];
+  const KNOWN_OTHER_STANDARDS = [
+    { test: /zigbee/i, file: "zigbee_logo.png" },
+    { test: /tuya/i, file: "tuya_logo.svg" },
+  ];
 
   // Shared with the quickview overlay (app.js) so both places agree on which
   // "Other" standards get a bundled logo, without duplicating the list.
@@ -287,14 +290,9 @@
         handlers.onDecode(code);
       };
     }
-    // Double-clicking the QR/card image itself is a shortcut for the decode button.
-    const qrImg = card.querySelector(".matter-sticker-qr, .zwave-sticker-img");
-    if (qrImg && handlers.onDecode) {
-      qrImg.ondblclick = (e) => {
-        e.stopPropagation();
-        handlers.onDecode(code);
-      };
-    }
+    // Double-click anywhere on the card — including the QR image — opens
+    // quickview (wired at the card level in app.js); decode is reached via the
+    // small icon button above, not via double-click.
     const dlBtn = card.querySelector("[data-download]");
     if (dlBtn && handlers.onDownload) {
       dlBtn.onclick = (e) => {

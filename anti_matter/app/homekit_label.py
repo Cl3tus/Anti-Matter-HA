@@ -78,6 +78,7 @@ def compose_card_svg(
     pairing_code: str,
     setup_uri: str,
     compact: bool = False,
+    hide_code: bool = False,
 ) -> str:
     digits = pairing_digits(pairing_code)
     if len(digits) != 8:
@@ -101,16 +102,17 @@ def compose_card_svg(
     qr_y = logo_y + logo_h + GAP
     code_y = qr_y + QR_SIZE + GAP
 
-    # Compact mode (quickview) drops the border and the pairing-code text —
-    # the code is already shown just below the image there.
-    if compact:
+    # Compact mode drops the border (grid/quickview draw their own box in CSS).
+    # hide_code additionally drops the pairing-code text — used by quickview
+    # only, since it already shows the code separately below the image; the
+    # grid card has no such separate text, so it keeps the code baked in.
+    if compact and hide_code:
         card_h = qr_y + QR_SIZE
-        border = ""
         code_text = ""
     else:
         card_h = code_y + CODE_H
-        border = f'<rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>'
         code_text = f'<text x="{CARD_W / 2}" y="{code_y + 24}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="22" fill="black">{pairing_display}</text>'
+    border = "" if compact else f'<rect x="1" y="1" width="{CARD_W - 2}" height="{card_h - 2}" rx="16" fill="white" stroke="black" stroke-width="2"/>'
 
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <svg viewBox="0 0 {CARD_W} {card_h}" xmlns="http://www.w3.org/2000/svg">
@@ -125,7 +127,7 @@ def compose_card_svg(
 </svg>"""
 
 
-def card_svg_for_code(code: dict, *, compact: bool = False) -> str:
+def card_svg_for_code(code: dict, *, compact: bool = False, hide_code: bool = False) -> str:
     manual = str(code.get("manual_code") or "")
     qr = str(code.get("qr_payload") or "")
     if not qr and manual:
@@ -139,4 +141,4 @@ def card_svg_for_code(code: dict, *, compact: bool = False) -> str:
             qr = compose_setup_uri(
                 category_id=cat, flag=flag, password=digits, setup_id=sid
             )
-    return compose_card_svg(pairing_code=manual, setup_uri=qr, compact=compact)
+    return compose_card_svg(pairing_code=manual, setup_uri=qr, compact=compact, hide_code=hide_code)

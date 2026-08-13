@@ -469,7 +469,14 @@
 }
 
 .codes-grid {
+  /* Single source of truth for every protocol's card footprint — sized once
+     here so matter/homekit/zwave/generic never drift apart from each other. */
+  --card-w: 300px;
   --card-h: 400px;
+  --card-pad: 17px;
+  --card-border: 2px;
+  --card-gap: 10px;
+  --card-logo-h: 54px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--rm-space-4);
@@ -491,7 +498,7 @@
 .matter-label-wrap {
   position: relative;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   margin: 0 auto;
 }
 
@@ -583,26 +590,25 @@
 }
 
 .matter-sticker-box {
-  --matter-sticker-qr: 220px;
-  --matter-sticker-quiet: 4px;
-  --matter-sticker-inner: calc(var(--matter-sticker-qr) - 2 * var(--matter-sticker-quiet));
-  --matter-sticker-pad-x: 10px;
-  --matter-sticker-pad-y: 8px;
-  --matter-sticker-gap: 6px;
-  --matter-sticker-outer-w: calc(var(--matter-sticker-qr) + 2 * var(--matter-sticker-pad-x) + 4px);
+  /* Derived from the shared --card-w/--card-pad/--card-border tokens
+     (.codes-grid) so the QR fills the box width edge-to-edge — the box's
+     *height* is fixed (below) independent of this, so there's no leftover
+     vertical slack to speak of. */
+  --matter-sticker-qr: calc(var(--card-w, 300px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px));
+  --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
   width: 100%;
   max-width: var(--matter-sticker-outer-w);
   margin: 0 auto;
-  padding: var(--matter-sticker-pad-y) var(--matter-sticker-pad-x) 10px;
+  padding: var(--card-pad, 17px);
   background: #fff;
-  border: 2px solid #000;
+  border: var(--card-border, 2px) solid #000;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--matter-sticker-gap);
+  gap: var(--card-gap, 10px);
   /* Universal card footprint — every protocol's card is this tall regardless
      of its own logo/QR/text proportions, so the grid never looks ragged. */
   height: var(--card-h, 400px);
@@ -612,28 +618,45 @@
   min-height: 0;
 }
 
-.matter-sticker-brand {
+.matter-sticker-brand,
+.generic-sticker-brand,
+.generic-sticker-standard {
+  /* A fixed-height slot (not sized off the logo's own aspect ratio) — every
+     protocol's brand mark/name occupies the same vertical space, so a tall
+     logo (Z-Wave) or a wide one (Matter) never changes the card's total
+     height, only how much of this slot its own image fills. */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--matter-sticker-qr);
-  max-width: 100%;
+  width: 100%;
+  height: var(--card-logo-h, 54px);
   min-height: 0;
   padding: 0;
+  margin: 0;
   flex-shrink: 0;
   overflow: hidden;
   box-sizing: border-box;
 }
 
-.matter-sticker-logo {
+.matter-sticker-logo,
+.generic-sticker-logo {
   display: block;
-  width: var(--matter-sticker-inner);
-  max-width: 100%;
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 100%;
   margin: 0 auto;
   object-fit: contain;
   object-position: center;
   box-sizing: border-box;
+}
+
+.generic-sticker-standard {
+  font-size: var(--rm-text-sm);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #000;
 }
 
 .matter-sticker-qr-slot {
@@ -699,15 +722,16 @@
 .homekit-sticker {
   box-sizing: border-box;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   height: var(--card-h, 400px);
   margin: 0 auto;
   /* Grid uses card.svg?compact=1, which drops its own baked-in border (same
      as quickview) — the box is drawn here instead, and object-fit:contain
-     letterboxes the image so every card hits the same fixed height. */
-  padding: 6px;
+     letterboxes the image so every card hits the same fixed height. Same
+     padding/border tokens as Matter/Generic, so the white frame matches. */
+  padding: var(--card-pad, 17px);
   background: #fff;
-  border: 2px solid #000;
+  border: var(--card-border, 2px) solid #000;
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -732,7 +756,7 @@
 .homekit-label-wrap {
   position: relative;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   margin: 0 auto;
 }
 
@@ -746,16 +770,16 @@
 .zwave-sticker {
   box-sizing: border-box;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   height: var(--card-h, 400px);
   margin: 0 auto;
   /* The grid card uses card.svg?compact=1, which drops its own baked-in
      border (compact is also used borderless in quickview) — draw the box
      here instead, matching Matter/Generic's CSS-drawn box. object-fit:contain
      letterboxes the image so every card hits the same fixed height. */
-  padding: 6px;
+  padding: var(--card-pad, 17px);
   background: #fff;
-  border: 2px solid #000;
+  border: var(--card-border, 2px) solid #000;
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -811,14 +835,14 @@
 .zwave-label-wrap {
   position: relative;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   margin: 0 auto;
 }
 
 .other-label-wrap {
   position: relative;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   margin: 0 auto;
 }
 
@@ -832,68 +856,29 @@
   /* --matter-sticker-* custom properties are scoped to whatever element
      declares them — .matter-sticker-box declares its own copy, so shared
      descendant rules (.matter-sticker-qr-slot, .matter-sticker-pin, …) need
-     the same declarations here too, or var(--matter-sticker-qr) etc. resolve
-     to nothing and those elements collapse to zero size. */
-  --matter-sticker-qr: 220px;
-  --matter-sticker-quiet: 4px;
-  --matter-sticker-inner: calc(var(--matter-sticker-qr) - 2 * var(--matter-sticker-quiet));
-  --matter-sticker-pad-x: 10px;
-  --matter-sticker-pad-y: 8px;
-  --matter-sticker-gap: 6px;
-  --matter-sticker-outer-w: calc(var(--matter-sticker-qr) + 2 * var(--matter-sticker-pad-x) + 4px);
+     the same declarations here too, or var(--matter-sticker-qr) resolves to
+     nothing and those elements collapse to zero size. Same formula as
+     .matter-sticker-box, both derived from the shared .codes-grid tokens. */
+  --matter-sticker-qr: calc(var(--card-w, 300px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px));
+  --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
   width: 100%;
   max-width: var(--matter-sticker-outer-w);
   margin: 0 auto;
-  padding: var(--matter-sticker-pad-y) var(--matter-sticker-pad-x) 10px;
+  padding: var(--card-pad, 17px);
   background: #fff;
-  border: 2px solid #000;
+  border: var(--card-border, 2px) solid #000;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--matter-sticker-gap);
+  gap: var(--card-gap, 10px);
   height: var(--card-h, 400px);
 }
 
 .generic-sticker-box--full {
   min-height: 0;
-}
-
-.generic-sticker-brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--matter-sticker-qr);
-  max-width: 100%;
-  min-height: 0;
-  padding: 0;
-  flex-shrink: 0;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.generic-sticker-logo {
-  display: block;
-  width: var(--matter-sticker-inner);
-  max-width: 100%;
-  height: auto;
-  margin: 0 auto;
-  object-fit: contain;
-  object-position: center;
-  box-sizing: border-box;
-}
-
-.generic-sticker-standard {
-  margin: 0;
-  padding: 0;
-  font-size: var(--rm-text-sm);
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--rm-text-muted);
-  text-align: center;
 }
 
 .form-hint {
@@ -915,7 +900,7 @@
 .code-card-caption {
   margin: 0.35rem 0 0;
   width: 100%;
-  max-width: var(--matter-sticker-outer-w, 244px);
+  max-width: var(--card-w, 300px);
   text-align: center;
   font-size: 1.05rem;
   font-weight: 600;

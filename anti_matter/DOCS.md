@@ -19,21 +19,28 @@ a scannable QR card so you can re-commission a device without hunting for the or
 
 ## Adding a code
 
-- **+ Code** opens a modal. Pick the protocol (Matter / HomeKit / Z-Wave), fill in the name
-  and any details (vendor, product, area, description, category, notes), and paste the manual
-  code and/or QR payload. The inline **+** next to Category creates a new one without
-  leaving the form.
+- **+ Code** opens a modal. Pick the protocol (Matter / HomeKit / Z-Wave / **Other**), fill in
+  the name and any details (vendor, product, area, description, category, notes), and paste
+  the manual code and/or QR payload. The inline **+** next to Category creates a new one
+  without leaving the form.
+- **Other** is for standards Anti-Matter doesn't natively parse (Tuya, Wyze, Zigbee 3.0, …) —
+  type a free-text **Standard** name plus a manual code and/or QR payload, stored and shown
+  as-is with no validation or decoding. Typing a recognized name (currently "Zigbee" or
+  "Tuya") shows that standard's own logo on the card, same as Matter/HomeKit/Z-Wave; any other
+  name is shown as plain text instead.
 - **Scan** (top bar, or inside the form) opens the camera. Point it at the QR on the device
   or its manual, with pinch-to-zoom and tap-to-focus where supported. On phones the rear
-  camera is used. If the browser can't use the camera, use **Or upload a photo**.
+  camera is used. If the browser can't use the camera, use **Or upload a photo**. A QR that
+  doesn't match Matter/HomeKit/Z-Wave is captured as an **Other** code instead of being
+  rejected or mistagged.
 - Opening or editing a Matter code decodes its payload in the background (vendor/product ID,
   passcode, discriminator, official CSA DCL name/links where available) and auto-fills
   Device vendor/product — typing something by hand always wins.
 - Z-Wave codes get their own decode view — DSK, PIN, QR version, requested security classes
   (S2/S0) and, from a full SmartStart QR, supported protocols and manufacturer/product/
-  device-class fields (decimal and hex) — available in the form, the quick-view popup, and
-  by double-clicking a Z-Wave card. There's no live vendor/product name lookup like Matter's
-  DCL — Z-Wave has no equivalent public API.
+  device-class fields (decimal and hex) — available in the form, the quick-view popup, and via
+  a Z-Wave card's small decode icon (shown on hover). There's no live vendor/product name
+  lookup like Matter's DCL — Z-Wave has no equivalent public API.
 - Saving or restoring a code that matches an existing one by QR payload or manual code is
   caught, with a Cancel/open-existing (or Cancel/Merge, when restoring) choice.
 - **Home Assistant link (optional)**: a type-to-search **Device** field lists your Home
@@ -57,8 +64,8 @@ If HA doesn't return areas, the field simply behaves as plain text.
 - The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
   a filterable, spreadsheet-style table (your filters stay active).
 - A double-click on a code (grid card or table row) opens the quick-view popup; a right-click
-  opens it for editing instead. Double-clicking a Matter/Z-Wave QR image specifically (grid
-  card or quick-view popup) opens the decode view there instead of quick-view.
+  opens it for editing instead. Matter/Z-Wave decode is reached via the small decode icon
+  shown on hover, or by double-clicking the QR image inside the quick-view popup itself.
 - The **Invert** button renders QR codes in a dark-friendly negative for reading on dark
   screens.
 
