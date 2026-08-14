@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.47
+
+- Made the logo/standard-name slot on "Other" and Matter cards taller (54px
+  → 100px) — the Tuya mark (a compact square icon, not a wide wordmark) was
+  barely bigger than before at the old slot height; verified it now renders
+  at exactly the slot size (100×100, up from 54×54). The QR shrinks a little
+  to compensate, still comfortably scannable, and every card still lands at
+  exactly 300×400.
+- The typed standard name for unrecognized "Other" codes (e.g. "Wyze") is now
+  much larger and bolder, closer in visual weight to the bundled wordmark
+  logos instead of a small caption-sized label.
+
 ## 1.0.46
 
 - Double-clicking a QR image on a grid card now always opens quick-view, on

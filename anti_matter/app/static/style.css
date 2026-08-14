@@ -476,7 +476,8 @@
   --card-pad: 17px;
   --card-border: 2px;
   --card-gap: 10px;
-  --card-logo-h: 54px;
+  --card-logo-h: 100px;
+  --card-pin-h: 26px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--rm-space-4);
@@ -590,11 +591,14 @@
 }
 
 .matter-sticker-box {
-  /* Derived from the shared --card-w/--card-pad/--card-border tokens
-     (.codes-grid) so the QR fills the box width edge-to-edge — the box's
-     *height* is fixed (below) independent of this, so there's no leftover
-     vertical slack to speak of. */
-  --matter-sticker-qr: calc(var(--card-w, 300px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px));
+  /* QR size is derived from the *height* budget (box height minus padding/
+     border/logo-slot/gaps/pin), not the width — so bumping --card-logo-h
+     (a bigger logo/standard-name slot) always still sums to exactly
+     --card-h, the QR just shrinks a little to make room. */
+  --matter-sticker-qr: calc(
+    var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
+    var(--card-logo-h, 80px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
+  );
   --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
   width: 100%;
@@ -652,11 +656,18 @@
 }
 
 .generic-sticker-standard {
-  font-size: var(--rm-text-sm);
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  /* No bundled logo for this standard — the typed name carries the same
+     visual weight a wordmark would, filling most of the fixed logo slot. */
+  font-size: 2.1rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   color: #000;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .matter-sticker-qr-slot {
@@ -859,7 +870,10 @@
      the same declarations here too, or var(--matter-sticker-qr) resolves to
      nothing and those elements collapse to zero size. Same formula as
      .matter-sticker-box, both derived from the shared .codes-grid tokens. */
-  --matter-sticker-qr: calc(var(--card-w, 300px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px));
+  --matter-sticker-qr: calc(
+    var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
+    var(--card-logo-h, 80px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
+  );
   --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
   width: 100%;
