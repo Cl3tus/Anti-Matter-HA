@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.53
+
+- "Other" standard logos (Tuya, …) render bigger again (54px → visually up
+  to 70px) without disturbing the QR-fills-width layout from 1.0.52: the
+  logo slot now bleeds past its own 54px flex height via
+  `overflow: visible` + a taller `max-height`, so a compact square badge
+  no longer gets squashed down to the shared wordmark slot's height.
+  Matter/HomeKit/Z-Wave logos are unaffected.
+- Fixed a real, previously-unnoticed bug: the QR slot's width and height
+  were both fixed px values derived from the 300px card-width token, so on
+  a grid column narrower than 300px (e.g. a tight browser window) the box
+  shrank to fit but the QR's height didn't — producing a stretched,
+  non-square QR. Switched the QR slot to `width: 100%; aspect-ratio: 1`,
+  so it's always a perfect square at whatever width the card actually
+  renders. Verified via headless-browser measurement at both a wide
+  (300px box, 262×262 QR) and a narrow (287px box, 249×249 QR) viewport.
+
 ## 1.0.52
 
 - Found the actual cause of the card looking off vs. the reference sticker

@@ -619,15 +619,10 @@
   /* Every protocol shares one box treatment — box footprint (300×400),
      padding, border and the QR/logo/pin *layout* formula, all driven by
      the same .codes-grid tokens — only the logo height itself (set above)
-     is independent per protocol. QR fills the box's full content WIDTH
-     (edge-to-edge, like the reference sticker look) rather than being
-     derived from the height budget — a taller logo slot doesn't shrink the
-     QR, it just leaves less centering slack (or, if pushed too far, grows
-     the content past --card-h — keep logo-h small, it's meant to be a
-     compact wordmark, not a second QR-sized element). */
-  --matter-sticker-qr: calc(
-    var(--card-w, 300px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px)
-  );
+     is independent per protocol. The QR slot itself fills the box's full
+     content width (edge-to-edge, like the reference sticker look) via
+     width:100% + aspect-ratio, not a fixed px size computed here — see
+     .matter-sticker-qr-slot. */
   --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
   width: 100%;
@@ -692,6 +687,21 @@
   box-sizing: border-box;
 }
 
+/* "Other" standard marks (Tuya, …) are often compact square badges rather
+   than wide wordmarks — at the shared 54px slot height they'd render tiny
+   (object-fit:contain binds to the smaller dimension, and a square mark in
+   a wide slot is always height-bound). Let this one specifically render
+   bigger than its own layout slot — overflow:visible plus a taller
+   max-height lets it bleed into the padding/gap above and below without
+   nudging the QR or box height, which stay governed by the slot's normal
+   54px for flex-layout purposes. */
+.generic-sticker-brand {
+  overflow: visible;
+}
+.generic-sticker-logo {
+  max-height: 70px;
+}
+
 .generic-sticker-standard {
   /* No bundled logo for this standard — the typed name carries the same
      visual weight a wordmark would, filling most of the fixed logo slot. */
@@ -708,9 +718,13 @@
 }
 
 .matter-sticker-qr-slot {
-  width: var(--matter-sticker-qr);
-  max-width: 100%;
-  height: var(--matter-sticker-qr);
+  /* 100% + aspect-ratio, not a fixed px size — the box itself can render
+     narrower than --card-w on tight viewports (its own max-width just caps
+     it, doesn't force it), and a fixed-px QR slot went non-square there
+     (width capped by the box, height still the old fixed value). This
+     always stays a perfect square at whatever width the box actually is. */
+  width: 100%;
+  aspect-ratio: 1;
   flex-shrink: 0;
 }
 
@@ -747,8 +761,7 @@
 
 .matter-sticker-pin {
   box-sizing: border-box;
-  width: var(--matter-sticker-qr);
-  max-width: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
