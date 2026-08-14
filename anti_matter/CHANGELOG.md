@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.48
+
+- HomeKit and Z-Wave grid cards are now composed the same way as Matter's —
+  logo slot, then a bare QR image, then a CSS-styled code — instead of a
+  flattened server-rendered SVG scaled to fit the box. Practical effect:
+  every protocol's QR is now pixel-identical in size (verified live: all
+  196×196), and Z-Wave's PIN renders in the exact same font/size/weight as
+  Matter's pairing code (both share the same CSS rule now) instead of its
+  own smaller baked-in SVG text.
+- The logo slot grew again (100px → 120px) — Tuya's mark is a compact square
+  icon, and even after the 1.0.47 bump it read as noticeably smaller than
+  the wide wordmark logos next to it.
+- Added an overflow safeguard to the card box: "Other" codes carry free-text
+  manual codes with no length limit, so a very long one now clips at the
+  box's rounded edge instead of visually spilling past it. This never
+  truncates the code's own text (that would make it unusable to actually
+  type in) — it only guards the box's edges.
+
 ## 1.0.47
 
 - Made the logo/standard-name slot on "Other" and Matter cards taller (54px

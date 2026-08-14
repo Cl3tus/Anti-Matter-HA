@@ -44,19 +44,28 @@
     return manual;
   }
 
-  function matterBrandHtml(opts) {
+  // Shared logo slot for the native protocols (Matter/HomeKit/Z-Wave) — same
+  // fixed-height slot pattern as "Other"'s brand logo, so every protocol's
+  // wordmark occupies identical space regardless of its own aspect ratio.
+  function brandLogoHtml(file, label, opts) {
     const assetsPrefix = opts.assetsPrefix || "/assets";
-    return `<div class="matter-sticker-brand" aria-label="matter">
-      <img class="matter-sticker-logo" src="${assetsPrefix}/matter_logo.svg" alt="" decoding="async" />
+    return `<div class="matter-sticker-brand" aria-label="${label}">
+      <img class="matter-sticker-logo" src="${assetsPrefix}/${file}" alt="" decoding="async" />
     </div>`;
   }
 
-  function qrSlotHtml(code, opts) {
+  function matterBrandHtml(opts) {
+    return brandLogoHtml("matter_logo.svg", "matter", opts);
+  }
+
+  // Shared QR slot for every protocol — a bare qr.png (no baked-in logo/card
+  // chrome) sized into the same fixed slot as Matter's, so Matter/HomeKit/
+  // Z-Wave/Other QR codes are all pixel-identical in the grid.
+  function qrSlotHtmlFor(hasQr, code, opts, qrClass) {
     const apiPrefix = opts.qrApiPrefix || "/api";
-    const hasMt = hasMtPayload(code);
-    if (hasMt) {
+    if (hasQr) {
       return `<div class="matter-sticker-qr-slot">
-        <img class="matter-sticker-qr" src="${apiPrefix}/codes/${code.id}/qr.png?fit=1" alt="" loading="lazy" decoding="async" />
+        <img class="${qrClass}" src="${apiPrefix}/codes/${code.id}/qr.png?fit=1" alt="" loading="lazy" decoding="async" />
       </div>`;
     }
     return `<div class="matter-sticker-qr-slot" aria-hidden="true">
@@ -67,6 +76,10 @@
         </svg>
       </div>
     </div>`;
+  }
+
+  function qrSlotHtml(code, opts) {
+    return qrSlotHtmlFor(hasMtPayload(code), code, opts, "matter-sticker-qr");
   }
 
   function buildMatterStickerHtml(code, opts) {
@@ -99,8 +112,12 @@
       </div>`;
   }
 
+  // HomeKit and Z-Wave grid cards are now composed exactly like Matter's —
+  // logo slot + QR slot (bare qr.png, not the baked server card.svg) + a
+  // CSS-styled pin — so the QR size and pin typography are pixel-identical
+  // across every protocol instead of depending on how a flattened SVG scales.
   function buildHomeKitStickerHtml(code, opts) {
-    const apiPrefix = opts.qrApiPrefix || "/api";
+    const escapeHtml = opts.escapeHtml;
     const HK = global.AntiMatterHomeKitPayload;
     const hasQr =
       HK && typeof HK.hasScannableQr === "function"
@@ -108,41 +125,57 @@
         : String(code.qr_payload || "")
             .toUpperCase()
             .startsWith("X-HM://");
-    if (!hasQr) {
-      return `<div class="homekit-sticker homekit-sticker--empty">
-        <p class="matter-sticker-empty-msg">No HomeKit code yet</p>
-      </div>`;
+    const pin = displayManual(code);
+    const brand = brandLogoHtml("homekit_logo.png", "homekit", opts);
+
+    if (!hasQr && !pin) {
+      return `
+        <div class="homekit-sticker">
+          <div class="homekit-sticker-box">
+            ${brand}
+            <p class="matter-sticker-empty-msg">No HomeKit code yet</p>
+          </div>
+        </div>`;
     }
-    // compact=1 drops the baked-in border — the grid box border comes from
-    // CSS (.homekit-sticker) instead, same treatment as Z-Wave's grid card.
-    return `<div class="homekit-sticker">
-      <img class="homekit-sticker-img" src="${apiPrefix}/codes/${code.id}/card.svg?compact=1" alt="" loading="lazy" decoding="async" />
-    </div>`;
+
+    const pinBlock = pin ? `<p class="matter-sticker-pin">${escapeHtml(pin)}</p>` : "";
+    return `
+      <div class="homekit-sticker">
+        <div class="homekit-sticker-box homekit-sticker-box--full">
+          ${brand}
+          ${qrSlotHtmlFor(hasQr, code, opts, "matter-sticker-qr")}
+          ${pinBlock}
+        </div>
+      </div>`;
   }
 
   function buildZWaveStickerHtml(code, opts) {
-    const apiPrefix = opts.qrApiPrefix || "/api";
+    const escapeHtml = opts.escapeHtml;
     const ZW = global.AntiMatterZWavePayload;
     const hasQr = ZW?.hasScannableQr?.(code.qr_payload);
-    if (!hasQr) {
-      const dsk = displayManual(code);
-      if (!dsk) {
-        return `<div class="zwave-sticker zwave-sticker--empty">
-          <p class="matter-sticker-empty-msg">No Z-Wave code yet</p>
+    const dsk = String(code.manual_code || "").trim();
+    const pin = dsk ? ZW?.pinFromDsk?.(dsk) || "" : "";
+    const brand = brandLogoHtml("zwave_logo.png", "z-wave", opts);
+
+    if (!hasQr && !pin) {
+      return `
+        <div class="zwave-sticker">
+          <div class="zwave-sticker-box">
+            ${brand}
+            <p class="matter-sticker-empty-msg">No Z-Wave code yet</p>
+          </div>
         </div>`;
-      }
-      return `<div class="zwave-sticker zwave-sticker--dsk-only">
-        <p class="zwave-sticker-brand">Z-Wave</p>
-        <p class="zwave-sticker-pin">PIN ${opts.escapeHtml(ZW?.pinFromDsk?.(dsk) || "")}</p>
-        <p class="zwave-sticker-dsk">${opts.escapeHtml(dsk)}</p>
-      </div>`;
     }
-    // compact=1 drops the full DSK text (2 lines) and baked-in border that the
-    // downloadable card keeps — those made the grid card noticeably taller than
-    // Matter's; the grid box border comes from CSS (.zwave-sticker) instead.
-    return `<div class="zwave-sticker">
-      <img class="zwave-sticker-img" src="${apiPrefix}/codes/${code.id}/card.svg?compact=1" alt="" loading="lazy" decoding="async" />
-    </div>`;
+
+    const pinBlock = pin ? `<p class="matter-sticker-pin">${escapeHtml(pin)}</p>` : "";
+    return `
+      <div class="zwave-sticker">
+        <div class="zwave-sticker-box zwave-sticker-box--full">
+          ${brand}
+          ${qrSlotHtmlFor(hasQr, code, opts, "matter-sticker-qr")}
+          ${pinBlock}
+        </div>
+      </div>`;
   }
 
   function hasGenericPayload(code) {
@@ -150,23 +183,11 @@
   }
 
   function genericQrSlotHtml(code, opts) {
-    const apiPrefix = opts.qrApiPrefix || "/api";
-    if (hasGenericPayload(code)) {
-      // Deliberately NOT .matter-sticker-qr — that class is what wireCodeCard's
-      // dblclick-to-decode selector matches, and there's no decode view for an
-      // unknown standard.
-      return `<div class="matter-sticker-qr-slot">
-        <img class="generic-sticker-qr" src="${apiPrefix}/codes/${code.id}/qr.png?fit=1" alt="" loading="lazy" decoding="async" />
-      </div>`;
-    }
-    return `<div class="matter-sticker-qr-slot" aria-hidden="true">
-      <div class="matter-sticker-qr-placeholder">
-        <svg class="matter-sticker-qr-ph-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
-          <path fill="currentColor" stroke="none" d="M7 12h.01M12 12h.01M17 12h.01M12 17h.01"/>
-        </svg>
-      </div>
-    </div>`;
+    // .generic-sticker-qr is now visually identical to .matter-sticker-qr
+    // (the old dblclick-to-decode class conflict this avoided no longer
+    // exists — grid double-click always opens quick-view) but keeping its
+    // own class name costs nothing and avoids implying "Other" has decode.
+    return qrSlotHtmlFor(hasGenericPayload(code), code, opts, "generic-sticker-qr");
   }
 
   // Known standards get a bundled brand logo, same treatment as Matter's own

@@ -476,7 +476,7 @@
   --card-pad: 17px;
   --card-border: 2px;
   --card-gap: 10px;
-  --card-logo-h: 100px;
+  --card-logo-h: 120px;
   --card-pin-h: 26px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -484,6 +484,8 @@
 }
 
 .code-card.matter-sticker-card,
+.code-card.homekit-sticker-card,
+.code-card.zwave-sticker-card,
 .code-card.generic-sticker-card {
   position: relative;
   padding: 0;
@@ -590,14 +592,20 @@
   width: 100%;
 }
 
-.matter-sticker-box {
-  /* QR size is derived from the *height* budget (box height minus padding/
+.matter-sticker-box,
+.homekit-sticker-box,
+.zwave-sticker-box,
+.generic-sticker-box {
+  /* Every protocol shares one box treatment — logo/QR/pin slot sizing, box
+     footprint (300×400), padding and border, all driven by the same
+     .codes-grid tokens, so Matter/HomeKit/Z-Wave/Other are pixel-identical.
+     QR size is derived from the *height* budget (box height minus padding/
      border/logo-slot/gaps/pin), not the width — so bumping --card-logo-h
      (a bigger logo/standard-name slot) always still sums to exactly
      --card-h, the QR just shrinks a little to make room. */
   --matter-sticker-qr: calc(
     var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
-    var(--card-logo-h, 80px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
+    var(--card-logo-h, 120px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
   );
   --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
@@ -613,12 +621,20 @@
   align-items: center;
   justify-content: center;
   gap: var(--card-gap, 10px);
+  /* Safety net for "Other" codes, whose manual code is free text (unbounded
+     length) — clips rather than letting a pathologically long one spill past
+     the rounded border. Never truncates the *text itself* (that would make a
+     real pairing code unusable) — it only guards the box's own edges. */
+  overflow: hidden;
   /* Universal card footprint — every protocol's card is this tall regardless
      of its own logo/QR/text proportions, so the grid never looks ragged. */
   height: var(--card-h, 400px);
 }
 
-.matter-sticker-box--full {
+.matter-sticker-box--full,
+.homekit-sticker-box--full,
+.zwave-sticker-box--full,
+.generic-sticker-box--full {
   min-height: 0;
 }
 
@@ -730,38 +746,13 @@
   text-align: center;
 }
 
-.homekit-sticker {
-  box-sizing: border-box;
+.homekit-sticker,
+.zwave-sticker {
+  /* Composed the same way as Matter/Other now (logo slot + QR slot + pin
+     text, all shared classes/rules) — box styling lives on
+     .homekit-sticker-box/.zwave-sticker-box above, this is just the outer
+     wrap, same role as .matter-sticker. */
   width: 100%;
-  max-width: var(--card-w, 300px);
-  height: var(--card-h, 400px);
-  margin: 0 auto;
-  /* Grid uses card.svg?compact=1, which drops its own baked-in border (same
-     as quickview) — the box is drawn here instead, and object-fit:contain
-     letterboxes the image so every card hits the same fixed height. Same
-     padding/border tokens as Matter/Generic, so the white frame matches. */
-  padding: var(--card-pad, 17px);
-  background: #fff;
-  border: var(--card-border, 2px) solid #000;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.homekit-sticker-img {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.homekit-sticker--empty {
-  padding: var(--rm-space-4);
-  text-align: center;
 }
 
 .homekit-label-wrap {
@@ -769,78 +760,6 @@
   width: 100%;
   max-width: var(--card-w, 300px);
   margin: 0 auto;
-}
-
-.code-card.homekit-sticker-card,
-.code-card.zwave-sticker-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.zwave-sticker {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: var(--card-w, 300px);
-  height: var(--card-h, 400px);
-  margin: 0 auto;
-  /* The grid card uses card.svg?compact=1, which drops its own baked-in
-     border (compact is also used borderless in quickview) — draw the box
-     here instead, matching Matter/Generic's CSS-drawn box. object-fit:contain
-     letterboxes the image so every card hits the same fixed height. */
-  padding: var(--card-pad, 17px);
-  background: #fff;
-  border: var(--card-border, 2px) solid #000;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.zwave-sticker-img {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.zwave-sticker--empty,
-.zwave-sticker--dsk-only {
-  box-sizing: border-box;
-  height: var(--card-h, 400px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--rm-space-4);
-  text-align: center;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid var(--rm-border, #e2e8f0);
-}
-
-.zwave-sticker-brand {
-  font-weight: 700;
-  color: #0b1f3a;
-  margin: 0 0 0.5rem;
-}
-
-.zwave-sticker-pin {
-  font-family: ui-monospace, monospace;
-  font-size: 0.9rem;
-  margin: 0 0 0.35rem;
-}
-
-.zwave-sticker-dsk {
-  font-family: ui-monospace, monospace;
-  font-size: 0.65rem;
-  line-height: 1.35;
-  word-break: break-all;
-  margin: 0;
-  color: var(--rm-text-muted);
 }
 
 .zwave-label-wrap {
@@ -858,41 +777,10 @@
 }
 
 /* "Other" (unrecognized standard) card — same box/QR-slot/pin proportions as
-   Matter's sticker, minus the protocol logo, plus the user-typed standard name. */
+   Matter's sticker, minus the protocol logo, plus the user-typed standard name.
+   Box/QR-slot styling itself is the shared .matter-sticker-box rule above. */
 .generic-sticker {
   width: 100%;
-}
-
-.generic-sticker-box {
-  /* --matter-sticker-* custom properties are scoped to whatever element
-     declares them — .matter-sticker-box declares its own copy, so shared
-     descendant rules (.matter-sticker-qr-slot, .matter-sticker-pin, …) need
-     the same declarations here too, or var(--matter-sticker-qr) resolves to
-     nothing and those elements collapse to zero size. Same formula as
-     .matter-sticker-box, both derived from the shared .codes-grid tokens. */
-  --matter-sticker-qr: calc(
-    var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
-    var(--card-logo-h, 80px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
-  );
-  --matter-sticker-outer-w: var(--card-w, 300px);
-  box-sizing: border-box;
-  width: 100%;
-  max-width: var(--matter-sticker-outer-w);
-  margin: 0 auto;
-  padding: var(--card-pad, 17px);
-  background: #fff;
-  border: var(--card-border, 2px) solid #000;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--card-gap, 10px);
-  height: var(--card-h, 400px);
-}
-
-.generic-sticker-box--full {
-  min-height: 0;
 }
 
 .form-hint {
@@ -1408,9 +1296,8 @@ dialog h3 {
 
 /* Dark-friendly (inverted) QR rendering — off by default */
 body.qr-invert .matter-sticker-box,
-body.qr-invert .homekit-sticker,
-body.qr-invert .zwave-sticker,
-body.qr-invert .zwave-sticker--dsk-only,
+body.qr-invert .homekit-sticker-box,
+body.qr-invert .zwave-sticker-box,
 body.qr-invert .generic-sticker-box,
 body.qr-invert #quickview-image-wrap {
   filter: invert(1);
@@ -1896,8 +1783,8 @@ body.qr-invert #quickview-image-wrap {
 
 /* Selected code cards (grid) / rows (table) */
 .code-card.selected .matter-sticker-box,
-.code-card.selected .homekit-sticker,
-.code-card.selected .zwave-sticker,
+.code-card.selected .homekit-sticker-box,
+.code-card.selected .zwave-sticker-box,
 .code-card.selected .generic-sticker-box {
   outline: 3px solid var(--rm-accent);
   outline-offset: 2px;
