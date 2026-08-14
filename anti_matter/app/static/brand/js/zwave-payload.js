@@ -49,24 +49,58 @@
     return d.length >= 5 ? d.slice(0, 5) : "";
   }
 
-  function checksumForBody(body) {
-    const enc = new TextEncoder().encode(body);
-    return global.crypto.subtle.digest("SHA-1", enc).then((buf) => {
-      const b = new Uint8Array(buf);
-      return (b[0] << 8) | b[1];
-    });
+  // Pure-JS SHA-1 (SubtleCrypto's digest() is async-only, but the grid render
+  // path — parseQrDigits, called synchronously for every card — needs the
+  // checksum decision immediately to know whether to draw a QR <img> tag at
+  // all. Verified byte-for-byte against Python's hashlib.sha1 for the exact
+  // body strings this file hashes (checksumForBody below).
+  function sha1Sync(bytes) {
+    let h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476, h4 = 0xc3d2e1f0;
+    const ml = bytes.length * 8;
+    const withOne = new Uint8Array(bytes.length + 1);
+    withOne.set(bytes);
+    withOne[bytes.length] = 0x80;
+    let totalLen = withOne.length;
+    while (totalLen % 64 !== 56) totalLen++;
+    const padded = new Uint8Array(totalLen + 8);
+    padded.set(withOne);
+    const dv = new DataView(padded.buffer);
+    dv.setUint32(padded.length - 4, ml >>> 0, false);
+    dv.setUint32(padded.length - 8, Math.floor(ml / 0x100000000), false);
+    for (let chunkStart = 0; chunkStart < padded.length; chunkStart += 64) {
+      const w = new Uint32Array(80);
+      for (let i = 0; i < 16; i++) {
+        w[i] = (padded[chunkStart + i * 4] << 24) | (padded[chunkStart + i * 4 + 1] << 16) |
+          (padded[chunkStart + i * 4 + 2] << 8) | padded[chunkStart + i * 4 + 3];
+      }
+      for (let i = 16; i < 80; i++) {
+        const v = w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16];
+        w[i] = (v << 1) | (v >>> 31);
+      }
+      let a = h0, b = h1, c = h2, d = h3, e = h4;
+      for (let i = 0; i < 80; i++) {
+        let f, k;
+        if (i < 20) { f = (b & c) | (~b & d); k = 0x5a827999; }
+        else if (i < 40) { f = b ^ c ^ d; k = 0x6ed9eba1; }
+        else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8f1bbcdc; }
+        else { f = b ^ c ^ d; k = 0xca62c1d6; }
+        const temp = (((a << 5) | (a >>> 27)) + f + e + k + w[i]) >>> 0;
+        e = d; d = c; c = ((b << 30) | (b >>> 2)) >>> 0; b = a; a = temp;
+      }
+      h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0; h4 = (h4 + e) >>> 0;
+    }
+    const out = new Uint8Array(20);
+    const dv2 = new DataView(out.buffer);
+    [h0, h1, h2, h3, h4].forEach((h, i) => dv2.setUint32(i * 4, h, false));
+    return out;
   }
 
-  function checksumForBodySync(body) {
-    return null;
-  }
-
-  async function validateChecksum(qrDigits) {
+  function checksumValid(qrDigits) {
     if (qrDigits.length < 9) return false;
     const given = parseInt(qrDigits.slice(4, 9), 10);
     const body = qrDigits.slice(9);
-    if (!global.crypto?.subtle) return true;
-    const expected = await checksumForBody(body);
+    const digest = sha1Sync(new TextEncoder().encode(body));
+    const expected = (digest[0] << 8) | digest[1];
     return given === expected;
   }
 
@@ -125,6 +159,7 @@
     const version = parseInt(d.slice(2, 4), 10);
     const dskRaw = d.slice(12, 52);
     if (!parseDskGroups(dskRaw)) return null;
+    if (!checksumValid(d)) return null;
     const meta = parseTlvs(d.slice(52));
     return {
       qr: d,
@@ -221,6 +256,6 @@
     normalizeFields,
     codeProtocol,
     metaSummary,
-    validateChecksum,
+    checksumValid,
   };
 })(typeof window !== "undefined" ? window : globalThis);

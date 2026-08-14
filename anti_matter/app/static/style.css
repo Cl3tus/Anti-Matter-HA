@@ -702,6 +702,21 @@
   max-height: 70px;
 }
 
+/* Z-Wave's wordmark (zwave_logo.png) is wide/short (~2400x1065) — bumping
+   --logo-h-zwave directly would grow the box's fixed flex-reserved slot and
+   push total content past the 400px card height (the budget is exactly
+   balanced at 54px), getting silently clipped by the box's overflow:hidden.
+   Same bleed technique as .generic-sticker-logo instead: the flex slot
+   stays 54px for layout math, the image itself renders bigger and bleeds
+   into the surrounding padding/gap. .matter-sticker-brand/-logo are shared
+   with Matter's own logo, so this must stay scoped to Z-Wave's box only. */
+.zwave-sticker-box .matter-sticker-brand {
+  overflow: visible;
+}
+.zwave-sticker-box .matter-sticker-logo {
+  max-height: 70px;
+}
+
 .generic-sticker-standard {
   /* No bundled logo for this standard — the typed name carries the same
      visual weight a wordmark would, filling most of the fixed logo slot. */

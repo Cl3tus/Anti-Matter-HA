@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.54
+
+- Found the real reason Z-Wave's QR sometimes looked smaller than the
+  others: the client-side Z-Wave QR parser (`zwave-payload.js`) never
+  actually checked the payload's checksum — only an unused async stub
+  existed. The grid would decide a code "has a QR" and inject an `<img
+  src=qr.png>` for it, but the backend's Python parser *does* enforce the
+  checksum and would 400 on a checksum-mismatched payload, leaving the
+  browser's small native broken-image icon in place of a full-size QR.
+  Ported the backend's SHA-1 checksum check into a synchronous pure-JS
+  implementation (verified byte-for-byte against Python's `hashlib.sha1`)
+  and wired it into the same validation path the grid uses — a
+  checksum-invalid Z-Wave code now correctly falls back to the QR
+  placeholder box instead of a broken image.
+- Found the real reason Tuya's logo still looked small even after 1.0.53's
+  size bump: the bundled `tuya_logo.svg` has its glyph occupying only
+  ~34% of its own canvas height (huge baked-in transparent padding), so
+  enlarging the box around it didn't enlarge what's actually visible.
+  Tightened the SVG's own viewBox to the glyph's real bounding box — same
+  logo file, same box size, but the wordmark itself now fills it.
+- Z-Wave's wordmark also renders bigger (54px → bleeds up to 70px), using
+  the same overflow-bleed technique as Tuya's "Other" logos but scoped to
+  Z-Wave's box specifically, since its markup shares CSS classes with
+  Matter's own logo and bumping the shared height token directly would
+  have overflowed the card's fixed height budget and gotten clipped.
+
 ## 1.0.53
 
 - "Other" standard logos (Tuya, …) render bigger again (54px → visually up
