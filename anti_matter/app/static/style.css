@@ -469,15 +469,25 @@
 }
 
 .codes-grid {
-  /* Single source of truth for every protocol's card footprint — sized once
-     here so matter/homekit/zwave/generic never drift apart from each other. */
+  /* Single source of truth for every protocol's card FOOTPRINT (width,
+     height, padding, border, gap, QR/pin proportions) — sized once here so
+     matter/homekit/zwave/generic never drift apart from each other. Logo
+     height is deliberately NOT shared (see --logo-h-* below): resizing one
+     protocol's logo previously rippled into all the others through a single
+     --card-logo-h token, which is exactly the bug that prompted splitting
+     them apart. */
   --card-w: 300px;
   --card-h: 400px;
   --card-pad: 17px;
   --card-border: 2px;
   --card-gap: 10px;
-  --card-logo-h: 120px;
   --card-pin-h: 26px;
+  /* Independent per protocol, all starting equal (120px, matching the size
+     that was agreed to look right) — tune one without touching the others. */
+  --logo-h-matter: 120px;
+  --logo-h-homekit: 120px;
+  --logo-h-zwave: 120px;
+  --logo-h-other: 120px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--rm-space-4);
@@ -592,17 +602,25 @@
   width: 100%;
 }
 
+/* Each protocol maps the shared --card-logo-h used below to its OWN
+   independent --logo-h-* token (.codes-grid) — resizing Tuya's logo, say,
+   only ever touches --logo-h-other, never Z-Wave's or Matter's slot. */
+.matter-sticker-box { --card-logo-h: var(--logo-h-matter, 120px); }
+.homekit-sticker-box { --card-logo-h: var(--logo-h-homekit, 120px); }
+.zwave-sticker-box { --card-logo-h: var(--logo-h-zwave, 120px); }
+.generic-sticker-box { --card-logo-h: var(--logo-h-other, 120px); }
+
 .matter-sticker-box,
 .homekit-sticker-box,
 .zwave-sticker-box,
 .generic-sticker-box {
-  /* Every protocol shares one box treatment — logo/QR/pin slot sizing, box
-     footprint (300×400), padding and border, all driven by the same
-     .codes-grid tokens, so Matter/HomeKit/Z-Wave/Other are pixel-identical.
-     QR size is derived from the *height* budget (box height minus padding/
-     border/logo-slot/gaps/pin), not the width — so bumping --card-logo-h
-     (a bigger logo/standard-name slot) always still sums to exactly
-     --card-h, the QR just shrinks a little to make room. */
+  /* Every protocol shares one box treatment — box footprint (300×400),
+     padding, border and the QR/logo/pin *layout* formula, all driven by
+     the same .codes-grid tokens — only the logo height itself (set above)
+     is independent per protocol. QR size is derived from the *height*
+     budget (box height minus padding/border/logo-slot/gaps/pin), not the
+     width — so a taller logo slot always still sums to exactly --card-h,
+     the QR just shrinks a little to make room. */
   --matter-sticker-qr: calc(
     var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
     var(--card-logo-h, 120px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)

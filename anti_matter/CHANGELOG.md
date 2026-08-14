@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.51
+
+- Split the shared `--card-logo-h` token into four independent ones
+  (`--logo-h-matter`, `--logo-h-homekit`, `--logo-h-zwave`, `--logo-h-other`)
+  — all still 120px, so nothing changes visually (verified: 1.0.50's
+  style.css was already byte-identical to 1.0.48's), but resizing one
+  protocol's logo can no longer ripple into another's, which is exactly
+  what happened in 1.0.49 when "make Tuya bigger" also grew Z-Wave's.
+  Confirmed via a live instance: bumping only --logo-h-other leaves
+  Matter/HomeKit/Z-Wave's box, QR and logo slot completely untouched.
+
 ## 1.0.50
 
 - Reverted 1.0.49's logo-slot/text-size bump (145px → back to 120px, 3rem →
