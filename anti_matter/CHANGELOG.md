@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.55
+
+- QR codes are now exactly 300x300 on every card, no per-protocol
+  exception — the QR slot was already a shared width:100% +
+  aspect-ratio:1 formula for all four protocols, so the fix is one shared
+  token change: `--card-w` 300px → 338px (QR width = card width minus
+  padding/border, so 338 gives exactly 300) and `--card-h` 400px → 440px
+  to fit the taller QR without clipping the logo/pin. Verified via
+  headless-browser measurement: all four protocols render 300x300 at
+  default width, and the slot stays a perfect (smaller) square with no
+  clipping on a narrow 950px viewport too.
+
 ## 1.0.54
 
 - Found the real reason Z-Wave's QR sometimes looked smaller than the

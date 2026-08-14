@@ -476,8 +476,14 @@
      protocol's logo previously rippled into all the others through a single
      --card-logo-h token, which is exactly the bug that prompted splitting
      them apart. */
-  --card-w: 300px;
-  --card-h: 400px;
+  /* QR width = --card-w - 2*pad - 2*border (the box's content width, since
+     the QR slot is width:100% of it) — 338px gives an exact 300x300 QR,
+     the same formula for every protocol, so "300x300, no exception" falls
+     out of one shared token instead of a per-protocol override. --card-h
+     grows to match so logo+gaps+qr+pin still fit inside without clipping
+     against the box's overflow:hidden. */
+  --card-w: 338px;
+  --card-h: 440px;
   --card-pad: 17px;
   --card-border: 2px;
   --card-gap: 10px;
@@ -491,7 +497,7 @@
   --logo-h-zwave: 54px;
   --logo-h-other: 54px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--rm-space-4);
 }
 
