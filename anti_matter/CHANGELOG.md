@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.52
+
+- Found the actual cause of the card looking off vs. the reference sticker
+  look: the QR size was derived from the box's *height* budget, not its
+  width, so it ended up narrower than the card with visible side margins
+  instead of filling it edge-to-edge. QR now always fills the box's full
+  content width (262×262); the logo slot shrinks back to a compact 54px
+  (still its own independent token per protocol) to make room. Verified:
+  every protocol now renders QR flush with the card's sides, matching the
+  reference image.
+
 ## 1.0.51
 
 - Split the shared `--card-logo-h` token into four independent ones

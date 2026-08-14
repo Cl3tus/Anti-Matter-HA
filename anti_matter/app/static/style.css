@@ -482,12 +482,14 @@
   --card-border: 2px;
   --card-gap: 10px;
   --card-pin-h: 26px;
-  /* Independent per protocol, all starting equal (120px, matching the size
-     that was agreed to look right) — tune one without touching the others. */
-  --logo-h-matter: 120px;
-  --logo-h-homekit: 120px;
-  --logo-h-zwave: 120px;
-  --logo-h-other: 120px;
+  /* Independent per protocol — tune one without touching the others. 54px is
+     what's left over once the QR fills the box edge-to-edge (its actual
+     width, not a height-derived shrink) and the pin/gaps take their share —
+     see the QR formula below. */
+  --logo-h-matter: 54px;
+  --logo-h-homekit: 54px;
+  --logo-h-zwave: 54px;
+  --logo-h-other: 54px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--rm-space-4);
@@ -605,10 +607,10 @@
 /* Each protocol maps the shared --card-logo-h used below to its OWN
    independent --logo-h-* token (.codes-grid) — resizing Tuya's logo, say,
    only ever touches --logo-h-other, never Z-Wave's or Matter's slot. */
-.matter-sticker-box { --card-logo-h: var(--logo-h-matter, 120px); }
-.homekit-sticker-box { --card-logo-h: var(--logo-h-homekit, 120px); }
-.zwave-sticker-box { --card-logo-h: var(--logo-h-zwave, 120px); }
-.generic-sticker-box { --card-logo-h: var(--logo-h-other, 120px); }
+.matter-sticker-box { --card-logo-h: var(--logo-h-matter, 54px); }
+.homekit-sticker-box { --card-logo-h: var(--logo-h-homekit, 54px); }
+.zwave-sticker-box { --card-logo-h: var(--logo-h-zwave, 54px); }
+.generic-sticker-box { --card-logo-h: var(--logo-h-other, 54px); }
 
 .matter-sticker-box,
 .homekit-sticker-box,
@@ -617,13 +619,14 @@
   /* Every protocol shares one box treatment — box footprint (300×400),
      padding, border and the QR/logo/pin *layout* formula, all driven by
      the same .codes-grid tokens — only the logo height itself (set above)
-     is independent per protocol. QR size is derived from the *height*
-     budget (box height minus padding/border/logo-slot/gaps/pin), not the
-     width — so a taller logo slot always still sums to exactly --card-h,
-     the QR just shrinks a little to make room. */
+     is independent per protocol. QR fills the box's full content WIDTH
+     (edge-to-edge, like the reference sticker look) rather than being
+     derived from the height budget — a taller logo slot doesn't shrink the
+     QR, it just leaves less centering slack (or, if pushed too far, grows
+     the content past --card-h — keep logo-h small, it's meant to be a
+     compact wordmark, not a second QR-sized element). */
   --matter-sticker-qr: calc(
-    var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
-    var(--card-logo-h, 120px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
+    var(--card-w, 300px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px)
   );
   --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
