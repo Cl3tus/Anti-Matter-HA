@@ -167,7 +167,7 @@
         </div>`;
     }
 
-    const pinBlock = pin ? `<p class="matter-sticker-pin">${escapeHtml(pin)}</p>` : "";
+    const pinBlock = pin ? `<p class="matter-sticker-pin">PIN: ${escapeHtml(pin)}</p>` : "";
     return `
       <div class="zwave-sticker">
         <div class="zwave-sticker-box zwave-sticker-box--full">

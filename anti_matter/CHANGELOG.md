@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.49
+
+- Logo/standard-name slot grew again (120px → 145px) and the "Other" typed
+  standard text grew with it (2.1rem → 3rem) — QR shrinks a little to
+  compensate (verified: 171×171, still comfortably scannable) but every
+  card stays exactly 300×400.
+- Z-Wave's card now shows "PIN: 12345" instead of a bare "12345" — same
+  `.matter-sticker-pin` styling as before (font/size/weight unchanged),
+  just the label back in front of it.
+
 ## 1.0.48
 
 - HomeKit and Z-Wave grid cards are now composed the same way as Matter's —
