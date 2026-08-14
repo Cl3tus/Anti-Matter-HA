@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.50
+
+- Reverted 1.0.49's logo-slot/text-size bump (145px → back to 120px, 3rem →
+  back to 2.1rem) — the shared slot meant "make Tuya bigger" also grew
+  Z-Wave's wordmark, which is proportionally blockier than the other logos,
+  making it look oversized and throwing off the card's balance. Back to
+  1.0.48's proportions (QR 196×196 again); Z-Wave's "PIN: " label stays.
+
 ## 1.0.49
 
 - Logo/standard-name slot grew again (120px → 145px) and the "Other" typed

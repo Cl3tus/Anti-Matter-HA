@@ -476,7 +476,7 @@
   --card-pad: 17px;
   --card-border: 2px;
   --card-gap: 10px;
-  --card-logo-h: 145px;
+  --card-logo-h: 120px;
   --card-pin-h: 26px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -605,7 +605,7 @@
      --card-h, the QR just shrinks a little to make room. */
   --matter-sticker-qr: calc(
     var(--card-h, 400px) - 2 * var(--card-pad, 17px) - 2 * var(--card-border, 2px) -
-    var(--card-logo-h, 145px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
+    var(--card-logo-h, 120px) - 2 * var(--card-gap, 10px) - var(--card-pin-h, 26px)
   );
   --matter-sticker-outer-w: var(--card-w, 300px);
   box-sizing: border-box;
@@ -674,7 +674,7 @@
 .generic-sticker-standard {
   /* No bundled logo for this standard — the typed name carries the same
      visual weight a wordmark would, filling most of the fixed logo slot. */
-  font-size: 3rem;
+  font-size: 2.1rem;
   line-height: 1;
   font-weight: 800;
   letter-spacing: 0.02em;
