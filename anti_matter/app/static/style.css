@@ -1240,13 +1240,28 @@ dialog h3 {
 .scan-inline-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--rm-space-2);
-  margin: 0 0 var(--rm-space-2);
 }
 
-.connectivity-row {
-  margin: 0 0 var(--rm-space-3);
+/* Each protocol's field group in the New/Edit code dialog (scan row, manual
+   code, QR payload, decode section, ...) previously had zero gap between
+   its own children — only the outer dialog form's top-level flex `gap`
+   provided spacing, and that stops at this div's boundary. Matches
+   .form-section's internal gap for one consistent rhythm throughout the
+   dialog. Specificity note: .hidden (single class) is defined earlier in
+   this file — a plain .code-type-fields{display:flex} here would come
+   later in source order and incorrectly win over it, so the hidden
+   variant needs the extra specificity below to always take precedence. */
+.code-type-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rm-space-3);
 }
+.code-type-fields.hidden {
+  display: none;
+}
+
 .connectivity-row .form-field-label {
   display: block;
   margin-bottom: var(--rm-space-1);
@@ -1263,6 +1278,13 @@ dialog h3 {
   align-items: center;
   gap: 0.3rem;
   font-weight: 400;
+}
+/* Same explicit size as .switch-row's "In use" checkbox — without it, this
+   one falls back to the browser's unstyled native checkbox, which renders
+   visibly bigger than the sized one right above it. */
+.connectivity-options input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .table-actions-col {
@@ -1546,12 +1568,26 @@ body.qr-invert #quickview-image-wrap {
   font-weight: 600;
 }
 
-/* Collapsible "Device details" section inside the code modal */
+/* Collapsible "Device details" section inside the code modal — its own
+   fields (vendor/product/.../in-use/connectivity/notes, or the HA-link's
+   device field/hint/button) had zero gap between them: nothing but the
+   outer dialog form's top-level flex `gap` provided any spacing, and that
+   only applies between the form's DIRECT children, not these nested ones.
+   Flex+gap here gives every stacked field the same breathing room as the
+   rest of the dialog, instead of sitting flush against its neighbors. */
 .form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rm-space-3);
   border: 1px solid var(--rm-border);
   border-radius: var(--rm-radius-sm);
   padding: 0 var(--rm-space-3);
-  margin: var(--rm-space-1) 0;
+  /* Bigger top margin (not just the bottom-margin collapse from the section
+     above) so "space before this section" and "space after it" read as the
+     same amount — previously both were --rm-space-1, but the section above
+     it visually read tighter since its own last-child bottom margin ate
+     into the collapsed gap. */
+  margin: var(--rm-space-3) 0;
   background: var(--rm-surface);
 }
 .form-section > summary {
@@ -1571,7 +1607,15 @@ body.qr-invert #quickview-image-wrap {
   transition: transform 0.15s ease;
 }
 .form-section[open] > summary::before { transform: rotate(90deg); }
-.form-section > label:last-child { margin-bottom: var(--rm-space-3); }
+/* flex `gap` only adds space BETWEEN children — the last one still sits
+   flush against the section's own bottom edge (padding is 0 vertically)
+   without its own margin. Covers whichever element type actually ends up
+   last (a plain label most of the time, but the HA-link section's last
+   child is the hint paragraph or the "Open in Home Assistant" link,
+   depending on what's currently shown). */
+.form-section > *:last-child {
+  margin-bottom: var(--rm-space-3);
+}
 
 /* Card action buttons: follow the active theme (were hard-coded light) */
 .matter-label-wrap .card-icon-actions,

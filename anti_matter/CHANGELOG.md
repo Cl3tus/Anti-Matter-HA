@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.58
+
+- New/Edit code dialog spacing overhaul:
+  - "Scan QR" and "Upload photo" now sit side by side instead of stacked —
+    "Upload photo" was actually a sibling of the row div, not inside it.
+  - Every protocol's field group (scan row, manual code, QR payload, decode
+    section, ...) and every `.form-section` (Decode payload, Device
+    details, Home Assistant link) previously had zero gap between their own
+    stacked fields — only the dialog's own top-level spacing existed, which
+    stopped at each section's boundary. Both now use the same flex `gap` as
+    the rest of the dialog, so decode-payload-to-device-details and
+    manual-code-to-QR-payload (and everything else) read as one consistent
+    rhythm instead of somewhat tight/uneven pockets.
+  - The "In use" checkbox was explicitly sized (1.1rem) but the
+    Connectivity checkboxes right below it weren't, falling back to an
+    unstyled (visibly bigger) native checkbox. Matched.
+  - Home Assistant link section (device field, suggested-device hint, "Open
+    device in Home Assistant" button) now gets the same breathing room as
+    everywhere else, including proper spacing below the button before the
+    section's border.
+
 ## 1.0.57
 
 - Fixed the "In use" filter dropdown rendering with huge oversized radio
