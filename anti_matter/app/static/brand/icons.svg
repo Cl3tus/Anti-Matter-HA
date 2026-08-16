@@ -54,4 +54,23 @@
   <symbol id="rm-icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/>
   </symbol>
+  <!-- Geometric cross, not a text glyph — a "+" character's centering within
+       its own font metrics varies by font/OS rendering (reported off-center
+       on both axes); this is symmetric by construction (12,12 is the exact
+       center of both strokes in the 24x24 viewBox), so it can't drift. -->
+  <symbol id="rm-icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+  <!-- Hand-drawn, not the mdi-qrcode icon-font glyph — reported off-center
+       within its badge on both axes (font-glyph line-box centering can
+       drift by rendering engine/OS in ways a geometric shape can't). Finder
+       squares placed at identical 2px inset from all three used corners
+       (2..9 span) so the shape is as symmetric as a real QR code's
+       three-corner-only pattern allows. -->
+  <symbol id="rm-icon-qr" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M2 2h9v9H2V2zm2 2v5h5V4H4zm1 1h3v3H5V5z"/>
+    <path d="M13 2h9v9h-9V2zm2 2v5h5V4h-5zm1 1h3v3h-3V5z"/>
+    <path d="M2 13h9v9H2v-9zm2 2v5h5v-5H4zm1 1h3v3H5v-3z"/>
+    <path d="M13 13h3v3h-3v-3zM17 13h2v2h-2v-2zM20 13h2v2h-2v-2zM13 17h2v2h-2v-2zM17 17h2v2h-2v-2zM13 20h2v2h-2v-2zM20 17h2v5h-2v-5z"/>
+  </symbol>
 </svg>

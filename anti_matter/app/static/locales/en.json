@@ -8,7 +8,7 @@
   "action.scan_code": "Scan",
   "action.zoom_out": "Zoom out",
   "action.zoom_in": "Zoom in",
-  "action.zoom_cycle": "Click to cycle zoom level",
+  "action.zoom_cycle": "Choose a zoom level",
   "action.zoom_reset": "Reset zoom to 100%",
   "action.share": "Share",
   "action.edit": "Edit",

@@ -30,13 +30,13 @@
         <input type="file" id="import-file" accept="application/json,.json" hidden />
       </label>
       <button type="button" id="btn-qr-invert" class="rm-btn rm-btn-secondary" data-i18n-tip="action.qr_invert" aria-pressed="false">
-        <i id="btn-qr-invert-icon" class="mdi mdi-qrcode" aria-hidden="true"></i> <span data-i18n="action.qr_invert_label">Invert</span>
+        <span id="btn-qr-invert-icon" aria-hidden="true"><svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-qr"/></svg></span> <span data-i18n="action.qr_invert_label">Invert</span>
       </button>
       <button type="button" id="btn-backup" class="rm-btn rm-btn-secondary" data-i18n-tip="backup.title">
         <span aria-hidden="true">💾</span> <span data-i18n="action.backup_menu">Backup</span>
       </button>
       <button type="button" id="btn-trash" class="rm-btn rm-btn-secondary" data-i18n-tip="trash.title">
-        <img src="./static/assets/recyclebin.png" alt="" width="18" height="18" /> <span data-i18n="trash.title">Trash</span>
+        <img id="btn-trash-icon" src="./static/assets/recyclebin.png" alt="" width="18" height="18" /> <span data-i18n="trash.title">Trash</span>
       </button>
       <button type="button" id="btn-scan-code" class="rm-btn rm-btn-primary" data-i18n-tip="scan.title">
         <span aria-hidden="true">⛶</span> <span data-i18n="action.scan_code">Scan</span>
@@ -72,7 +72,9 @@
           <h2 data-i18n="categories.title">Categories</h2>
           <i class="mdi mdi-chevron-down sidebar-toggle-icon" aria-hidden="true"></i>
         </button>
-        <button type="button" id="btn-add-category" class="btn icon" data-i18n-tip="categories.add_title">+</button>
+        <button type="button" id="btn-add-category" class="btn icon" data-i18n-tip="categories.add_title">
+          <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-plus"/></svg>
+        </button>
       </div>
       <div id="sidebar-body" class="sidebar-body">
         <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All categories</button>
@@ -152,10 +154,17 @@
     </section>
     <footer class="statusbar">
       <div id="statusbar-zoom" class="statusbar-zoom">
-        <button type="button" id="btn-zoom-out" class="rm-btn rm-btn-secondary btn-zoom" data-i18n-tip="action.zoom_out" aria-label="Zoom out">−</button>
-        <button type="button" id="btn-zoom-pct" class="rm-btn rm-btn-secondary btn-zoom-pct" data-i18n-tip="action.zoom_cycle">100%</button>
-        <button type="button" id="btn-zoom-in" class="rm-btn rm-btn-secondary btn-zoom" data-i18n-tip="action.zoom_in" aria-label="Zoom in">+</button>
-        <button type="button" id="btn-zoom-reset" class="rm-btn rm-btn-secondary btn-zoom" data-i18n-tip="action.zoom_reset" aria-label="Reset zoom">
+        <button type="button" id="btn-zoom-out" class="zoom-btn" data-i18n-tip="action.zoom_out" aria-label="Zoom out">
+          <i class="mdi mdi-minus" aria-hidden="true"></i>
+        </button>
+        <div class="filter-dropdown zoom-dropdown">
+          <button type="button" id="btn-zoom-pct" class="zoom-pct filter-dropdown-toggle" data-i18n-tip="action.zoom_cycle">100%</button>
+          <div id="zoom-pct-panel" class="filter-dropdown-panel zoom-pct-panel open-up hidden"></div>
+        </div>
+        <button type="button" id="btn-zoom-in" class="zoom-btn" data-i18n-tip="action.zoom_in" aria-label="Zoom in">
+          <i class="mdi mdi-plus" aria-hidden="true"></i>
+        </button>
+        <button type="button" id="btn-zoom-reset" class="zoom-btn" data-i18n-tip="action.zoom_reset" aria-label="Reset zoom">
           <i class="mdi mdi-refresh" aria-hidden="true"></i>
         </button>
       </div>
@@ -189,7 +198,9 @@
             <button type="button" id="code-category-toggle" class="filter-dropdown-toggle" data-i18n="code.category_none">No category</button>
             <div id="code-category-checks" class="filter-dropdown-panel hidden"></div>
           </div>
-          <button type="button" id="btn-add-category-inline" class="btn icon" data-i18n-tip="categories.add_title">+</button>
+          <button type="button" id="btn-add-category-inline" class="btn icon" data-i18n-tip="categories.add_title">
+            <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-plus"/></svg>
+          </button>
         </div>
       </label>
       <div id="code-fields-matter">

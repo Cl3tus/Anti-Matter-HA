@@ -77,6 +77,11 @@ async function loadVault() {
   selectedCategoryIds.clear();
   lastSelectedCategoryIndex = null;
   render();
+  // Every delete/restore/purge path already ends by calling loadVault() (and
+  // deleting a code/category is exactly what moves it into the trash) — this
+  // is the one place to keep the header Trash icon's empty/full state
+  // current, rather than repeating the fetch at each individual call site.
+  updateTrashIcon(await api("/trash"));
 }
 
 // Category names are stored exactly as typed (matching is already case-insensitive,
@@ -117,10 +122,25 @@ const dynamicFilters = {
 
 const PROTOCOL_FILTER_OPTIONS = [
   ["matter", "code.protocol_matter"],
-  ["homekit", "code.protocol_homekit"],
   ["zwave", "code.protocol_zwave"],
+  ["zigbee", "code.protocol_zigbee"],
+  ["homekit", "code.protocol_homekit"],
+  ["tuya", "code.protocol_tuya"],
   ["other", "code.protocol_other"],
 ];
+
+// Same "other" + custom_standard preset used by the New/Edit dropdown
+// (OTHER_STANDARD_PRESETS/standardPresetKeyFor, defined further down) — a
+// Zigbee/Tuya code is stored as protocol "other" underneath, so the filter
+// needs the same reverse-mapping to tell them apart from real "Other" codes.
+function filterProtocolFor(code) {
+  const proto = window.AntiMatterVaultCards?.codeProtocol?.(code) || "matter";
+  if (proto === "other") {
+    const key = standardPresetKeyFor(code.custom_standard);
+    if (key) return key;
+  }
+  return proto;
+}
 const protocolFilter = new Set();
 
 // In-use is exclusive (All/Yes/No), unlike every other filter — a code can't be both
@@ -284,8 +304,7 @@ function filteredCodes() {
     });
   }
   if (protocolFilter.size) {
-    const Cards = window.AntiMatterVaultCards;
-    codes = codes.filter((c) => protocolFilter.has(Cards?.codeProtocol?.(c) || "matter"));
+    codes = codes.filter((c) => protocolFilter.has(filterProtocolFor(c)));
   }
   for (const [, field] of DYNAMIC_FILTER_FIELDS) {
     const selected = dynamicFilters[field];
@@ -394,8 +413,22 @@ function trashListItemHtml(item, kind) {
   </li>`;
 }
 
+// Swap the header Trash button's icon between the full/empty bin artwork —
+// called whenever trash contents are known to have changed (loadTrash() is
+// the single fetch point for /trash, called both when the dialog opens and
+// after every restore/purge/delete, plus once at boot for the initial icon).
+function updateTrashIcon(trash) {
+  const img = document.getElementById("btn-trash-icon");
+  if (!img) return;
+  const isEmpty = trash.categories.length === 0 && trash.codes.length === 0;
+  img.src = isEmpty
+    ? "./static/assets/recyclebin_empty.png"
+    : "./static/assets/recyclebin.png";
+}
+
 async function loadTrash() {
   const trash = await api("/trash");
+  updateTrashIcon(trash);
   const catSection = document.getElementById("trash-categories-section");
   const codeSection = document.getElementById("trash-codes-section");
   const empty = document.getElementById("trash-empty");
@@ -506,6 +539,9 @@ function applyZoom() {
   if (grid) grid.style.zoom = `${zoomPct}%`;
   const label = document.getElementById("btn-zoom-pct");
   if (label) label.textContent = `${zoomPct}%`;
+  document.querySelectorAll(".zoom-pct-option").forEach((el) => {
+    el.classList.toggle("active", Number(el.dataset.pct) === zoomPct);
+  });
   try { localStorage.setItem(ZOOM_KEY, String(zoomPct)); } catch (e) { /* ignore */ }
 }
 
@@ -516,16 +552,33 @@ function stepZoom(delta) {
   applyZoom();
 }
 
-function cycleZoom() {
-  const idx = ZOOM_PRESETS.indexOf(zoomPct);
-  const nextIdx = idx < 0 ? 5 : (idx + 1) % ZOOM_PRESETS.length;
-  zoomPct = ZOOM_PRESETS[nextIdx];
+function setZoom(pct) {
+  if (!ZOOM_PRESETS.includes(pct)) return;
+  zoomPct = pct;
   applyZoom();
 }
 
 function resetZoom() {
   zoomPct = 100;
   applyZoom();
+}
+
+// Panel content is static (the preset list never changes) — built once, not
+// re-rendered on every filter/data refresh like the actual filter panels.
+function buildZoomPctPanel() {
+  const panel = document.getElementById("zoom-pct-panel");
+  if (!panel) return;
+  panel.innerHTML = ZOOM_PRESETS.slice()
+    .reverse()
+    .map((pct) => `<button type="button" class="zoom-pct-option" data-pct="${pct}">${pct}%</button>`)
+    .join("");
+  panel.querySelectorAll(".zoom-pct-option").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setZoom(Number(btn.dataset.pct));
+      panel.classList.add("hidden");
+    });
+  });
 }
 
 const CONN_LABELS = {
@@ -1790,8 +1843,8 @@ function bindUi() {
   document.getElementById("btn-table-view").onclick = toggleViewMode;
   document.getElementById("btn-zoom-out").onclick = () => stepZoom(-1);
   document.getElementById("btn-zoom-in").onclick = () => stepZoom(1);
-  document.getElementById("btn-zoom-pct").onclick = cycleZoom;
   document.getElementById("btn-zoom-reset").onclick = resetZoom;
+  buildZoomPctPanel();
   applyZoom();
   document.querySelectorAll("#codes-table thead th[data-sort-key]").forEach((th) => {
     th.addEventListener("click", () => {

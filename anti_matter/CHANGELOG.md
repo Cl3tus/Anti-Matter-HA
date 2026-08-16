@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.57
+
+- Fixed the "In use" filter dropdown rendering with huge oversized radio
+  circles and its All/Yes/No labels word-wrapped into a tiny sliver: the
+  checkbox filter panels had an explicit 1rem sizing rule, but the radio
+  panel (only "In use" uses radios) never got the same rule and fell back
+  to an unstyled, oversized native widget. Added the matching rule.
+- Protocol filter dropdown now also offers Zigbee/Tuya as their own options
+  (matching the New/Edit dropdown) — reverse-maps a code's "other" +
+  custom_standard back to its Zigbee/Tuya pseudo-value, same as the edit
+  dialog does.
+- Replaced the categories "+" button and the Invert button's QR icon with
+  hand-drawn SVGs instead of a text glyph / icon-font glyph — both were
+  reported off-center on both axes despite repeated measurement showing
+  near-zero offset in testing here, which points to a font/glyph-metric
+  rendering difference between environments rather than a CSS bug. An SVG's
+  centering is geometric (exact coordinates flex-centered in a fixed box),
+  not font-baseline-dependent, so it can't drift the same way.
+- Redesigned the zoom control: smaller and plainer (no more chunky pill
+  buttons), the percentage is now plain clickable text rather than a
+  button, and clicking it opens an upward dropdown listing all 11 presets
+  (50%-150%) instead of cycling one step per click — reuses the same
+  dropdown mechanism as the toolbar's filter dropdowns, just anchored to
+  open above instead of below since it lives in the bottom status bar.
+- Added an empty/full recycle-bin icon swap for the header Trash button —
+  swaps automatically whenever the trash's contents change (delete,
+  restore, purge), not just when the dialog is opened.
+
 ## 1.0.56
 
 - Found the real reason HomeKit's QR looked bigger than the others (measured:

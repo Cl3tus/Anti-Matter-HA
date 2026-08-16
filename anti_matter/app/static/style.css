@@ -428,7 +428,8 @@
 .filter-dropdown-panel label:hover {
   background: var(--rm-accent-soft);
 }
-.filter-dropdown-panel input[type="checkbox"] {
+.filter-dropdown-panel input[type="checkbox"],
+.filter-dropdown-panel input[type="radio"] {
   width: 1rem;
   height: 1rem;
   margin: 0;
@@ -1288,15 +1289,16 @@ dialog h3 {
   width: 32px;
   height: 32px;
   padding: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1;
   border-radius: var(--rm-radius-sm);
   background: var(--rm-accent-soft);
   color: var(--rm-accent);
   border: 1px solid var(--rm-border);
   cursor: pointer;
   font-family: inherit;
+}
+.btn.icon .rm-icon {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 /* Legacy .btn aliases */
@@ -1345,12 +1347,20 @@ dialog h3 {
    — a fixed background behind the glyph keeps it visible regardless of the app's
    own light/dark theme (a plain black icon would vanish on a dark button in dark mode). */
 #btn-qr-invert-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #111;
   background: #fff;
   border-radius: var(--rm-radius-sm);
-  padding: 1px 3px;
-  line-height: 1;
+  padding: 2px 4px;
   transition: color 0.15s ease, background-color 0.15s ease;
+}
+#btn-qr-invert-icon .rm-icon {
+  width: 1rem;
+  height: 1rem;
+  stroke: none;
+  fill: currentColor;
 }
 #btn-qr-invert.is-active #btn-qr-invert-icon {
   color: #fff;
@@ -1449,25 +1459,91 @@ body.qr-invert #quickview-image-wrap {
 }
 
 /* Card-grid zoom cluster — hidden in table view, .codes-grid has no concept
-   of zoom there. */
+   of zoom there. Deliberately plainer than the .rm-btn pill buttons used
+   elsewhere in the toolbar — this sits in the compact status bar, so it
+   reads as a small inline control rather than another set of chunky buttons. */
 .statusbar-zoom {
   display: flex;
   align-items: center;
-  gap: var(--rm-space-1);
+  gap: 2px;
 }
 .statusbar-zoom.hidden {
   display: none;
 }
-.btn-zoom {
-  width: 24px;
-  min-width: 24px;
-  font-weight: 700;
-  font-size: 1rem;
-  line-height: 1;
+.zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--rm-radius-sm);
+  background: transparent;
+  color: var(--rm-text-muted);
+  cursor: pointer;
 }
-.btn-zoom-pct {
-  min-width: 3.6rem;
+.zoom-btn:hover {
+  background: var(--rm-accent-soft);
+  color: var(--rm-accent);
+}
+.zoom-btn .mdi {
+  font-size: 0.95rem;
+}
+
+/* The % readout is plain text, not a button — only its dropdown affordance
+   (subtle underline on hover) hints it's clickable. */
+.zoom-pct {
+  border: none;
+  background: none;
+  padding: 2px 4px;
+  min-width: 2.6rem;
+  font-family: inherit;
+  font-size: var(--rm-text-xs);
   font-variant-numeric: tabular-nums;
+  color: var(--rm-text-muted);
+  cursor: pointer;
+  text-decoration: none;
+}
+.zoom-pct:hover {
+  color: var(--rm-text);
+  text-decoration: underline;
+}
+.zoom-dropdown {
+  position: relative;
+}
+
+/* Opens upward — this control lives in the bottom status bar, so the default
+   .filter-dropdown-panel (which drops below its toggle) would render mostly
+   off-screen. */
+.zoom-pct-panel.open-up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.zoom-pct-panel {
+  min-width: 4.5rem;
+  padding: 0.25rem;
+}
+.zoom-pct-option {
+  display: block;
+  width: 100%;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  background: none;
+  border-radius: var(--rm-radius-sm);
+  font-family: inherit;
+  font-size: var(--rm-text-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--rm-text);
+  cursor: pointer;
+}
+.zoom-pct-option:hover {
+  background: var(--rm-accent-soft);
+}
+.zoom-pct-option.active {
+  color: var(--rm-accent);
+  font-weight: 600;
 }
 
 /* Collapsible "Device details" section inside the code modal */
