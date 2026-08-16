@@ -194,8 +194,8 @@
   // wordmark — falls back to the plain text label if the asset is missing (or
   // not one of these), so adding a new standard's logo later is a drop-in.
   const KNOWN_OTHER_STANDARDS = [
-    { test: /zigbee/i, file: "zigbee_logo.png" },
-    { test: /tuya/i, file: "tuya_logo.svg" },
+    { key: "zigbee", test: /zigbee/i, file: "zigbee_logo.png" },
+    { key: "tuya", test: /tuya/i, file: "tuya_logo.svg" },
   ];
 
   // Shared with the quickview overlay (app.js) so both places agree on which
@@ -206,10 +206,15 @@
   }
 
   function standardBrandHtml(standard, opts) {
-    const file = otherStandardLogoFile(standard);
+    const known = KNOWN_OTHER_STANDARDS.find((s) => s.test.test(standard || ""));
+    const file = known?.file;
     if (!file) return "";
     const assetsPrefix = opts.assetsPrefix || "/assets";
-    return `<div class="generic-sticker-brand" aria-label="${opts.escapeHtml(standard)}">
+    // Modifier class (standard-tuya/standard-zigbee/…) lets style.css size each
+    // bundled "Other" logo independently — they don't all need the same
+    // treatment (Tuya's SVG has ~66% baked-in padding and needs to bleed
+    // bigger, Zigbee's PNG has none and looks oversized with the same bleed).
+    return `<div class="generic-sticker-brand standard-${known.key}" aria-label="${opts.escapeHtml(standard)}">
       <img class="generic-sticker-logo" src="${assetsPrefix}/${file}" alt=""
            decoding="async" onerror="this.style.display='none'" />
     </div>`;

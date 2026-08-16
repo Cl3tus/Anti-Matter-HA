@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.0.56
+
+- Found the real reason HomeKit's QR looked bigger than the others (measured:
+  6px too much top and bottom): its generator used `border=0` (no quiet
+  zone) while Matter/Z-Wave use `border=4`. Compared actual PNG output
+  pixel-for-pixel — Matter/Z-Wave crop to a clean 4px white margin on all
+  sides, HomeKit's modules touched all four edges with zero margin. Fixed
+  by matching `border=4`; verified the cropped output now has the identical
+  4px margin as Matter across several payload shapes.
+- Removed the custom hover-tooltip bubbles ([data-tip]::after/::before) —
+  aria-label/data-tip stay for accessibility, just no visible popup on hover
+  anymore.
+- Fixed the header's vertical divider (between "New" and Dark/EN) sitting
+  visibly closer to "New" than to "Dark" — `.header-lang-theme` had its own
+  `margin-left` stacked on top of the flex `gap` already provided by
+  `.header-actions`, making the right-side gap bigger than the left.
+  Removed the redundant margin; both gaps measure identical now.
+- Added a Matter equivalent of Z-Wave's "find your device" link in the
+  decode dialog — links to the Matter Distributed Compliance Ledger web UI.
+- Zigbee and Tuya are now first-class options in the New/Edit code protocol
+  dropdown (Matter, Z-Wave, Zigbee, HomeKit, Tuya, Other) — they still store
+  as the existing generic "other" code type with `custom_standard` locked to
+  "Zigbee"/"Tuya" under the hood (reuses the existing free-text-standard
+  storage/QR/dedup pipeline instead of adding two new protocols end to end),
+  but now get their own dropdown entry, auto-hide the redundant "Standard"
+  text field, and (for Zigbee) auto-check the Zigbee connectivity box like
+  Z-Wave's preset already did.
+- Zigbee's bundled logo no longer uses Tuya's "bleed bigger" treatment —
+  Tuya's SVG needed it to compensate for ~66% baked-in transparent padding,
+  but Zigbee's PNG has none and was stretching to nearly the card's full
+  width at the same treatment. Zigbee now renders at the shared slot's
+  normal size.
+- Added a zoom control for the card grid (table view unaffected): −/+ buttons
+  step through 50%–150% in 10% increments, the percentage label itself
+  cycles through the same presets on click, and a reset button jumps back to
+  100%. Lives in the bottom status bar's left side; hidden in table view;
+  remembered across reloads.
+
 ## 1.0.55
 
 - QR codes are now exactly 300x300 on every card, no per-protocol

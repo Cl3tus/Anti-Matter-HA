@@ -490,6 +490,44 @@ function updateStatusbar(shown) {
 const VIEW_MODE_KEY = "antimatter-view-mode";
 let viewMode = localStorage.getItem(VIEW_MODE_KEY) === "table" ? "table" : "grid";
 
+// Card-grid zoom (grid mode only — table view has no concept of it). Uses the
+// CSS `zoom` property (not transform:scale) so the grid's own auto-fill
+// column reflow still happens correctly at the scaled size, not just a
+// visual stretch/shrink of a fixed layout.
+const ZOOM_KEY = "antimatter-grid-zoom";
+const ZOOM_PRESETS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
+let zoomPct = (() => {
+  const stored = parseInt(localStorage.getItem(ZOOM_KEY), 10);
+  return ZOOM_PRESETS.includes(stored) ? stored : 100;
+})();
+
+function applyZoom() {
+  const grid = document.getElementById("codes-grid");
+  if (grid) grid.style.zoom = `${zoomPct}%`;
+  const label = document.getElementById("btn-zoom-pct");
+  if (label) label.textContent = `${zoomPct}%`;
+  try { localStorage.setItem(ZOOM_KEY, String(zoomPct)); } catch (e) { /* ignore */ }
+}
+
+function stepZoom(delta) {
+  const idx = ZOOM_PRESETS.indexOf(zoomPct);
+  const nextIdx = Math.min(ZOOM_PRESETS.length - 1, Math.max(0, (idx < 0 ? 5 : idx) + delta));
+  zoomPct = ZOOM_PRESETS[nextIdx];
+  applyZoom();
+}
+
+function cycleZoom() {
+  const idx = ZOOM_PRESETS.indexOf(zoomPct);
+  const nextIdx = idx < 0 ? 5 : (idx + 1) % ZOOM_PRESETS.length;
+  zoomPct = ZOOM_PRESETS[nextIdx];
+  applyZoom();
+}
+
+function resetZoom() {
+  zoomPct = 100;
+  applyZoom();
+}
+
 const CONN_LABELS = {
   conn_wifi: "WiFi",
   conn_matter: "Thread",
@@ -585,6 +623,7 @@ function renderTable() {
 function applyViewMode() {
   document.getElementById("codes-grid").classList.toggle("hidden", viewMode !== "grid");
   document.getElementById("codes-table-view").classList.toggle("hidden", viewMode !== "table");
+  document.getElementById("statusbar-zoom")?.classList.toggle("hidden", viewMode !== "grid");
   const icon = document.getElementById("btn-table-view-icon");
   if (icon) icon.className = viewMode === "grid" ? "mdi mdi-table" : "mdi mdi-qrcode";
   const btn = document.getElementById("btn-table-view");
@@ -1138,12 +1177,29 @@ function syncHomeKitDerived() {
   hint.classList.toggle("hidden", parts.length === 0);
 }
 
+// "zigbee"/"tuya" are UI-only presets — there's no such code_type in the data
+// model, they're just the generic "other" type with custom_standard locked to
+// a known value (reuses the existing free-text-standard machinery instead of
+// adding two new first-class protocols through the backend/dedup/QR pipeline).
+const OTHER_STANDARD_PRESETS = { zigbee: "Zigbee", tuya: "Tuya" };
+
 function syncCodeTypeFields() {
   const type = document.getElementById("code-type")?.value || "matter";
+  const preset = OTHER_STANDARD_PRESETS[type];
+  const isOtherLike = type === "other" || Boolean(preset);
   document.getElementById("code-fields-matter")?.classList.toggle("hidden", type !== "matter");
   document.getElementById("code-fields-homekit")?.classList.toggle("hidden", type !== "homekit");
   document.getElementById("code-fields-zwave")?.classList.toggle("hidden", type !== "zwave");
-  document.getElementById("code-fields-other")?.classList.toggle("hidden", type !== "other");
+  document.getElementById("code-fields-other")?.classList.toggle("hidden", !isOtherLike);
+  // The Standard field is redundant once the dropdown itself says Zigbee/Tuya —
+  // hide it and keep it in sync, but only while the user hasn't hand-edited it
+  // to something else (e.g. picked Tuya, then typed a different sub-variant).
+  const standardRow = document.getElementById("code-other-standard-row");
+  const standardInput = document.getElementById("code-other-standard");
+  if (standardRow) standardRow.classList.toggle("hidden", Boolean(preset));
+  if (preset && standardInput && standardInput.dataset.userEdited !== "1") {
+    standardInput.value = preset;
+  }
 }
 
 // Only wired to the protocol dropdown's own onchange (not called when a dialog opens
@@ -1154,8 +1210,12 @@ function syncCodeTypeFields() {
 // just be wrong as often as right.
 function onCodeTypeChanged() {
   syncCodeTypeFields();
-  if (document.getElementById("code-type")?.value === "zwave") {
+  const type = document.getElementById("code-type")?.value;
+  if (type === "zwave") {
     const cb = document.getElementById("code-conn-zwave");
+    if (cb) cb.checked = true;
+  } else if (type === "zigbee") {
+    const cb = document.getElementById("code-conn-zigbee");
     if (cb) cb.checked = true;
   }
 }
@@ -1169,13 +1229,25 @@ function trimVal(id) {
   return (document.getElementById(id)?.value || "").trim();
 }
 
+// codeProtocol() only knows the 4 real code_type values — "other" covers both
+// a genuinely custom standard and a Zigbee/Tuya preset underneath. Reverse-map
+// a preset's exact stored name back to its dropdown pseudo-value so editing an
+// existing Zigbee/Tuya code re-selects the same option instead of "Other".
+function standardPresetKeyFor(standard) {
+  const s = (standard || "").trim().toLowerCase();
+  return Object.keys(OTHER_STANDARD_PRESETS).find(
+    (key) => OTHER_STANDARD_PRESETS[key].toLowerCase() === s
+  );
+}
+
 function openCodeDialog(code = null) {
   const dlg = document.getElementById("code-dialog");
   const proto =
     code && window.AntiMatterVaultCards
       ? window.AntiMatterVaultCards.codeProtocol(code)
       : "matter";
-  document.getElementById("code-type").value = code?.code_type || proto;
+  const presetKey = proto === "other" ? standardPresetKeyFor(code?.custom_standard) : null;
+  document.getElementById("code-type").value = presetKey || code?.code_type || proto;
   syncCodeTypeFields();
   document.getElementById("code-dialog-title").textContent = code
     ? t("code.dialog_edit")
@@ -1219,6 +1291,8 @@ function openCodeDialog(code = null) {
   if (zwaveDecode) zwaveDecode.open = false;
   renderZwaveDecode();
   setVal("code-other-standard", proto === "other" ? code?.custom_standard : "");
+  document.getElementById("code-other-standard").dataset.userEdited =
+    proto === "other" && code?.custom_standard && !presetKey ? "1" : "";
   setVal("code-other-manual", proto === "other" ? code?.manual_code : "");
   setVal("code-other-qr", proto === "other" ? code?.qr_payload : "");
   setVal("code-notes", code?.notes);
@@ -1425,12 +1499,14 @@ async function saveCode(e) {
       qr_payload: n.qr_payload,
       zwave_pin: n.zwave_pin,
     };
-  } else if (codeType === "other") {
+  } else if (codeType === "other" || OTHER_STANDARD_PRESETS[codeType]) {
+    // Zigbee/Tuya presets store as plain code_type "other" underneath — the
+    // dropdown's pseudo-value never reaches the backend, only its standard name.
     body = {
       ...baseBody("other"),
       manual_code: trimVal("code-other-manual"),
       qr_payload: trimVal("code-other-qr"),
-      custom_standard: trimVal("code-other-standard"),
+      custom_standard: OTHER_STANDARD_PRESETS[codeType] || trimVal("code-other-standard"),
     };
   } else {
     body = {
@@ -1695,6 +1771,7 @@ function bindUi() {
   document.getElementById("code-zwave-dsk")?.addEventListener("input", renderZwaveDecode);
   document.getElementById("code-device-vendor")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-vendor"));
   document.getElementById("code-device-product")?.addEventListener("input", () => markDeviceFieldUserEdited("code-device-product"));
+  document.getElementById("code-other-standard")?.addEventListener("input", () => markDeviceFieldUserEdited("code-other-standard"));
   document.getElementById("code-ha-device-name")?.addEventListener("input", resolveHaDeviceInput);
   document.getElementById("code-ha-device-name")?.addEventListener("change", resolveHaDeviceInput);
   document.getElementById("btn-add-code").onclick = () => openCodeDialog();
@@ -1711,6 +1788,11 @@ function bindUi() {
   document.getElementById("search").oninput = renderCodes;
 
   document.getElementById("btn-table-view").onclick = toggleViewMode;
+  document.getElementById("btn-zoom-out").onclick = () => stepZoom(-1);
+  document.getElementById("btn-zoom-in").onclick = () => stepZoom(1);
+  document.getElementById("btn-zoom-pct").onclick = cycleZoom;
+  document.getElementById("btn-zoom-reset").onclick = resetZoom;
+  applyZoom();
   document.querySelectorAll("#codes-table thead th[data-sort-key]").forEach((th) => {
     th.addEventListener("click", () => {
       const key = th.dataset.sortKey;

@@ -693,20 +693,28 @@
   box-sizing: border-box;
 }
 
-/* "Other" standard marks (Tuya, …) are often compact square badges rather
-   than wide wordmarks — at the shared 54px slot height they'd render tiny
-   (object-fit:contain binds to the smaller dimension, and a square mark in
-   a wide slot is always height-bound). Let this one specifically render
-   bigger than its own layout slot — overflow:visible plus a taller
-   max-height lets it bleed into the padding/gap above and below without
-   nudging the QR or box height, which stay governed by the slot's normal
-   54px for flex-layout purposes. */
-.generic-sticker-brand {
+/* Tuya's bundled SVG is a compact wordmark with ~66% baked-in transparent
+   padding — at the shared 54px slot height it renders tiny (object-fit:
+   contain binds to the smaller dimension, and its real glyph is far shorter
+   than its own canvas). Let it render bigger than its own layout slot —
+   overflow:visible plus a taller max-height lets it bleed into the
+   padding/gap above and below without nudging the QR or box height, which
+   stay governed by the slot's normal 54px for flex-layout purposes. Scoped
+   to Tuya specifically (.standard-tuya, set by vault-cards.js) — other
+   "Other" standards don't share the same padding problem and look
+   oversized with the same bleed (see .standard-zigbee below). */
+.standard-tuya {
   overflow: visible;
 }
-.generic-sticker-logo {
+.standard-tuya .generic-sticker-logo {
   max-height: 70px;
 }
+
+/* Zigbee's bundled PNG has no baked-in padding (content already fills its
+   canvas) and is a very wide wordmark (~4:1) — at Tuya's 70px bleed height
+   it stretches to nearly the card's full width and dominates the card.
+   No override needed here: without the bleed, it just falls back to the
+   shared slot's normal 54px (base .generic-sticker-logo max-height:100%). */
 
 /* Z-Wave's wordmark (zwave_logo.png) is wide/short (~2400x1065) — bumping
    --logo-h-zwave directly would grow the box's fixed flex-reserved slot and
@@ -1416,11 +1424,12 @@ body.qr-invert #quickview-image-wrap {
    v1.0.5 UI
    ============================================================ */
 
-/* Bottom status bar — everything (count + grid/table toggle) lives on the right */
+/* Bottom status bar — zoom controls (grid mode only) on the left, code count
+   + grid/table toggle on the right. */
 .statusbar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: var(--rm-space-3);
   height: 34px;
   padding: 0 var(--rm-space-4);
@@ -1432,6 +1441,33 @@ body.qr-invert #quickview-image-wrap {
 .statusbar .rm-btn {
   height: 24px;
   padding: 0 var(--rm-space-2);
+}
+.statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-3);
+}
+
+/* Card-grid zoom cluster — hidden in table view, .codes-grid has no concept
+   of zoom there. */
+.statusbar-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--rm-space-1);
+}
+.statusbar-zoom.hidden {
+  display: none;
+}
+.btn-zoom {
+  width: 24px;
+  min-width: 24px;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1;
+}
+.btn-zoom-pct {
+  min-width: 3.6rem;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Collapsible "Device details" section inside the code modal */
@@ -1513,53 +1549,9 @@ body.qr-invert #quickview-image-wrap {
   height: 1.1rem;
 }
 
-/* Custom app-styled tooltip bubble, replaces native title on icon-only buttons */
-[data-tip] {
-  position: relative;
-}
-[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background: #16181d;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.12s ease, transform 0.12s ease;
-  z-index: 60;
-}
-[data-tip]::before {
-  content: "";
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  border: 5px solid transparent;
-  border-top-color: #16181d;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.12s ease, transform 0.12s ease;
-  z-index: 60;
-}
-[data-tip]:hover::after,
-[data-tip]:focus-visible::after,
-[data-tip]:hover::before,
-[data-tip]:focus-visible::before {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
+/* data-tip/aria-label are still set by i18n.js for accessibility (screen
+   readers), but the visual hover-bubble tooltip itself was removed — no
+   [data-tip]::after/::before rule left to show it. */
 
 /* ============================================================
    v1.0.8 UI
@@ -1727,10 +1719,14 @@ body.qr-invert #quickview-image-wrap {
   margin-left: auto;
 }
 .header-lang-theme {
+  /* No margin-left here — .header-actions already puts a uniform flex `gap`
+     between every child (New button / .header-sep / this group). An extra
+     margin-left on top of that gap only pushed the SEPARATOR's right-side
+     space to be bigger than its left-side space, so the divider visually
+     sat closer to "New" than to "Dark". */
   display: flex;
   align-items: center;
   gap: var(--rm-space-2);
-  margin-left: var(--rm-space-2);
 }
 
 /* Flags (copied sizing from E-Ink Studio) + yin-yang theme glyph */

@@ -151,10 +151,20 @@
       <p id="empty-state" class="empty hidden" data-i18n="empty.no_codes">No codes yet. Click New or Scan to get started.</p>
     </section>
     <footer class="statusbar">
-      <span id="statusbar-count"></span>
-      <button type="button" id="btn-table-view" class="rm-btn rm-btn-secondary" data-i18n-tip="table.tooltip">
-        <i id="btn-table-view-icon" class="mdi mdi-table" aria-hidden="true"></i>
-      </button>
+      <div id="statusbar-zoom" class="statusbar-zoom">
+        <button type="button" id="btn-zoom-out" class="rm-btn rm-btn-secondary btn-zoom" data-i18n-tip="action.zoom_out" aria-label="Zoom out">−</button>
+        <button type="button" id="btn-zoom-pct" class="rm-btn rm-btn-secondary btn-zoom-pct" data-i18n-tip="action.zoom_cycle">100%</button>
+        <button type="button" id="btn-zoom-in" class="rm-btn rm-btn-secondary btn-zoom" data-i18n-tip="action.zoom_in" aria-label="Zoom in">+</button>
+        <button type="button" id="btn-zoom-reset" class="rm-btn rm-btn-secondary btn-zoom" data-i18n-tip="action.zoom_reset" aria-label="Reset zoom">
+          <i class="mdi mdi-refresh" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="statusbar-right">
+        <span id="statusbar-count"></span>
+        <button type="button" id="btn-table-view" class="rm-btn rm-btn-secondary" data-i18n-tip="table.tooltip">
+          <i id="btn-table-view-icon" class="mdi mdi-table" aria-hidden="true"></i>
+        </button>
+      </div>
     </footer>
   </main>
 
@@ -165,8 +175,10 @@
       <label><span data-i18n="code.protocol">Protocol</span>
         <select id="code-type">
           <option value="matter" data-i18n="code.protocol_matter">Matter</option>
-          <option value="homekit" data-i18n="code.protocol_homekit">HomeKit</option>
           <option value="zwave" data-i18n="code.protocol_zwave">Z-Wave</option>
+          <option value="zigbee" data-i18n="code.protocol_zigbee">Zigbee</option>
+          <option value="homekit" data-i18n="code.protocol_homekit">HomeKit</option>
+          <option value="tuya" data-i18n="code.protocol_tuya">Tuya</option>
           <option value="other" data-i18n="code.protocol_other">Other</option>
         </select>
       </label>
@@ -248,7 +260,7 @@
         <input type="file" id="scan-file-other" accept="image/*" hidden />
       </label>
       <p id="scan-file-other-error" class="form-hint scan-photo-error hidden"></p>
-      <label><span data-i18n="code.other_standard">Standard</span>
+      <label id="code-other-standard-row"><span data-i18n="code.other_standard">Standard</span>
         <input type="text" id="code-other-standard" data-i18n-placeholder="code.other_standard_placeholder" placeholder="e.g. Tuya, Zigbee 3.0" />
       </label>
       <label><span data-i18n="code.other_manual">Manual code</span>
@@ -438,6 +450,8 @@
     <h3 data-i18n="code.decode_mt">Decode Matter payload</h3>
     <div id="mt-decode-dialog-result" class="mt-decode-result"></div>
     <div class="dialog-actions">
+      <a id="mt-decode-device-db-link" href="https://webui.dcl.csa-iot.org/" target="_blank" rel="noreferrer" class="form-hint dialog-actions-link" data-i18n="code.matter_device_db">Find your device in the Matter Distributed Compliance Ledger</a>
+      <span class="dialog-actions-spacer"></span>
       <button type="button" class="rm-btn rm-btn-primary" data-close data-i18n="action.close">Close</button>
     </div>
   </dialog>

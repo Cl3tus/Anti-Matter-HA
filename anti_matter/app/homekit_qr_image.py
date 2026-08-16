@@ -16,7 +16,12 @@ def qr_png_bytes(payload: str, size: int = DEFAULT_QR_SIZE) -> bytes:
         version=2,
         error_correction=qrcode.constants.ERROR_CORRECT_Q,
         box_size=8,
-        border=0,
+        # border=0 left modules with zero quiet zone before cropping, and since
+        # this payload's outermost modules are dark right at the edge, the crop
+        # found nothing to trim: the QR came out full-bleed (0px margin) instead
+        # of the same 4px margin Matter/Z-Wave get from their border=4 — visibly
+        # bigger/edge-to-edge once scaled into the same card frame.
+        border=4,
     )
     qr.add_data(payload)
     qr.make(fit=True)
