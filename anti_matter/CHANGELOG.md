@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.63
+
+- Header badge now shows a separate "display version" (currently v2.0.0)
+  from the real add-on version (config.yaml/APP_VERSION, still 1.0.63) —
+  for a batch of screenshots being taken for the add-on listing. The two
+  will be reconciled before those screenshots actually get published.
+
 ## 1.0.62
 
 - Found the real cause of the "black box" in decode popup dialogs: they
