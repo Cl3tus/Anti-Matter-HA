@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.61
+
+- The New/Edit code dialog's inline "Decode Matter/Z-Wave payload" sections
+  now also show the "find your device" reference link (Matter Distributed
+  Compliance Ledger / Z-Wave JS device database) — previously only the
+  standalone decode popup dialogs had it. Always opens in a new tab.
+  Removed the now-duplicate copy from the standalone dialogs' own action
+  row, since it comes from the same shared render function both places use.
+- "Open device in Home Assistant" already opened in a new tab (shipped
+  that way since v1.0.41) — no change needed there, just a stale code
+  comment cleaned up that still described the old target=_top approach.
+
 ## 1.0.60
 
 - Dialog scrollbars now sit close to the dialog's right edge instead of

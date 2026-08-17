@@ -756,11 +756,18 @@ async function renderDecodeInto(box, parsed, opts = {}) {
     [t("code.decode_flow"), parsed.flow != null ? t(`code.decode_flow_${parsed.flow}`) || parsed.flow : "—"],
   ];
   let linksHtml = "";
+  // Static reference link, unconditional (not gated on a DCL lookup match) —
+  // same one the standalone decode dialog shows, so the New/Edit dialog's
+  // inline decode section offers the same way to look a device up by hand.
+  const deviceDbLinkHtml =
+    `<p class="form-hint"><a href="https://webui.dcl.csa-iot.org/" target="_blank" rel="noreferrer" class="dialog-actions-link">` +
+    `${escapeHtml(t("code.matter_device_db"))}</a></p>`;
   const paint = () =>
     `<table class="mt-decode-table">` +
     rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
     `</table>` +
-    linksHtml;
+    linksHtml +
+    deviceDbLinkHtml;
   box.innerHTML = paint();
 
   if (parsed.vid == null) return;
@@ -936,11 +943,17 @@ async function renderZwaveDecodeInto(box, parsed, opts = {}) {
   }
   rows.push([t("code.decode_zwave_pin"), parsed.pin || "—"]);
 
+  // Static reference link, unconditional (not gated on a device-db lookup
+  // match) — same one the standalone decode dialog shows.
+  const deviceDbLinkHtml =
+    `<p class="form-hint"><a href="https://devices.zwave-js.io/" target="_blank" rel="noreferrer" class="dialog-actions-link">` +
+    `${escapeHtml(t("code.zwave_device_db"))}</a></p>`;
   const paint = () =>
     headHtml +
     `<table class="mt-decode-table">` +
     rows.map(([k, v]) => `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(String(v))}</td></tr>`).join("") +
-    `</table>`;
+    `</table>` +
+    deviceDbLinkHtml;
   box.innerHTML = paint();
 
   if (meta.manufacturerId == null || meta.productType == null || meta.productId == null) return;
@@ -1369,8 +1382,9 @@ function openCodeDialog(code = null) {
 
 // The hidden #code-ha-device holds the device_id; the visible #code-ha-device-name
 // is a searchable datalist input. "Open device in Home Assistant" is a straight
-// substitution — no server round-trip (target=_top navigates the HA frontend, not
-// just the ingress iframe this add-on runs in).
+// substitution — no server round-trip. target="_blank" (HTML, not here) opens it
+// in a new tab rather than navigating the ingress iframe's own top-level frame —
+// see [[ha-device-page-link-constraint]] memory, shipped this way since v1.0.41.
 function updateHaDeviceLink() {
   const link = document.getElementById("btn-open-ha-device");
   const deviceId = document.getElementById("code-ha-device")?.value;
