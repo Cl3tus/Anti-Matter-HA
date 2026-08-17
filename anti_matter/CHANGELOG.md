@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.60
+
+- Dialog scrollbars now sit close to the dialog's right edge instead of
+  matching the same inset as the left/top/bottom padding — the dialog's
+  own right padding shrank, and the scrolling form gets a compensating
+  padding-right so the actual content still keeps its original margin,
+  just inside the scrollbar rather than outside it.
+
 ## 1.0.59
 
 - Found the real cause of collapsed sections (Decode payload, Device

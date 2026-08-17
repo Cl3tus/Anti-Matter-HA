@@ -981,7 +981,13 @@ dialog {
   background: var(--rm-surface-glass);
   backdrop-filter: blur(var(--rm-blur-strong));
   color: var(--rm-text);
-  padding: var(--rm-space-5);
+  /* Right padding is intentionally smaller than the other sides — the
+     scrolling <form> below sits in this padding box, so its own scrollbar
+     (when the content is tall enough to need one) renders close to the
+     dialog's edge instead of matching the left/top/bottom inset. The
+     form's own padding-right restores the content's visual right margin
+     to the same amount as the other sides, just inside the scrollbar. */
+  padding: var(--rm-space-5) var(--rm-space-2) var(--rm-space-5) var(--rm-space-5);
   max-width: 480px;
   max-height: 85vh;
   width: calc(100% - 2rem);
@@ -1023,6 +1029,9 @@ dialog form {
      to 'auto' on both axes per spec — any accidental wide child (long unbroken
      text in a table cell, etc.) then draws a horizontal scrollbar. Force it off. */
   overflow-x: hidden;
+  /* Restores the content's right margin to match the other 3 sides — see
+     the comment on `dialog`'s own (intentionally smaller) right padding. */
+  padding-right: calc(var(--rm-space-5) - var(--rm-space-2));
 }
 
 dialog label {
