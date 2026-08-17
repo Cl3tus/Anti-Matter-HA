@@ -283,6 +283,10 @@
       </div>
       <details id="code-details" class="form-section">
         <summary data-i18n="code.device_details">Device details</summary>
+        <label class="switch-row">
+          <input type="checkbox" id="code-in-use" />
+          <span data-i18n="code.in_use">In use</span>
+        </label>
         <label><span data-i18n="code.device_vendor">Device vendor</span>
           <input type="text" id="code-device-vendor" data-i18n-placeholder="code.device_vendor_placeholder" placeholder="e.g. IKEA" />
         </label>
@@ -299,10 +303,6 @@
         <label><span data-i18n="code.area">Area</span>
           <input type="text" id="code-area" list="area-options" data-i18n-placeholder="code.area_placeholder" placeholder="e.g. Living room" />
           <datalist id="area-options"></datalist>
-        </label>
-        <label class="switch-row">
-          <input type="checkbox" id="code-in-use" />
-          <span data-i18n="code.in_use">In use</span>
         </label>
         <div class="connectivity-row">
           <span class="form-field-label" data-i18n="code.connectivity">Connectivity</span>

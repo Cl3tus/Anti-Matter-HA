@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.59
+
+- Found the real cause of collapsed sections (Decode payload, Device
+  details, Home Assistant link) showing extra whitespace below their
+  summary text: v1.0.58 made `.form-section` (a `<details>` element) a flex
+  container to add gaps between its fields, but Chromium's native "hide
+  everything but `<summary>` while closed" mechanism breaks under
+  `display:flex` on `<details>` itself — the closed content kept being
+  laid out (just outside the visible border), silently adding height.
+  Confirmed by toggling display:flex→block on a closed section: height
+  dropped from 60px to the correct ~48px. Replaced flex+gap with margins
+  on the elements after `<summary>` instead, which don't have this problem.
+- "Scan QR" and "Upload photo" now render the same height — a `<button>`'s
+  default line-height ("normal", tighter for form controls) differed from
+  a `<label>`'s (~1.6x font-size) despite identical padding/font-size.
+- "In use" moved above "Device vendor" in the (now-fixed) Device details
+  section.
+- Home Assistant link section: fixed two related spacing bugs — no gap
+  below the device field when nothing else was shown, and no gap between
+  the field and the "Open device in Home Assistant" button when it was
+  visible but the suggestion hint wasn't. Both traced back to spacing
+  being anchored to whichever DOM child happened to be *last*, without
+  accounting for which of the (mutually exclusive) hint/button was
+  actually visible — replaced with unconditional spacing after `<summary>`.
+- Form-section boxes (Decode payload, Device details, HA link) now sit
+  slightly inset from the dialog's own edges instead of spanning it
+  edge-to-edge — the dialog's own width is unchanged.
+
 ## 1.0.58
 
 - New/Edit code dialog spacing overhaul:

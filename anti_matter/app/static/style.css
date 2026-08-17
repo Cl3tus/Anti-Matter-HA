@@ -1243,6 +1243,15 @@ dialog h3 {
   align-items: center;
   gap: var(--rm-space-2);
 }
+/* "Scan QR" (<button>) and "Upload photo" (<label>) share .rm-btn's padding
+   and font-size, but a <button>'s UA-stylesheet line-height ("normal",
+   which resolves tighter for form controls) differs from a <label>'s
+   (~1.6x font-size) — same padding + different line-height meant different
+   rendered heights despite looking like identical buttons. Forcing both to
+   the same explicit line-height makes them come out the same height. */
+.scan-inline-row .rm-btn {
+  line-height: 1;
+}
 
 /* Each protocol's field group in the New/Edit code dialog (scan row, manual
    code, QR payload, decode section, ...) previously had zero gap between
@@ -1568,27 +1577,32 @@ body.qr-invert #quickview-image-wrap {
   font-weight: 600;
 }
 
-/* Collapsible "Device details" section inside the code modal — its own
-   fields (vendor/product/.../in-use/connectivity/notes, or the HA-link's
-   device field/hint/button) had zero gap between them: nothing but the
-   outer dialog form's top-level flex `gap` provided any spacing, and that
-   only applies between the form's DIRECT children, not these nested ones.
-   Flex+gap here gives every stacked field the same breathing room as the
-   rest of the dialog, instead of sitting flush against its neighbors. */
+/* Collapsible "Device details" section inside the code modal.
+   IMPORTANT: never set display:flex/grid on this element (a <details>) —
+   Chromium's native "hide everything but <summary> while closed" mechanism
+   breaks under it: the closed content keeps being laid out (just outside
+   the visible border box), which is exactly what showed up as mysterious
+   extra whitespace below a closed section's summary. Confirmed by
+   toggling display:flex -> block on a closed section here: height dropped
+   from 60px back to the correct ~48px. Spacing between the (block-flow)
+   children is done with margins instead, which don't have this problem. */
 .form-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--rm-space-3);
   border: 1px solid var(--rm-border);
   border-radius: var(--rm-radius-sm);
   padding: 0 var(--rm-space-3);
-  /* Bigger top margin (not just the bottom-margin collapse from the section
-     above) so "space before this section" and "space after it" read as the
-     same amount — previously both were --rm-space-1, but the section above
-     it visually read tighter since its own last-child bottom margin ate
-     into the collapsed gap. */
-  margin: var(--rm-space-3) 0;
+  /* Small horizontal inset too — the dialog itself stays the same width,
+     but these bordered boxes (Decode payload, Device details, HA link)
+     read a little tidier sitting slightly inside the dialog's own edges
+     rather than spanning it edge-to-edge like a plain input does. */
+  margin: var(--rm-space-3) var(--rm-space-1);
   background: var(--rm-surface);
+}
+/* Bottom padding only while open — a permanent one would apply even while
+   closed (nothing but <summary> is visible then), which is exactly the
+   "too much whitespace under the collapsed text" bug this whole section
+   exists to avoid. */
+.form-section[open] {
+  padding-bottom: var(--rm-space-3);
 }
 .form-section > summary {
   cursor: pointer;
@@ -1607,14 +1621,16 @@ body.qr-invert #quickview-image-wrap {
   transition: transform 0.15s ease;
 }
 .form-section[open] > summary::before { transform: rotate(90deg); }
-/* flex `gap` only adds space BETWEEN children — the last one still sits
-   flush against the section's own bottom edge (padding is 0 vertically)
-   without its own margin. Covers whichever element type actually ends up
-   last (a plain label most of the time, but the HA-link section's last
-   child is the hint paragraph or the "Open in Home Assistant" link,
-   depending on what's currently shown). */
-.form-section > *:last-child {
-  margin-bottom: var(--rm-space-3);
+/* Every element after <summary> gets the same top margin — a uniform gap
+   between each field (and between summary and the first one) without
+   relying on flex/gap on the <details> itself. The open-only
+   padding-bottom above (not a :last-child margin) means the bottom gap is
+   correct regardless of which field ends up visually last — a :last-child
+   rule doesn't know or care whether that DOM-last element is actually
+   hidden (e.g. the HA-link section's hint/button, only one of which is
+   normally shown at a time), so it could target the wrong element. */
+.form-section > summary ~ * {
+  margin-top: var(--rm-space-3);
 }
 
 /* Card action buttons: follow the active theme (were hard-coded light) */
