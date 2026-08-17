@@ -978,8 +978,12 @@
 dialog {
   border: 1px solid var(--rm-border-silver);
   border-radius: var(--rm-radius-lg);
-  background: var(--rm-surface-glass);
-  backdrop-filter: blur(var(--rm-blur-strong));
+  /* Solid, not the semi-transparent --rm-surface-glass + backdrop-filter
+     blur this used to have — whatever sits behind the dialog (a card's
+     mostly-black QR image, say) showed through empty areas of the dialog
+     as a stark solid-black patch, most visible wherever the dialog's own
+     content was sparse. */
+  background: var(--rm-surface-elevated);
   color: var(--rm-text);
   /* Right padding is intentionally smaller than the other sides — the
      scrolling <form> below sits in this padding box, so its own scrollbar
@@ -1167,7 +1171,7 @@ dialog h3 {
   /* Stays pinned at the bottom of the modal while the fields above scroll. */
   position: sticky;
   bottom: 0;
-  background: var(--rm-surface-glass);
+  background: var(--rm-surface-elevated);
   padding-top: var(--rm-space-2);
   flex: none;
 }
@@ -1479,7 +1483,6 @@ body.qr-invert #quickview-image-wrap {
 .statusbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--rm-space-3);
   height: 34px;
   padding: 0 var(--rm-space-4);
@@ -1496,6 +1499,13 @@ body.qr-invert #quickview-image-wrap {
   display: flex;
   align-items: center;
   gap: var(--rm-space-3);
+  /* Not justify-content:space-between on the parent — with only one visible
+     child (table view hides .statusbar-zoom entirely), space-between has
+     nothing to distribute against and the remaining child sits at the
+     flex-start (left) instead of staying on the right. margin-left:auto
+     pushes this one to the right regardless of whether its sibling is
+     present. */
+  margin-left: auto;
 }
 
 /* Card-grid zoom cluster — hidden in table view, .codes-grid has no concept

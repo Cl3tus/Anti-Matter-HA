@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.62
+
+- Found the real cause of the "black box" in decode popup dialogs: they
+  used a semi-transparent glass background + backdrop-filter blur, and
+  whatever sat behind the dialog (a card's mostly-black QR image) showed
+  through empty areas as a stark black patch. Switched dialogs to a solid
+  background.
+- Ctrl+scroll wheel (and trackpad pinch, which browsers report the same
+  way) now zooms the card grid, same as the +/- buttons.
+- Fixed the status bar's right-hand group (code count + table-view toggle)
+  sitting at the far left in table view instead of the right — it relied
+  on `justify-content: space-between` against the zoom controls, which
+  are hidden entirely in table view; with only one visible flex child,
+  space-between has nothing to distribute against. Switched to
+  `margin-left: auto` on the right-hand group, which stays correct
+  regardless of whether the zoom controls are present.
+
 ## 1.0.61
 
 - The New/Edit code dialog's inline "Decode Matter/Z-Wave payload" sections

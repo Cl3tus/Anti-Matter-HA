@@ -1860,6 +1860,19 @@ function bindUi() {
   document.getElementById("btn-zoom-reset").onclick = resetZoom;
   buildZoomPctPanel();
   applyZoom();
+  // Ctrl+wheel (and trackpad pinch, which browsers report as a ctrlKey wheel
+  // event) zooms the grid instead of the page — { passive: false } is
+  // required for preventDefault() to actually stop the browser's own
+  // page-zoom on the same gesture.
+  document.getElementById("codes-grid")?.addEventListener(
+    "wheel",
+    (e) => {
+      if (!e.ctrlKey || viewMode !== "grid") return;
+      e.preventDefault();
+      stepZoom(e.deltaY < 0 ? 1 : -1);
+    },
+    { passive: false }
+  );
   document.querySelectorAll("#codes-table thead th[data-sort-key]").forEach((th) => {
     th.addEventListener("click", () => {
       const key = th.dataset.sortKey;
