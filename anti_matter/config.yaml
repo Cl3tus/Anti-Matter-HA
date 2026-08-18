@@ -1,7 +1,7 @@
 name: Anti-Matter
-version: "1.0.65"
+version: "1.0.66"
 slug: anti_matter
-description: Store, organize and back up your Matter, HomeKit and Z-Wave pairing codes and QR payloads.
+description: Store, organize and back up your Matter, Z-Wave, Zigbee, HomeKit and Tuya pairing codes and QR payloads.
 url: https://github.com/Cl3tus/Anti-Matter-HA
 arch:
   - aarch64

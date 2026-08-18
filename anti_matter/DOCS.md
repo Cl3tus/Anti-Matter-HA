@@ -19,15 +19,17 @@ a scannable QR card so you can re-commission a device without hunting for the or
 
 ## Adding a code
 
-- **+ Code** opens a modal. Pick the protocol (Matter / HomeKit / Z-Wave / **Other**), fill in
-  the name and any details (vendor, product, area, description, category, notes), and paste
-  the manual code and/or QR payload. The inline **+** next to Category creates a new one
-  without leaving the form.
-- **Other** is for standards Anti-Matter doesn't natively parse (Tuya, Wyze, Zigbee 3.0, …) —
+- **+ Code** opens a modal. Pick the protocol — **Matter, Z-Wave, Zigbee, HomeKit, Tuya or
+  Other** — fill in the name and any details (vendor, product, area, description, category,
+  notes), and paste the manual code and/or QR payload. The inline **+** next to Category
+  creates a new one without leaving the form.
+- Zigbee and Tuya are their own dropdown entries with a branded card, same as
+  Matter/HomeKit/Z-Wave — under the hood they're stored the same way as **Other** (protocol
+  "other" plus a standard name), so editing one still shows the same fields.
+- **Other** is for standards Anti-Matter doesn't natively parse (Wyze, Zigbee 3.0, …) —
   type a free-text **Standard** name plus a manual code and/or QR payload, stored and shown
-  as-is with no validation or decoding. Typing a recognized name (currently "Zigbee" or
-  "Tuya") shows that standard's own logo on the card, same as Matter/HomeKit/Z-Wave; any other
-  name is shown as plain text instead.
+  as-is with no validation or decoding. Typing a recognized name ("Zigbee" or "Tuya") shows
+  that standard's own logo on the card; any other name is shown as plain text instead.
 - **Scan** (top bar, or inside the form) opens the camera. Point it at the QR on the device
   or its manual, with pinch-to-zoom and tap-to-focus where supported. On phones the rear
   camera is used. If the browser can't use the camera, use **Or upload a photo**. A QR that
@@ -63,6 +65,9 @@ If HA doesn't return areas, the field simply behaves as plain text.
   selection in the sidebar — click several categories to filter by all of them at once.
 - The grid/table toggle (bottom-right, next to the code count) swaps the QR card grid for
   a filterable, spreadsheet-style table (your filters stay active).
+- In grid view, the bottom-left status bar has a zoom control: −/+ buttons, a percentage
+  that opens a 50–150% preset dropdown when clicked, and a reset-to-100% button. Ctrl+scroll
+  (or a trackpad pinch) also zooms.
 - A double-click on a code (grid card or table row) opens the quick-view popup; a right-click
   opens it for editing instead. Matter/Z-Wave decode is reached via the small decode icon
   shown on hover, or by double-clicking the QR image inside the quick-view popup itself.

@@ -4,16 +4,17 @@
 
 # Anti-Matter
 
-[![GitHub release](https://img.shields.io/badge/version-1.0.41-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![GitHub release](https://img.shields.io/badge/version-1.0.66-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Project Stage](https://img.shields.io/badge/project%20stage-experimental-yellow.svg)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)](https://github.com/Cl3tus/Anti-Matter-HA/commits/main)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Cl3tus/Anti-Matter-HA/blob/main/LICENSE)
 
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green.svg)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green.svg)
+![Supports arm64](https://img.shields.io/badge/arm64-yes-green.svg)
 
-Store, organize and back up your **Matter**, **HomeKit** and **Z-Wave** pairing codes
-and QR payloads — right inside Home Assistant.
+Store, organize and back up your **Matter**, **Z-Wave**, **Zigbee**, **HomeKit** and
+**Tuya** pairing codes and QR payloads — right inside Home Assistant.
 
 Anti-Matter keeps a tidy vault of every commissioning code you own, renders a clean
 scannable QR card for each one, and stores everything in a local folder that is reachable
@@ -24,9 +25,12 @@ over SAMBA and included in Home Assistant's own backups. No cloud, no account.
 ## Features
 
 - **+ Code** — add a code manually or by scanning, with an inline **+** to create a new
-  category without leaving the form. Matter, HomeKit and Z-Wave are natively decoded; pick
-  **Other** for anything else (Tuya, Wyze, Zigbee 3.0, …) — a free-text standard name plus a
-  manual code/QR payload, stored as-is. Zigbee and Tuya get their own logo on the card.
+  category without leaving the form. Pick from **Matter, Z-Wave, Zigbee, HomeKit, Tuya or
+  Other**; Matter/HomeKit/Z-Wave are natively decoded, Zigbee/Tuya get their own branded
+  card. **Other** covers anything else (Wyze, Zigbee 3.0, …) — a free-text standard name
+  plus a manual code/QR payload, stored as-is.
+- **Zoom** — the card grid has its own zoom control (bottom-left status bar): −/+ buttons,
+  a percentage that opens a 50–150% preset dropdown, a reset button, or Ctrl+scroll/pinch.
 - **Scan** — webcam QR scanning (works on mobile, with pinch-to-zoom and tap-to-focus
   where the device supports it), with a photo-upload fallback. Fully offline: the scanner
   fallback library is bundled, nothing is loaded from a CDN. An unrecognized QR is captured
@@ -77,6 +81,15 @@ backups. Downloaded label/QR images are also saved under Home Assistant's Media 
 | Language | Auto / Nederlands / English | UI language. Auto follows HA, then the browser. |
 | Theme | Auto / Light / Dark | Auto follows HA's light/dark setting. |
 | Backups to keep | 1–100 | How many timestamped backup copies to retain. |
+
+## Screenshots
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cl3tus/Anti-Matter-HA/main/docs/screenshots/en/anti-matter-dark-light-tear-en.png" alt="Anti-Matter — Dark and Light theme" width="90%">
+</p>
+
+More in the [wiki's Screenshots page](https://github.com/Cl3tus/Anti-Matter-HA/wiki/Screenshots)
+(English + Dutch).
 
 ## Documentation
 

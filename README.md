@@ -4,13 +4,14 @@
 
 # Anti-Matter
 
-[![GitHub release](https://img.shields.io/badge/version-1.0.41-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
+[![GitHub release](https://img.shields.io/badge/version-1.0.66-blue)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Project Stage](https://img.shields.io/badge/project%20stage-experimental-yellow.svg)](https://github.com/Cl3tus/Anti-Matter-HA)
 [![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen.svg)](https://github.com/Cl3tus/Anti-Matter-HA/commits/main)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Cl3tus/Anti-Matter-HA/blob/main/LICENSE)
 
 ![Supports aarch64](https://img.shields.io/badge/aarch64-yes-green.svg)
 ![Supports amd64](https://img.shields.io/badge/amd64-yes-green.svg)
+![Supports arm64](https://img.shields.io/badge/arm64-yes-green.svg)
 
 ## About
 
@@ -37,11 +38,12 @@ The add-on itself lives in [`anti_matter/`](anti_matter/) — see its
 
 ## Highlights
 
-- Add, scan and organize Matter / HomeKit / Z-Wave pairing codes with branded, scannable
-  QR cards, or switch to a filterable spreadsheet-style table view.
-- **Other** covers anything else (Tuya, Wyze, Zigbee 3.0, …) — free-text standard name plus
-  a manual code/QR payload, no parsing required; a scanned QR that matches none of the known
-  protocols lands here automatically instead of being rejected.
+- Add, scan and organize Matter / Z-Wave / Zigbee / HomeKit / Tuya pairing codes with
+  branded, scannable QR cards (each protocol's own logo), or switch to a filterable
+  spreadsheet-style table view.
+- **Other** covers anything else not natively parsed (Wyze, Zigbee 3.0, …) — free-text
+  standard name plus a manual code/QR payload, no parsing required; a scanned QR that
+  matches none of the known protocols lands here automatically instead of being rejected.
 - Vendor, product name, area (with Home Assistant area suggestions), device type,
   connectivity and category on every code — Matter payload decode auto-fills vendor/product
   from the official CSA DCL registry.
@@ -51,6 +53,7 @@ The add-on itself lives in [`anti_matter/`](anti_matter/) — see its
 - Link a code to a Home Assistant device (searchable, with auto-match) and jump to its page;
   double-click any code (grid card or table row) for a quick-view with a large QR, right-click
   to edit instead.
+- Zoomable card grid (buttons, a 50–150% preset dropdown, or Ctrl+scroll/pinch).
 - Local, SAMBA-reachable storage in the add-on config folder, included in HA backups; Trash
   is a separate file, and downloads also save to Home Assistant's Media folder.
 - Backup schedule (hourly/daily/weekly/monthly) with automatic pruning, plus manual
@@ -61,8 +64,11 @@ The add-on itself lives in [`anti_matter/`](anti_matter/) — see its
 ## Screenshots
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Cl3tus/Anti-Matter-HA/main/social-preview.png" alt="Anti-Matter preview" width="70%">
+  <img src="https://raw.githubusercontent.com/Cl3tus/Anti-Matter-HA/main/docs/screenshots/en/anti-matter-dark-light-tear-en.png" alt="Anti-Matter — Dark and Light theme" width="90%">
 </p>
+
+More in the [wiki's Screenshots page](https://github.com/Cl3tus/Anti-Matter-HA/wiki/Screenshots)
+(English + Dutch).
 
 ## Credits
 
