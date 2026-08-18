@@ -3,11 +3,14 @@
 Detailed per-commit history is in [git log](https://github.com/Cl3tus/Anti-Matter-HA/commits/main).
 This file summarizes the notable changes by theme.
 
-## 1.0.66 — docs refresh
+## 2.0.0 — docs refresh, version milestone
 
 - Re-shot and reorganized the wiki screenshots (language-suffixed file names, a new
   Dark/Light theme hero shot), refreshed the README/DOCS for Zigbee/Tuya and the zoom
   control, added an `arm64` support badge, and condensed this changelog.
+- Version bumped to 2.0.0 to mark this set of changes (Zigbee/Tuya as first-class
+  protocols, the card-grid zoom control, and the round of dialog/sticker-card fixes
+  below) as a milestone release.
 
 ## 1.0.42–1.0.65 — Zigbee/Tuya, card-grid zoom, sticker/dialog polish
 
