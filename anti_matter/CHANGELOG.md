@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.65
+
+- Filter dropdown panels (Connectivity, Vendor, Product, ...): when tall
+  enough to scroll, a native (non-overlay) scrollbar's flat edge had no
+  room to sit inside the panel's rounded corner and visibly overlapped it.
+  Added extra right padding so the scrollbar sits fully within the
+  straight part of the box.
+- Reverted the header's temporary "v2.0.0" display (screenshots are done)
+  — back to showing the real add-on version. Removed the now-unused
+  DISPLAY_VERSION split from GET /api/info.
+
 ## 1.0.64
 
 - Fixed a real regression from v1.0.60's scrollbar-inset change: it made

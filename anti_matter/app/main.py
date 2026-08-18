@@ -63,12 +63,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.64"
-# Shown in the header badge only (GET /info) — deliberately different from
-# APP_VERSION (the real HA add-on/config.yaml version) for a batch of
-# screenshots being taken for the add-on listing. Temporary; reconcile the
-# two before actually publishing those screenshots.
-DISPLAY_VERSION = "2.0.0"
+APP_VERSION = "1.0.65"
 PORT = int(os.environ.get("ANTIMATTER_PORT", "8099"))
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -351,7 +346,7 @@ async def client_log(body: ClientLogBody):
 @app.get("/api/info")
 async def app_info():
     return {
-        "version": DISPLAY_VERSION,
+        "version": APP_VERSION,
         "language": norm_language(opt("interface", "language", "auto")),
         "theme": norm_theme(opt("interface", "theme", "auto")),
         "ha_available": ha.enabled,

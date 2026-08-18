@@ -394,6 +394,14 @@
   flex-direction: column;
   gap: 0.15rem;
   padding: var(--rm-space-2);
+  /* A native (non-overlay) scrollbar — the common case on Windows — is
+     wider than the plain space-2 right padding, so its flat edge poked
+     past the rounded corner above/below it instead of sitting inside the
+     curve. Extra right padding gives it room to sit fully within the
+     straight part of the box; overflow-y:auto + border-radius on the same
+     element already clips the scrollbar to the rounded shape everywhere
+     else, this was purely a "not enough space" issue in the corners. */
+  padding-right: calc(var(--rm-space-2) + 10px);
   width: max-content;
   min-width: 12rem;
   max-width: min(20rem, calc(100vw - 1.5rem));
