@@ -985,13 +985,15 @@ dialog {
      content was sparse. */
   background: var(--rm-surface-elevated);
   color: var(--rm-text);
-  /* Right padding is intentionally smaller than the other sides — the
-     scrolling <form> below sits in this padding box, so its own scrollbar
-     (when the content is tall enough to need one) renders close to the
-     dialog's edge instead of matching the left/top/bottom inset. The
-     form's own padding-right restores the content's visual right margin
-     to the same amount as the other sides, just inside the scrollbar. */
-  padding: var(--rm-space-5) var(--rm-space-2) var(--rm-space-5) var(--rm-space-5);
+  /* Symmetric — dialogs with no <form> (quickview, the decode popups, ...)
+     render their content DIRECTLY in this padding box, so an asymmetric
+     padding here (previously smaller on the right, for the scrollbar —
+     see dialog form below) threw off their centering: a white QR card and
+     the Download/Close button row both sat closer to the right edge than
+     the left. The scrollbar inset now lives entirely on `dialog form`
+     instead, via a negative margin, so it only affects dialogs that
+     actually have one. */
+  padding: var(--rm-space-5);
   max-width: 480px;
   max-height: 85vh;
   width: calc(100% - 2rem);
@@ -1033,8 +1035,14 @@ dialog form {
      to 'auto' on both axes per spec — any accidental wide child (long unbroken
      text in a table cell, etc.) then draws a horizontal scrollbar. Force it off. */
   overflow-x: hidden;
-  /* Restores the content's right margin to match the other 3 sides — see
-     the comment on `dialog`'s own (intentionally smaller) right padding. */
+  /* Pull this element's own right edge (where its scrollbar renders,
+     since this is the scrolling box) closer to the dialog's border than
+     `dialog`'s now-symmetric padding alone would put it, then pad the
+     content back out by the same amount — so the scrollbar sits close to
+     the edge while the actual content keeps the same margin as the other
+     3 sides. Only affects dialogs with a <form> (the ones that actually
+     scroll); others just get `dialog`'s plain symmetric padding. */
+  margin-right: calc(-1 * (var(--rm-space-5) - var(--rm-space-2)));
   padding-right: calc(var(--rm-space-5) - var(--rm-space-2));
 }
 
@@ -1825,7 +1833,12 @@ body.qr-invert #quickview-image-wrap {
   flex-wrap: wrap;
   gap: var(--rm-space-2);
   justify-content: center;
-  margin: 0 0 var(--rm-space-3);
+  /* No bottom margin of its own — .dialog-actions right below already
+     has margin-top:space-2, and position:sticky on that element takes it
+     out of normal margin-collapsing, so a margin here would have ADDED
+     to (not collapsed with) that one, doubling the gap instead of
+     matching .dialog-actions's own button-to-button gap. */
+  margin: 0;
 }
 .quickview-ha-links a.hidden {
   display: none;

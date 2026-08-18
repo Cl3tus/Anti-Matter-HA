@@ -63,7 +63,7 @@ _LOGGER = logging.getLogger("anti_matter")
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-APP_VERSION = "1.0.63"
+APP_VERSION = "1.0.64"
 # Shown in the header badge only (GET /info) — deliberately different from
 # APP_VERSION (the real HA add-on/config.yaml version) for a batch of
 # screenshots being taken for the add-on listing. Temporary; reconcile the

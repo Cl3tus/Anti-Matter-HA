@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.64
+
+- Fixed a real regression from v1.0.60's scrollbar-inset change: it made
+  `dialog`'s own right padding smaller everywhere, compensating on
+  `dialog form` — but dialogs with no `<form>` (quickview, the standalone
+  decode popups) never got that compensation, so their content sat closer
+  to the right edge than the left. Measured on the quickview dialog: the
+  white QR card was 21px from the left vs 9px from the right, and
+  Download/Close had the same mismatch. Moved the scrollbar-inset trick
+  entirely onto `dialog form` (negative margin instead of relying on an
+  asymmetric parent), so `dialog` itself stays symmetric and every
+  non-form dialog is centered correctly again.
+- Quickview's "Open device in Home Assistant" button had a visibly bigger
+  gap to the Download/Edit/Close row below it (20px) than those buttons
+  have to each other (8px) — turned out `position: sticky` on that row
+  takes it out of normal margin collapsing, so two 8px margins from
+  adjacent elements were adding up to 16px instead of collapsing to 8px.
+  Fixed to a real 8px gap.
+
 ## 1.0.63
 
 - Header badge now shows a separate "display version" (currently v2.0.0)
