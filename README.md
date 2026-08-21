@@ -27,7 +27,7 @@ included in Home Assistant's own backups.
 1. In Home Assistant go to **Settings → Add-ons → Add-on Store → ⋮ → Repositories**.
 2. Add this repository URL:
    ```
-   https://github.com/Cl3tus/Anti-Matter-HA
+   https://github.com/Cl3tus/HA-Addons
    ```
 3. Install the **Anti-Matter** add-on and start it. Open it from the sidebar (it runs through
    Home Assistant ingress).
