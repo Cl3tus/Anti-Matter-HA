@@ -155,19 +155,10 @@
 
 .sidebar-head {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--rm-space-2);
   margin-bottom: var(--rm-space-3);
   flex: none;
-}
-/* The sidebar is only 240px wide — Delete selected/Clear next to the title
-   and "+" button won't fit on one line, so they wrap onto their own line
-   below, still pinned to the right by .selection-bar.inline's auto margin. */
-.sidebar-head .selection-bar.inline {
-  flex-basis: 100%;
-  justify-content: flex-end;
 }
 
 .sidebar-toggle {
@@ -2048,11 +2039,4 @@ body.qr-invert #quickview-image-wrap {
 }
 #codes-table-body tr.selected {
   background: var(--rm-accent-soft);
-}
-
-/* Categories held for bulk delete (ctrl/shift+click) — distinct from the
-   filter-active state, which uses .active */
-.category-btn.selected-for-delete {
-  outline: 2px dashed var(--rm-danger);
-  outline-offset: -2px;
 }

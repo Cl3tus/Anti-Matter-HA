@@ -16,8 +16,6 @@ let haDisplayToId = new Map(); // datalist display string -> id
 // selection above and from the category "active" filter state.
 let selectedCodeIds = new Set();
 let lastSelectedCodeIndex = null;
-let selectedCategoryIds = new Set();
-let lastSelectedCategoryIndex = null;
 let categoryIconPicker = null;
 const NONE_CATEGORY_ID = "__none__";
 // Set right before opening the category dialog from the "+" inside the code form,
@@ -74,8 +72,6 @@ async function loadVault() {
   lastVaultJson = JSON.stringify(vault);
   selectedCodeIds.clear();
   lastSelectedCodeIndex = null;
-  selectedCategoryIds.clear();
-  lastSelectedCategoryIndex = null;
   render();
   // Every delete/restore/purge path already ends by calling loadVault() (and
   // deleting a code/category is exactly what moves it into the trash) — this
@@ -354,16 +350,6 @@ function updateCodeSelectionUi() {
   });
 }
 
-function updateCategorySelectionUi() {
-  const bar = document.getElementById("category-selection-bar");
-  const count = document.getElementById("category-selection-count");
-  if (bar) bar.classList.toggle("hidden", selectedCategoryIds.size === 0);
-  if (count) count.textContent = t("status.selected", { count: selectedCategoryIds.size });
-  document.querySelectorAll("#category-list .category-btn[data-category-id]").forEach((btn) => {
-    btn.classList.toggle("selected-for-delete", selectedCategoryIds.has(btn.dataset.categoryId));
-  });
-}
-
 function handleCodeSelectClick(e, code, index, orderedCodes) {
   if (e.shiftKey && lastSelectedCodeIndex != null) {
     const [lo, hi] = [lastSelectedCodeIndex, index].sort((a, b) => a - b);
@@ -381,32 +367,11 @@ function handleCodeSelectClick(e, code, index, orderedCodes) {
   updateCodeSelectionUi();
 }
 
-function handleCategorySelectClick(e, cat, index, orderedCats) {
-  if (e.shiftKey && lastSelectedCategoryIndex != null) {
-    const [lo, hi] = [lastSelectedCategoryIndex, index].sort((a, b) => a - b);
-    if (!e.ctrlKey && !e.metaKey) selectedCategoryIds.clear();
-    for (let i = lo; i <= hi; i++) selectedCategoryIds.add(orderedCats[i].id);
-  } else {
-    if (selectedCategoryIds.has(cat.id)) selectedCategoryIds.delete(cat.id);
-    else selectedCategoryIds.add(cat.id);
-    lastSelectedCategoryIndex = index;
-  }
-  updateCategorySelectionUi();
-}
-
 async function deleteSelectedCodes() {
   const ids = [...selectedCodeIds];
   if (!ids.length) return;
   if (!(await uiConfirm(t("confirm.delete_selected", { count: ids.length }), t("action.delete")))) return;
   for (const id of ids) await api(`/codes/${id}`, { method: "DELETE" });
-  await loadVault();
-}
-
-async function deleteSelectedCategories() {
-  const ids = [...selectedCategoryIds];
-  if (!ids.length) return;
-  if (!(await uiConfirm(t("confirm.delete_selected_categories", { count: ids.length }), t("action.delete")))) return;
-  for (const id of ids) await api(`/categories/${id}`, { method: "DELETE" });
   await loadVault();
 }
 
@@ -478,24 +443,17 @@ function renderCategories() {
   const sorted = [...vault.categories].sort(
     (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
   );
-  sorted.forEach((cat, i) => {
+  sorted.forEach((cat) => {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.type = "button";
     btn.dataset.categoryId = cat.id;
-    btn.className =
-      "category-btn" +
-      (activeCategories.has(cat.id) ? " active" : "") +
-      (selectedCategoryIds.has(cat.id) ? " selected-for-delete" : "");
+    btn.className = "category-btn" + (activeCategories.has(cat.id) ? " active" : "");
     const mark = window.AntiMatterCategoryIcons
       ? window.AntiMatterCategoryIcons.markMarkup(cat, BRAND_PREFIX)
       : `<span class="category-dot" style="background:${cat.color}"></span>`;
     btn.innerHTML = `${mark}${escapeHtml(capitalizeFirst(cat.name))}`;
-    btn.onclick = (e) => {
-      if (e.shiftKey || e.ctrlKey || e.metaKey) {
-        handleCategorySelectClick(e, cat, i, sorted);
-        return;
-      }
+    btn.onclick = () => {
       if (activeCategories.has(cat.id)) activeCategories.delete(cat.id);
       else activeCategories.add(cat.id);
       render();
@@ -508,7 +466,6 @@ function renderCategories() {
     li.appendChild(btn);
     ul.appendChild(li);
   });
-  updateCategorySelectionUi();
 }
 
 function closeSidebarOnMobile() {
@@ -1950,13 +1907,6 @@ function bindUi() {
     lastSelectedCodeIndex = null;
     updateCodeSelectionUi();
   });
-  document.getElementById("btn-delete-selected-categories")?.addEventListener("click", deleteSelectedCategories);
-  document.getElementById("btn-clear-category-selection")?.addEventListener("click", () => {
-    selectedCategoryIds.clear();
-    lastSelectedCategoryIndex = null;
-    updateCategorySelectionUi();
-  });
-
   document.querySelectorAll("[data-close]").forEach((btn) => {
     btn.onclick = () => btn.closest("dialog").close();
   });

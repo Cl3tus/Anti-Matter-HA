@@ -143,7 +143,6 @@
   "confirm.delete_code": "Deze code verwijderen?",
   "confirm.delete_category": "Deze categorie verwijderen? De codes blijven bestaan en komen zonder categorie terug.",
   "confirm.delete_selected": "{count} geselecteerde codes verwijderen?",
-  "confirm.delete_selected_categories": "{count} geselecteerde categorieën verwijderen? De codes blijven bestaan en komen zonder categorie terug.",
   "action.delete_selected": "Verwijder selectie",
   "action.clear_selection": "Wissen",
   "status.selected": "{count} geselecteerd",

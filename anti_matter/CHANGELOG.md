@@ -3,6 +3,15 @@
 Detailed per-commit history is in [git log](https://github.com/Cl3tus/Anti-Matter-HA/commits/main).
 This file summarizes the notable changes by theme.
 
+## 2.0.4 — drop category multi-select, credits out of the in-app docs
+
+- Removed category multi-select/bulk-delete entirely (Ctrl/Shift-click,
+  the sidebar selection bar, "Delete selected") — codes keep it, categories
+  go back to plain click-to-filter/right-click-to-edit.
+- Dropped the **Credits** section from DOCS.md, since Home Assistant's
+  add-on store renders that file in the Documentation tab. It stays on
+  README.md, which only ever shows up on the GitHub repo page.
+
 ## 2.0.3 — Shift-deselect, selection bar styling
 
 - Shift+Click on codes/categories now sets the selection to just that range

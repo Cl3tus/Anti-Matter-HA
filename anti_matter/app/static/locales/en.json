@@ -143,7 +143,6 @@
   "confirm.delete_code": "Delete this code?",
   "confirm.delete_category": "Delete this category? Its codes stay and move to no category.",
   "confirm.delete_selected": "Delete {count} selected codes?",
-  "confirm.delete_selected_categories": "Delete {count} selected categories? Their codes stay and move to no category.",
   "action.delete_selected": "Delete selected",
   "action.clear_selection": "Clear",
   "status.selected": "{count} selected",

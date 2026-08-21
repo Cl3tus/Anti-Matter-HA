@@ -107,9 +107,3 @@ best-effort, never-required lookup against the official CSA Distributed Complian
 (DCL) when decoding a Matter payload, to show the vendor/product's public certification
 name and links if one exists. Otherwise it only talks to your Home Assistant Supervisor
 (entity states, areas, devices) and stores everything locally.
-
-## Credits
-
-Anti-Matter is a rewrite of [Rematters](https://github.com/Rematters/Rematters-HA) by
-Jesse Hulswit ([JesseFPV](https://rematters.casa/)), reworked into a cloud-free, local-only
-add-on. Full credit to Jesse for the original Rematters add-on and its design.
