@@ -440,7 +440,7 @@ async function loadTrash() {
   codeSection?.classList.toggle("hidden", trash.codes.length === 0);
   empty?.classList.toggle("hidden", trash.categories.length > 0 || trash.codes.length > 0);
   const emptyBtn = document.getElementById("btn-empty-trash");
-  if (emptyBtn) emptyBtn.disabled = trash.categories.length === 0 && trash.codes.length === 0;
+  emptyBtn?.classList.toggle("hidden", trash.categories.length === 0 && trash.codes.length === 0);
 }
 
 async function openTrashDialog() {

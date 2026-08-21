@@ -3,6 +3,20 @@
 Detailed per-commit history is in [git log](https://github.com/Cl3tus/Anti-Matter-HA/commits/main).
 This file summarizes the notable changes by theme.
 
+## 2.0.2 — empty-bin visibility, code multi-select relocation
+
+- The **Empty bin** button now hides itself entirely when the trash is empty,
+  instead of just showing disabled.
+- The code selection bar (Delete selected / Clear, shown once you Ctrl/Shift-
+  click to multi-select codes) now sits inline at the right edge of the
+  filter bar, next to Clear filters, instead of on its own row below it.
+  The underlying Ctrl-toggle / Shift-range / mixed selection (Explorer-style)
+  was already there for both grid and table view — this only moves where the
+  bar renders.
+- Also fixes the in-app version badge: it reads a separate `APP_VERSION`
+  constant in main.py that didn't get bumped alongside config.yaml in 2.0.1,
+  so the header kept showing v2.0.0.
+
 ## 2.0.1 — trash scroll/empty-bin, SAMBA share rename
 
 - Trash dialog now scrolls when it has enough items (it wasn't wrapped in a

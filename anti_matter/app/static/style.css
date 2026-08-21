@@ -2008,6 +2008,17 @@ body.qr-invert #quickview-image-wrap {
   color: var(--rm-text);
 }
 
+/* Nested in the code filter row instead of its own full-width line — sits at
+   the row's right edge, right of Clear filters, and only takes up the space
+   its own content needs. */
+.attr-filters .selection-bar {
+  margin-bottom: 0;
+  margin-left: auto;
+}
+.attr-filters .selection-bar span {
+  flex: initial;
+}
+
 /* Selected code cards (grid) / rows (table) */
 .code-card.selected .matter-sticker-box,
 .code-card.selected .homekit-sticker-box,
