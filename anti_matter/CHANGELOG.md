@@ -3,6 +3,15 @@
 Detailed per-commit history is in [git log](https://github.com/Cl3tus/Anti-Matter-HA/commits/main).
 This file summarizes the notable changes by theme.
 
+## 2.0.1 — trash scroll/empty-bin, SAMBA share rename
+
+- Trash dialog now scrolls when it has enough items (it wasn't wrapped in a
+  `<form>`, so it never picked up the scrolling rule other dialogs use) and
+  gained an **Empty bin** button to purge everything in one go.
+- Renamed the add-on's SAMBA config share from `addon_configs` to `app_configs`
+  (map key `addon_config:rw` → `app_config:rw`) to match Home Assistant's
+  newer add-on/app terminology.
+
 ## 2.0.0 — docs refresh, version milestone
 
 - Re-shot and reorganized the wiki screenshots (language-suffixed file names, a new
