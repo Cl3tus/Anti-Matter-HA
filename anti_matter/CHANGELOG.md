@@ -3,6 +3,20 @@
 Detailed per-commit history is in [git log](https://github.com/Cl3tus/Anti-Matter-HA/commits/main).
 This file summarizes the notable changes by theme.
 
+## 2.0.3 — Shift-deselect, selection bar styling
+
+- Shift+Click on codes/categories now sets the selection to just that range
+  (shrinking it deselects whatever falls back out), matching Windows
+  Explorer — it previously only ever added to the selection, so a range
+  could grow but never shrink. Ctrl+Shift+Click still adds the range on top
+  of the existing selection instead of replacing it.
+- The code selection bar (Delete selected / Clear) now matches the filter
+  buttons' height and sits flush at the right edge of the filter row instead
+  of its own bordered box. The category selection bar got the same
+  treatment, moved from above the category list into the sidebar's header
+  row (right of the "+" add-category button, wrapping onto its own
+  right-aligned line since the 240px sidebar has no room for it inline).
+
 ## 2.0.2 — empty-bin visibility, code multi-select relocation
 
 - The **Empty bin** button now hides itself entirely when the trash is empty,

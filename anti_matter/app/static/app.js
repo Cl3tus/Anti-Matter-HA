@@ -367,6 +367,11 @@ function updateCategorySelectionUi() {
 function handleCodeSelectClick(e, code, index, orderedCodes) {
   if (e.shiftKey && lastSelectedCodeIndex != null) {
     const [lo, hi] = [lastSelectedCodeIndex, index].sort((a, b) => a - b);
+    // Plain Shift+Click sets the selection to just this range (so shrinking
+    // the range towards the anchor deselects whatever falls back out of it),
+    // same as Windows Explorer. Ctrl+Shift+Click adds the range on top of
+    // whatever's already selected instead of replacing it.
+    if (!e.ctrlKey && !e.metaKey) selectedCodeIds.clear();
     for (let i = lo; i <= hi; i++) selectedCodeIds.add(orderedCodes[i].id);
   } else {
     if (selectedCodeIds.has(code.id)) selectedCodeIds.delete(code.id);
@@ -379,6 +384,7 @@ function handleCodeSelectClick(e, code, index, orderedCodes) {
 function handleCategorySelectClick(e, cat, index, orderedCats) {
   if (e.shiftKey && lastSelectedCategoryIndex != null) {
     const [lo, hi] = [lastSelectedCategoryIndex, index].sort((a, b) => a - b);
+    if (!e.ctrlKey && !e.metaKey) selectedCategoryIds.clear();
     for (let i = lo; i <= hi; i++) selectedCategoryIds.add(orderedCats[i].id);
   } else {
     if (selectedCategoryIds.has(cat.id)) selectedCategoryIds.delete(cat.id);

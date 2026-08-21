@@ -75,14 +75,14 @@
         <button type="button" id="btn-add-category" class="btn icon" data-i18n-tip="categories.add_title">
           <svg class="rm-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="./static/brand/icons.svg#rm-icon-plus"/></svg>
         </button>
-      </div>
-      <div id="sidebar-body" class="sidebar-body">
-        <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All categories</button>
-        <div id="category-selection-bar" class="selection-bar hidden">
+        <div id="category-selection-bar" class="selection-bar inline hidden">
           <span id="category-selection-count"></span>
           <button type="button" id="btn-delete-selected-categories" class="rm-btn rm-btn-danger" data-i18n="action.delete_selected">Delete selected</button>
           <button type="button" id="btn-clear-category-selection" class="rm-btn rm-btn-secondary" data-i18n="action.clear_selection">Clear</button>
         </div>
+      </div>
+      <div id="sidebar-body" class="sidebar-body">
+        <button type="button" id="filter-all" class="filter-all active" data-i18n="categories.filter_all">All categories</button>
         <ul id="category-list" class="category-list"></ul>
       </div>
     </aside>
@@ -120,7 +120,7 @@
             <div id="filter-conn-panel" class="filter-dropdown-panel hidden"></div>
           </div>
           <button type="button" id="btn-clear-filters" class="filter-dropdown-toggle" data-i18n="filter.clear">Clear filters</button>
-          <div id="code-selection-bar" class="selection-bar hidden">
+          <div id="code-selection-bar" class="selection-bar inline hidden">
             <span id="code-selection-count"></span>
             <button type="button" id="btn-delete-selected-codes" class="rm-btn rm-btn-danger" data-i18n="action.delete_selected">Delete selected</button>
             <button type="button" id="btn-clear-code-selection" class="rm-btn rm-btn-secondary" data-i18n="action.clear_selection">Clear</button>
