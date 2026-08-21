@@ -439,6 +439,8 @@ async function loadTrash() {
   catSection?.classList.toggle("hidden", trash.categories.length === 0);
   codeSection?.classList.toggle("hidden", trash.codes.length === 0);
   empty?.classList.toggle("hidden", trash.categories.length > 0 || trash.codes.length > 0);
+  const emptyBtn = document.getElementById("btn-empty-trash");
+  if (emptyBtn) emptyBtn.disabled = trash.categories.length === 0 && trash.codes.length === 0;
 }
 
 async function openTrashDialog() {
@@ -1972,6 +1974,12 @@ function bindUi() {
   };
 
   document.getElementById("btn-trash").onclick = openTrashDialog;
+  document.getElementById("btn-empty-trash").onclick = async () => {
+    if (!(await uiConfirm(t("confirm.empty_trash"), t("action.empty_trash")))) return;
+    await api("/trash", { method: "DELETE" });
+    await loadTrash();
+    await loadVault();
+  };
   document.getElementById("trash-dialog")?.addEventListener("click", async (e) => {
     const restoreBtn = e.target.closest("[data-restore]");
     if (restoreBtn) {

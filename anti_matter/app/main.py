@@ -370,6 +370,35 @@ async def get_trash():
     return {"categories": bin_data.categories, "codes": bin_data.codes}
 
 
+@app.delete("/api/trash")
+async def empty_trash():
+    from vault_merge import record_deletion
+
+    bin_data = storage.load_bin()
+    category_ids = [c.id for c in bin_data.categories]
+    code_ids = [c.id for c in bin_data.codes]
+    if not category_ids and not code_ids:
+        return {"ok": True}
+
+    vault = storage.load()
+    data = vault.model_dump(mode="json")
+    for category_id in category_ids:
+        for code in data["codes"]:
+            ids = code.get("category_ids") or []
+            if category_id in ids:
+                code["category_ids"] = [i for i in ids if i != category_id]
+        record_deletion(data, "categories", category_id)
+    for code_id in code_ids:
+        record_deletion(data, "codes", code_id)
+    storage.save(Vault.model_validate(data))
+
+    bin_data.categories = []
+    bin_data.codes = []
+    storage.save_bin(bin_data)
+    _LOGGER.info("Trash emptied: %d categories, %d codes purged", len(category_ids), len(code_ids))
+    return {"ok": True}
+
+
 @app.get("/api/export")
 async def export_vault():
     content = storage.export_json()

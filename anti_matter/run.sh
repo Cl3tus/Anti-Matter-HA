@@ -22,11 +22,11 @@ else
     log_line WARNING '\033[33m' "/media not mounted — downloaded images will only save to the browser"
 fi
 
-# addon_config:rw mounts the add-on config folder at /config.
-# On the SAMBA share this shows up as addon_configs\<slug>. Store the vault there
+# app_config:rw mounts the add-on config folder at /config.
+# On the SAMBA share this shows up as app_configs\<slug>. Store the vault there
 # so backups are reachable over the network and included in HA backups.
 if [ -d "/config" ]; then
-    log_line INFO '\033[32m' "SAMBA storage active: /config (\\\\<HA-IP>\\addon_configs\\<slug>)"
+    log_line INFO '\033[32m' "SAMBA storage active: /config (\\\\<HA-IP>\\app_configs\\<slug>)"
     export STORAGE_DIR="/config"
 else
     log_line WARNING '\033[33m' "/config not mounted — falling back to /data"

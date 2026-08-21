@@ -22,9 +22,9 @@ homeassistant_api: true
 hassio_api: false
 
 # The vault + timestamped backups are stored in the add-on config folder,
-# reachable over SAMBA at \\<HA-IP>\addon_configs\<slug> and included in HA backups.
+# reachable over SAMBA at \\<HA-IP>\app_configs\<slug> and included in HA backups.
 map:
-  - addon_config:rw
+  - app_config:rw
   - media:rw
 
 # --- User options (Configuration tab; rendered as dropdowns with section headers) ---

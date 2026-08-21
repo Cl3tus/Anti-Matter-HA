@@ -64,7 +64,7 @@ Everything lives in the add-on config folder, mounted at `/config` inside the ad
 reachable on your network at:
 
 ```
-\\<HA-IP>\addon_configs\<slug>_anti_matter\
+\\<HA-IP>\app_configs\<slug>_anti_matter\
     anti_matter.json          # the vault
     anti-matter-bin.json      # trashed codes/categories, until restored or purged
     backups/                  # timestamped backups

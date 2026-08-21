@@ -474,19 +474,23 @@
   </dialog>
 
   <dialog id="trash-dialog">
-    <h3 data-i18n="trash.title">Trash</h3>
-    <p id="trash-empty" class="form-hint hidden" data-i18n="trash.empty">Trash is empty.</p>
-    <div id="trash-categories-section" class="hidden">
-      <p class="form-field-label" data-i18n="trash.section_categories">Categories</p>
-      <ul id="trash-category-list" class="trash-list"></ul>
-    </div>
-    <div id="trash-codes-section" class="hidden">
-      <p class="form-field-label" data-i18n="trash.section_codes">Codes</p>
-      <ul id="trash-code-list" class="trash-list"></ul>
-    </div>
-    <div class="dialog-actions">
-      <button type="button" class="rm-btn rm-btn-primary" data-close data-i18n="action.close">Close</button>
-    </div>
+    <form method="dialog">
+      <h3 data-i18n="trash.title">Trash</h3>
+      <p id="trash-empty" class="form-hint hidden" data-i18n="trash.empty">Trash is empty.</p>
+      <div id="trash-categories-section" class="hidden">
+        <p class="form-field-label" data-i18n="trash.section_categories">Categories</p>
+        <ul id="trash-category-list" class="trash-list"></ul>
+      </div>
+      <div id="trash-codes-section" class="hidden">
+        <p class="form-field-label" data-i18n="trash.section_codes">Codes</p>
+        <ul id="trash-code-list" class="trash-list"></ul>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="btn-empty-trash" class="rm-btn rm-btn-danger" data-i18n="action.empty_trash">Empty bin</button>
+        <span class="dialog-actions-spacer"></span>
+        <button type="button" class="rm-btn rm-btn-primary" data-close data-i18n="action.close">Close</button>
+      </div>
+    </form>
   </dialog>
 
   <dialog id="confirm-dialog" class="confirm-dialog">
